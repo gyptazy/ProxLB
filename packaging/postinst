@@ -1,0 +1,5 @@
+#!/bin/bash
+useradd -m plb 
+chown plb:plb /etc/proxlb/proxlb.conf
+chmod 600 /etc/proxlb/proxlb.conf
+systemctl daemon-reload
