@@ -1,0 +1,6 @@
+[Unit]
+Description=ProxLB - Rebalance VM workloads
+
+[Service]
+ExecStart=/usr/bin/proxlb -c /etc/proxlb/proxlb.conf
+User=plb
