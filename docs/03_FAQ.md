@@ -21,3 +21,18 @@ Jul 06 10:25:16 build01 proxlb[7285]:  proxlb: Error: [python-imports]: Could no
 
 Debian/Ubuntu: apt-get install python3-proxmoxer
 If the package is not provided by your systems repository, you can also install it by running `pip3 install proxmoxer`.
+
+### VM Grouping
+<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-vm-grouping-for-rebalancing.jpg"/> In the Proxmox WEB UI, you can group VMs using the notes field. While Proxmox doesn't natively support tagging or flagging VMs, you can utilize the VM's notes/description field for this purpose. You can still include any other notes and comments in the description field, but to enable grouping, you must add a new line starting with `proxlb-grouping:` followed by the group name.
+
+Example:
+```
+This is a great VM
+proxlb-grouping: db-gyptazy01-workload-group01
+
+foo bar With some more text.
+Important is only the proxlb-grouping line with a name and
+we can still use this field.
+```
+
+The notes field is evaluated for each VM. All VMs with the same group name (e.g., `db-gyptazy01-workload-group01`) will be rebalanced together on the same host.

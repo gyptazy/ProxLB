@@ -29,6 +29,7 @@ try:
     _imports = True
 except ImportError as error:
     _imports = False
+import re
 import requests
 import sys
 import time
@@ -250,8 +251,13 @@ def get_vm_statistics(api_object, ignore_vms):
     for node in api_object.nodes.get():
         for vm in api_object.nodes(node['node']).qemu.get():
 
+            # Get the comment field for the VM for VM grouping
+            vm_comment       = __get_vm_comment(api_object, node, vm['vmid'])
+            vm_grouping      = __get_vm_grouping(vm_comment)
+
             if vm['status'] == 'running' and vm['name'] not in ignore_vms_list:
                 vm_statistics[vm['name']] = {}
+                vm_statistics[vm['name']]['grouping']       = vm_grouping
                 vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
                 vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
                 vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
@@ -270,6 +276,30 @@ def get_vm_statistics(api_object, ignore_vms):
     return vm_statistics
 
 
+def __get_vm_comment(api_object, node, vmid):
+    """ Get a comment for a VM from a given VMID. """
+    info_prefix  = 'Info: [api-get-vm-comment]:'
+
+    vm_config = api_object.nodes(node['node']).qemu(vmid).config.get()
+    logging.info(f'{info_prefix} Got VM comment from API.')
+    return vm_config.get('description', None)
+
+
+def __get_vm_grouping(vm_comment):
+    """ Get the grouping name from the comment field for each VM if present. """
+    info_prefix  = 'Info: [api-get-vm-grouping-comment]:'
+
+    if vm_comment is None:
+        logging.info(f'{info_prefix} No grouping comment for VM found.')
+        return None
+
+    _comment = re.split("\n", vm_comment)
+    for line in _comment:
+        if line.startswith('proxlb-grouping:'):
+            logging.info(f'{info_prefix} Got grouping comment {line.strip("proxlb-grouping: ")} for VM found.')
+            return line.strip('proxlb-grouping: ')
+
+
 def balancing_calculations(balancing_method, node_statistics, vm_statistics):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
     error_prefix = 'Error: [rebalancing-calculator]:'
@@ -278,7 +308,6 @@ def balancing_calculations(balancing_method, node_statistics, vm_statistics):
     if balancing_method not in ['memory', 'disk', 'cpu']:
         logging.error(f'{error_prefix} Invalid balancing method: {balancing_method}')
         sys.exit(2)
-        return node_statistics, vm_statistics
 
     sorted_vms = sorted(vm_statistics.items(), key=lambda item: item[1][f'{balancing_method}_used'], reverse=True)
     logging.info(f'{info_prefix} Balancing will be done for {balancing_method} efficiency.')

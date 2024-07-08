@@ -17,6 +17,7 @@
   * Manuel
   * Proxmox GUI Integration
   * Quick Start
+  * VM Grouping
 * Motivation
 * References
 * Packages
@@ -114,7 +115,7 @@ A manual installation is possible and also supports BSD based systems. Proxmox R
 The executable must be able to read the config file, if no dedicated config file is given by the `-c` argument, PLB tries to read it from `/etc/proxlb/proxlb.conf`.
 
 ### Proxmox GUI Integration
-<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxmoxlb-service-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
+<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxlb-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
 * Rebalancing VM workloads
 * Migrate VM workloads away from a defined node (e.g. maintenance preparation)
 
@@ -129,6 +130,21 @@ vi /etc/proxlb/proxlb.conf
 systemctl restart proxlb
 systemctl status proxlb
 ```
+
+### VM Grouping
+<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-vm-grouping-for-rebalancing.jpg"/> In the Proxmox WEB UI, you can group VMs using the notes field. While Proxmox doesn't natively support tagging or flagging VMs, you can utilize the VM's notes/description field for this purpose. You can still include any other notes and comments in the description field, but to enable grouping, you must add a new line starting with `proxlb-grouping:` followed by the group name.
+
+Example:
+```
+This is a great VM
+proxlb-grouping: db-gyptazy01-workload-group01
+
+foo bar With some more text.
+Important is only the proxlb-grouping line with a name and
+we can still use this field.
+```
+
+The notes field is evaluated for each VM. All VMs with the same group name (e.g., `db-gyptazy01-workload-group01`) will be rebalanced together on the same host.
 
 ### Logging
 ProxLB uses the `SystemdHandler` for logging. You can find all your logs in your systemd unit log or in the journalctl.
