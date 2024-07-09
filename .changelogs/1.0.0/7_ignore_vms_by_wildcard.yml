@@ -1,0 +1,2 @@
+added:
+  - Add feature to prevent VMs from being relocated by defining a wildcard pattern. [#7]

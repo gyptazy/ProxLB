@@ -72,8 +72,8 @@ The following options can be set in the `proxlb.conf` file:
 | api_pass | FooBar | Password for the API. |
 | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
 | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
-| ignore_nodes | dummynode01,dummynode02 | Defines a comma separated list of nodes to exclude. |
-| ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. |
+| ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
+| ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | schedule | 24 | Hours to rebalance in hours. (default: 24) |
 
@@ -98,6 +98,17 @@ The following options and parameters are currently supported:
 | Option | Long Option | Description | Default |
 |------|:------:|------:|------:|
 | -c | --config | Path to a config file. | /etc/proxlb/proxlb.conf (default) |
+
+
+### Grouping
+#### Include (Stay Together)
+<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-include-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_include_ followed by your unique identifier, for example, plb_include_group1. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be included in the group.
+
+#### Exclude (Stay Separate)
+<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-exclude-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_exclude_ followed by your unique identifier, for example, plb_exclude_critical. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be excluded from being on the same node.
+
+#### Ignore VMs (tag style)
+<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
 
 ### Systemd
 When installing a Linux distribution (such as .deb or .rpm) file, this will be shipped with a systemd unit file. The default configuration file will be sourced from `/etc/proxlb/proxlb.conf`.

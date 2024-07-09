@@ -1,0 +1,2 @@
+added:
+  - Add exclude grouping feature to rebalance VMs from being located together to new nodes. [#4]
