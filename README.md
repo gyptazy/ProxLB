@@ -130,6 +130,24 @@ systemctl restart proxlb
 systemctl status proxlb
 ```
 
+### Docker quick start
+
+Clone this repository.
+Build the proxlb container:
+```bash
+build -t proxlb .
+```
+
+Adjust your config
+```
+vi /etc/proxlb/proxlb.conf
+```
+
+Run your container
+```bash
+docker run -it --rm -v $(pwd)/proxlb.conf:/etc/proxlb/proxlb.conf proxlb
+```
+
 ### Logging
 ProxLB uses the `SystemdHandler` for logging. You can find all your logs in your systemd unit log or in the journalctl.
 
