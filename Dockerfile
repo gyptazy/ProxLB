@@ -1,6 +1,12 @@
 # Use the official Debian 12 base image
 FROM debian:12
 
+# Labels
+LABEL maintainer="gyptazy@gyptazy.ch"
+LABEL org.label-schema.schema-version="0.9"
+LABEL org.label-schema.description="ProxLB - Rebalance VM workloads across nodes in a Proxmox cluster."
+LABEL org.label-schema.url="https://github.com/gyptazy/ProxLB"
+
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 

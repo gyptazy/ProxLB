@@ -17,9 +17,10 @@
   * Manuel
   * Proxmox GUI Integration
   * Quick Start
+  * Container Quick Start (Docker/Podman)
 * Motivation
 * References
-* Packages
+* Packages / Container Images
 * Misc
   * Bugs
   * Contributing
@@ -141,20 +142,21 @@ systemctl restart proxlb
 systemctl status proxlb
 ```
 
-### Docker quick start
+### Container Quick Start (Docker/Podman)
+Creating a container image of ProxLB is straightforward using the provided Dockerfile. The Dockerfile simplifies the process by automating the setup and configuration required to get ProxLB running in a container. Simply follow the steps in the Dockerfile to build the image, ensuring all dependencies and configurations are correctly applied. For those looking for an even quicker setup, a ready-to-use ProxLB container image is also available, eliminating the need for manual building and allowing for immediate deployment.
 
-Clone this repository.
-Build the proxlb container:
 ```bash
+git clone https://github.com/gyptazy/ProxLB.git
+cd ProxLB
 build -t proxlb .
 ```
 
-Adjust your config
+Afterwards simply adjust the config file to your needs:
 ```
 vi /etc/proxlb/proxlb.conf
 ```
 
-Run your container
+Finally, start the created container.
 ```bash
 docker run -it --rm -v $(pwd)/proxlb.conf:/etc/proxlb/proxlb.conf proxlb
 ```
@@ -181,12 +183,18 @@ Here you can find some overviews of references for and about the ProxLB (PLB):
 | General introduction into ProxLB | https://gyptazy.ch/blog/proxlb-rebalancing-vm-workloads-across-nodes-in-proxmox-clusters/ |
 | Howto install and use ProxLB on Debian to rebalance vm workloads in a Proxmox cluster | https://gyptazy.ch/howtos/howto-install-and-use-proxlb-to-rebalance-vm-workloads-across-nodes-in-proxmox-clusters/ |
 
-## Packages
+## Packages / Container Images
 Ready to use packages can be found at:
 * https://cdn.gyptazy.ch/files/amd64/debian/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/ubuntu/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/redhat/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/freebsd/proxlb/
+
+Container Images for Podman, Docker etc., can be found at:
+| Version | Image |
+|------|:------:|
+| latest | cr.gyptazy.ch/proxlb/proxlb:latest |
+| v0.0.9 | cr.gyptazy.ch/proxlb/proxlb:v0.0.9 |
 
 ## Misc
 ### Bugs
