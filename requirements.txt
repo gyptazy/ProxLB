@@ -1,0 +1,5 @@
+argparse
+configparser
+proxmoxer
+requests
+urllib3
