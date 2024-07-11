@@ -1,0 +1,2 @@
+added:
+  - Add dry-run support to see what kind of rebalancing would be done. [#6]

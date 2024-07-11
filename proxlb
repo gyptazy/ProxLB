@@ -22,12 +22,13 @@
 
 import argparse
 import configparser
+import json
 import logging
 import os
 try:
     import proxmoxer
     _imports = True
-except ImportError as error:
+except ImportError:
     _imports = False
 import random
 import re
@@ -140,7 +141,9 @@ def __validate_config_file(config_path):
 def initialize_args():
     """ Initialize given arguments for ProxLB. """
     argparser = argparse.ArgumentParser(description='ProxLB')
-    argparser.add_argument('-c', '--config', type=str, help='Path to config file.')
+    argparser.add_argument('-c', '--config',  type=str, help='Path to config file.', required=True)
+    argparser.add_argument('-d', '--dry-run', help='Perform a dry-run without doing any actions.', action='store_true', required=False)
+    argparser.add_argument('-j', '--json',    help='Return a JSON of the VM movement.', action='store_true', required=False)
     return argparser.parse_args()
 
 
@@ -172,6 +175,7 @@ def initialize_config_options(config_path):
         proxmox_api_ssl_v = config['proxmox']['verify_ssl']
         # Balancing
         balancing_method  = config['balancing'].get('method', 'memory')
+        balanciness       = config['balancing'].get('balanciness', 10)
         ignore_nodes      = config['balancing'].get('ignore_nodes', None)
         ignore_vms        = config['balancing'].get('ignore_vms', None)
         # Service
@@ -189,7 +193,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         ignore_nodes, ignore_vms, daemon, schedule
+         balanciness, ignore_nodes, ignore_vms, daemon, schedule
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -346,10 +350,10 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, node_statistics, vm_statistics):
+def balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
     info_prefix        = 'Info: [rebalancing-calculator]:'
-    balanciness        = 10
+    balanciness        = int(balanciness)
     rebalance          = False
     processed_vms      = []
     rebalance          = True
@@ -546,20 +550,53 @@ def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_metho
     return node_statistics, vm_statistics
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced):
+def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
     """ Run rebalancing of vms to new nodes in cluster. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
 
-    logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
-    for vm, value in vm_statistics_rebalanced.items():
+    if not app_args.dry_run:
+        logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
+        for vm, value in vm_statistics_rebalanced.items():
 
-        try:
-            logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-            api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
-        except proxmoxer.core.ResourceException as error_resource:
-            __errors__ = True
-            logging.critical(f'{error_prefix} {error_resource}')
+            try:
+                logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+            except proxmoxer.core.ResourceException as error_resource:
+                logging.critical(f'{error_prefix} {error_resource}')
+        if app_args.json:
+            logging.info(f'{info_prefix} Printing json output of VM statistics.')
+            json.dumps(vm_statistics_rebalanced)
+    else:
+        logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
+        _vm_to_node_list = []
+        _vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
+
+        for vm_name, vm_values in vm_statistics_rebalanced.items():
+            _vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance']])
+
+        if app_args.json:
+            logging.info(f'{info_prefix} Printing json output of VM statistics.')
+            json.dumps(vm_statistics_rebalanced)
+        else:
+            if len(vm_statistics_rebalanced) > 0:
+                logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
+                print_table_cli(_vm_to_node_list)
+            else:
+                logging.info(f'{info_prefix} No rebalancing needed according to the defined balanciness.')
+                print('No rebalancing needed according to the defined balanciness.')
+
+
+def print_table_cli(table):
+    """ Pretty print a given table to the cli. """
+    longest_cols = [
+        (max([len(str(row[i])) for row in table]) + 3)
+        for i in range(len(table[0]))
+    ]
+
+    row_format = "".join(["{:>" + str(longest_col) + "}" for longest_col in longest_cols])
+    for row in table:
+        print(row_format.format(*row))
 
 
 def main():
@@ -572,7 +609,7 @@ def main():
 
     # Parse global config
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-        ignore_nodes, ignore_vms, daemon, schedule = initialize_config_options(config_path)
+        balanciness, ignore_nodes, ignore_vms, daemon, schedule = initialize_config_options(config_path)
 
     while True:
         # API Authentication.
@@ -583,10 +620,10 @@ def main():
         vm_statistics = get_vm_statistics(api_object, ignore_vms)
 
         # Calculate rebalancing of vms.
-        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics)
+        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness)
 
         # Rebalance vms to new nodes within the cluster.
-        run_vm_rebalancing(api_object, vm_statistics_rebalanced)
+        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
 
         # Validate for any errors
         post_validations()
