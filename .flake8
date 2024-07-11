@@ -1,0 +1,3 @@
+[flake8]
+per-file-ignores =
+    proxlb: E501,E221,E266,E231,E127,E222,E128

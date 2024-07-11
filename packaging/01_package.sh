@@ -1,5 +1,5 @@
 #!/bin/bash
-apt-get install rpm cmake git make
+sudo apt-get install rpm cmake git make python3-yaml
 
 git clone https://github.com/gyptazy/changelog-fragments-creator.git
 ./changelog-fragments-creator/changelog-creator -f ../.changelogs/ -o ../CHANGELOG.md
