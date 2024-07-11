@@ -49,6 +49,10 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
 * Filter
   * Exclude nodes
   * Exclude virtual machines
+* Grouping
+  * Include groups (VMs that are rebalanced to nodes together)
+  * Exclude groups (VMs that must run on different nodes)
+  * Ignore groups (VMs that should be untouched)
 * Migrate VM workloads away (e.g. maintenance preparation)
 * Fully based on Proxmox API
 * Usage
@@ -99,6 +103,8 @@ The following options and parameters are currently supported:
 | Option | Long Option | Description | Default |
 |------|:------:|------:|------:|
 | -c | --config | Path to a config file. | /etc/proxlb/proxlb.conf (default) |
+| -d | --dry-run | Perform a dry-run without doing any actions. | Unset |
+| -j | --json | Return a JSON of the VM movement. | Unset |
 
 
 ### Grouping

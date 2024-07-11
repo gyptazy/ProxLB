@@ -22,6 +22,7 @@
 
 import argparse
 import configparser
+import json
 import logging
 import os
 try:
@@ -140,7 +141,9 @@ def __validate_config_file(config_path):
 def initialize_args():
     """ Initialize given arguments for ProxLB. """
     argparser = argparse.ArgumentParser(description='ProxLB')
-    argparser.add_argument('-c', '--config', type=str, help='Path to config file.')
+    argparser.add_argument('-c', '--config',  type=str, help='Path to config file.', required=True)
+    argparser.add_argument('-d', '--dry-run', help='Perform a dry-run without doing any actions.', action='store_true', required=False)
+    argparser.add_argument('-j', '--json',    help='Return a JSON of the VM movement.', action='store_true', required=False)
     return argparser.parse_args()
 
 
@@ -546,20 +549,50 @@ def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_metho
     return node_statistics, vm_statistics
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced):
+def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
     """ Run rebalancing of vms to new nodes in cluster. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
 
-    logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
-    for vm, value in vm_statistics_rebalanced.items():
+    if not app_args.dry_run:
+        logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
+        for vm, value in vm_statistics_rebalanced.items():
 
-        try:
-            logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-            api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
-        except proxmoxer.core.ResourceException as error_resource:
-            __errors__ = True
-            logging.critical(f'{error_prefix} {error_resource}')
+            try:
+                logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+            except proxmoxer.core.ResourceException as error_resource:
+                __errors__ = True
+                logging.critical(f'{error_prefix} {error_resource}')
+        if app_args.json:
+            logging.info(f'{info_prefix} Printing json output of VM statistics.')
+            json.dumps(vm_statistics_rebalanced)
+    else:
+        logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
+        _vm_to_node_list = []
+        _vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
+        
+        for vm_name, vm_values in vm_statistics_rebalanced.items():
+            _vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalanced']])
+
+        if app_args.json:
+            logging.info(f'{info_prefix} Printing json output of VM statistics.')
+            json.dumps(vm_statistics_rebalanced)
+        else:
+            logging.info(f'{info_prefix} Printing cli output of VM statistics.')
+            print_table_cli(_vm_to_node_list)
+
+
+def print_table_cli(table):
+    """ Pretty print a given table to the cli. """
+    longest_cols = [
+        (max([len(str(row[i])) for row in table]) + 3)
+        for i in range(len(table[0]))
+    ]
+
+    row_format = "".join(["{:>" + str(longest_col) + "}" for longest_col in longest_cols])
+    for row in table:
+        print(row_format.format(*row))
 
 
 def main():
@@ -586,7 +619,7 @@ def main():
         node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics)
 
         # Rebalance vms to new nodes within the cluster.
-        run_vm_rebalancing(api_object, vm_statistics_rebalanced)
+        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
 
         # Validate for any errors
         post_validations()
