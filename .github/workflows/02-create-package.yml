@@ -1,0 +1,26 @@
+name: Run basic pipeline on push
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python for ProxLB
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies for ProxLB
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest proxmoxer flake8
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run Python linting
+        run: |
+          python3 -m flake8 proxlb
+      - name: Create distro packages
+        run: |
+          cd packaging
+          ./01_package.sh
