@@ -5,33 +5,38 @@
 <p float="center"><img src="https://img.shields.io/github/license/gyptazy/ProxLB"/><img src="https://img.shields.io/github/contributors/gyptazy/ProxLB"/><img src="https://img.shields.io/github/last-commit/gyptazy/ProxLB/main"/><img src="https://img.shields.io/github/issues-raw/gyptazy/ProxLB"/><img src="https://img.shields.io/github/issues-pr/gyptazy/ProxLB"/></p>
 
 
-## Table of Content
-* Introduction
-  * Video of Migration
-* Features
-* Usage
-  * Dependencies
-  * Options
-  * Parameters
-  * Systemd
-  * Manuel
-  * Proxmox GUI Integration
-  * Quick Start
-  * Container Quick Start (Docker/Podman)
-* Motivation
-* References
-* Packages / Container Images
-* Misc
-  * Bugs
-  * Contributing
-  * Author(s)
+## Table of Contents
+* [Introduction](#introduction)
+  * [Video of Migration](#video-of-migration)
+* [Features](#features)
+* [Usage](#usage)
+  * [Dependencies](#dependencies)
+  * [Options](#options)
+  * [Parameters](#parameters)
+  * [Grouping](#grouping)
+    * [Include (Stay Together)](#include-stay-together)
+    * [Exclude (Stay Separate)](#exclude-stay-separate)
+    * [Ignore VMs (tag style)](#ignore-vms-tag-style)
+  * [Systemd](#systemd)
+  * [Manual](#manual)
+  * [Proxmox GUI Integration](#proxmox-gui-integration)
+  * [Quick Start](#quick-start)
+  * [Container Quick Start (Docker/Podman)](#container-quick-start-dockerpodman)
+  * [Logging](#logging)
+* [Motivation](#motivation)
+* [References](#references)
+* [Packages / Container Images](#packages--container-images)
+* [Misc](#misc)
+  * [Bugs](#bugs)
+  * [Contributing](#contributing)
+  * [Author(s)](#authors)
 
 ## Introduction
 `ProxLB` (PLB) is an advanced tool designed to enhance the efficiency and performance of Proxmox clusters by optimizing the distribution of virtual machines (VMs) across the cluster nodes by using the Proxmox API. ProxLB meticulously gathers and analyzes a comprehensive set of resource metrics from both the cluster nodes and the running VMs. These metrics include CPU usage, memory consumption, and disk utilization, specifically focusing on local disk resources.
 
 PLB collects resource usage data from each node in the Proxmox cluster, including CPU, (local) disk and memory utilization. Additionally, it gathers resource usage statistics from all running VMs, ensuring a granular understanding of the cluster's workload distribution.
 
-Intelligent rebalancing is a key feature of ProxLB where it re-balances VMs based on their memory, disk or cpu usage, ensuring that no node is overburdened while others remain underutilized. The rebalancing capabilities of PLB significantly enhance cluster performance and reliability. By ensuring that resources are evenly distributed, PLB helps prevent any single node from becoming a performance bottleneck, improving the reliability and stability of the cluster. Efficient rebalancing leads to better utilization of available resources, potentially reducing the need for additional hardware investments and lowering operational costs.
+Intelligent rebalancing is a key feature of ProxLB where it re-balances VMs based on their memory, disk or CPU usage, ensuring that no node is overburdened while others remain underutilized. The rebalancing capabilities of PLB significantly enhance cluster performance and reliability. By ensuring that resources are evenly distributed, PLB helps prevent any single node from becoming a performance bottleneck, improving the reliability and stability of the cluster. Efficient rebalancing leads to better utilization of available resources, potentially reducing the need for additional hardware investments and lowering operational costs.
 
 Automated rebalancing reduces the need for manual actions, allowing operators to focus on other critical tasks, thereby increasing operational efficiency.
 
@@ -54,7 +59,7 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
   * Exclude groups (VMs that must run on different nodes)
   * Ignore groups (VMs that should be untouched)
 * Dry-run support
-  * Human readable output in cli
+  * Human readable output in CLI
   * JSON output for further parsing
 * Migrate VM workloads away (e.g. maintenance preparation)
 * Fully based on Proxmox API
@@ -125,7 +130,7 @@ The following options and parameters are currently supported:
 #### Exclude (Stay Separate)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-exclude-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_exclude_ followed by your unique identifier, for example, plb_exclude_critical. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be excluded from being on the same node.
 
-#### Ignore VMs (tag style)
+#### Ignore VMs (Tag Style)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
 
 ### Systemd
