@@ -72,14 +72,18 @@ class SystemdHandler(logging.Handler):
 
 
 # Functions
-def initialize_logger(log_level, log_handler):
+def initialize_logger(log_level, update_log_verbosity=False):
     """ Initialize ProxLB logging handler. """
     info_prefix = 'Info: [logger]:'
 
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    root_logger.addHandler(SystemdHandler())
-    logging.info(f'{info_prefix} Logger got initialized.')
+
+    if not update_log_verbosity:
+        root_logger.addHandler(SystemdHandler())
+        logging.info(f'{info_prefix} Logger got initialized.')
+    else:
+        logging.info(f'{info_prefix} Logger verbosity got updated to: {log_level}.')
 
 
 def pre_validations(config_path):
@@ -175,12 +179,14 @@ def initialize_config_options(config_path):
         proxmox_api_ssl_v = config['proxmox']['verify_ssl']
         # Balancing
         balancing_method  = config['balancing'].get('method', 'memory')
+        balancing_mode    = config['balancing'].get('mode', 'used_resources')
         balanciness       = config['balancing'].get('balanciness', 10)
         ignore_nodes      = config['balancing'].get('ignore_nodes', None)
         ignore_vms        = config['balancing'].get('ignore_vms', None)
         # Service
         daemon            = config['service'].get('daemon', 1)
         schedule          = config['service'].get('schedule', 24)
+        log_verbosity     = config['service'].get('log_verbosity', 'CRITICAL')
     except configparser.NoSectionError:
         logging.critical(f'{error_prefix} Could not find the required section.')
         sys.exit(2)
@@ -193,7 +199,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         balanciness, ignore_nodes, ignore_vms, daemon, schedule
+         balancing_mode, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -350,7 +356,7 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness):
+def balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness, balancing_mode):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
     info_prefix        = 'Info: [rebalancing-calculator]:'
     balanciness        = int(balanciness)
@@ -359,6 +365,11 @@ def balancing_calculations(balancing_method, node_statistics, vm_statistics, bal
     rebalance          = True
     emergency_counter  = 0
 
+    # Log balancing information
+    logging.info(f'{info_prefix} Rebalancing will be done for method: {balancing_method}.')
+    logging.info(f'{info_prefix} Rebalancing will be done by: {balancing_mode} resources.')
+    logging.info(f'{info_prefix} Balanciness is set to: {balanciness}.')
+
     # Validate for a supported balancing method.
     __validate_balancing_method(balancing_method)
 
@@ -366,10 +377,14 @@ def balancing_calculations(balancing_method, node_statistics, vm_statistics, bal
     # node until reaching the desired balanciness.
     while rebalance and emergency_counter < 10000:
         emergency_counter = emergency_counter + 1
-        rebalance = __validate_balanciness(balanciness, balancing_method, node_statistics)
+
+        # Validating and comparing the used resources makes only sense when balancing for used resources. When using different balancing modes
+        # this should be performed.
+        if balancing_mode == 'used':
+            rebalance = __validate_balanciness(balanciness, balancing_method, node_statistics)
 
         if rebalance:
-            resource_highest_used_resources_vm, processed_vms   = __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms)
+            resource_highest_used_resources_vm, processed_vms   = __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms, balancing_mode)
             resource_highest_free_resources_node = __get_most_free_resources_node(balancing_method, node_statistics)
             node_statistics, vm_statistics = __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node,
                                                                             vm_statistics, node_statistics, balancing_method)
@@ -401,7 +416,7 @@ def __validate_balancing_method(balancing_method):
 
 def __validate_balanciness(balanciness, balancing_method, node_statistics):
     """ Validate for balanciness to ensure further rebalancing is needed. """
-    info_prefix                   = 'Info: [balanciness-validation]]:'
+    info_prefix                   = 'Info: [balanciness-validation]:'
     node_memory_free_percent_list = []
 
     for node_name, node_info in node_statistics.items():
@@ -412,25 +427,28 @@ def __validate_balanciness(balanciness, balancing_method, node_statistics):
     node_highest_percent                 = node_memory_free_percent_list_sorted[-1]
 
     if (node_lowest_percent + balanciness) < node_highest_percent:
-        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is needed.')
+        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is needed. Highest usage: {node_lowest_percent}% | Lowest usage: {node_lowest_percent}%.')
         return True
     else:
-        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is not needed.')
+        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is not needed. Highest usage: {node_lowest_percent}% | Lowest usage: {node_lowest_percent}%.')
         return False
 
 
-def __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms):
+def __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms, balancing_mode):
     """ Get and return the most used resources of a VM by the defined balancing method. """
+    info_prefix                   = 'Info: [get-used-resources-vm]:'
+
     if balancing_method == 'memory':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['memory_used'] if item[0] not in processed_vms else -float('inf'))
+        vm = max(vm_statistics.items(), key=lambda item: item[1][f'memory_{balancing_mode}'] if item[0] not in processed_vms else -float('inf'))
+        logging.info(f'{info_prefix} {vm}.')
         processed_vms.append(vm[0])
         return vm, processed_vms
     if balancing_method == 'disk':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['disk_used'] if item[0] not in processed_vms else -float('inf'))
+        vm = max(vm_statistics.items(), key=lambda item: item[1][f'disk_{balancing_mode}'] if item[0] not in processed_vms else -float('inf'))
         processed_vms.append(vm[0])
         return vm, processed_vms
     if balancing_method == 'cpu':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['cpu_used'] if item[0] not in processed_vms else -float('inf'))
+        vm = max(vm_statistics.items(), key=lambda item: item[1][f'cpu_{balancing_mode}'] if item[0] not in processed_vms else -float('inf'))
         processed_vms.append(vm[0])
         return vm, processed_vms
 
@@ -601,15 +619,17 @@ def print_table_cli(table):
 
 def main():
     """ Run ProxLB for balancing VM workloads across a Proxmox cluster. """
-    # Initialize PAS.
-    initialize_logger('CRITICAL', 'SystemdHandler()')
     app_args = initialize_args()
+    initialize_logger('CRITICAL')
     config_path = initialize_config_path(app_args)
     pre_validations(config_path)
 
     # Parse global config
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-        balanciness, ignore_nodes, ignore_vms, daemon, schedule = initialize_config_options(config_path)
+        balancing_mode, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+
+    # Overwrite logging handler with user defined log verbosity.
+    initialize_logger(log_verbosity, update_log_verbosity=True)
 
     while True:
         # API Authentication.
@@ -617,10 +637,10 @@ def main():
 
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)
-        vm_statistics = get_vm_statistics(api_object, ignore_vms)
+        vm_statistics   = get_vm_statistics(api_object, ignore_vms)
 
         # Calculate rebalancing of vms.
-        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness)
+        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness, balancing_mode)
 
         # Rebalance vms to new nodes within the cluster.
         run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
