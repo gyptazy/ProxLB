@@ -49,6 +49,13 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
 * Filter
   * Exclude nodes
   * Exclude virtual machines
+* Grouping
+  * Include groups (VMs that are rebalanced to nodes together)
+  * Exclude groups (VMs that must run on different nodes)
+  * Ignore groups (VMs that should be untouched)
+* Dry-run support
+  * Human readable output in cli
+  * JSON output for further parsing
 * Migrate VM workloads away (e.g. maintenance preparation)
 * Fully based on Proxmox API
 * Usage
@@ -73,6 +80,7 @@ The following options can be set in the `proxlb.conf` file:
 | api_pass | FooBar | Password for the API. |
 | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
 | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
+| balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
@@ -87,6 +95,13 @@ api_pass: FooBar
 verify_ssl: 1
 [balancing]
 method: memory
+# Balanciness defines how much difference may be
+# between the lowest & highest resource consumption
+# of nodes before rebalancing will be done.
+# Examples:
+# Rebalancing:     node01: 41% memory consumption :: node02: 52% consumption
+# No rebalancing:  node01: 43% memory consumption :: node02: 50% consumption
+balanciness: 10
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
 [service]
@@ -99,6 +114,8 @@ The following options and parameters are currently supported:
 | Option | Long Option | Description | Default |
 |------|:------:|------:|------:|
 | -c | --config | Path to a config file. | /etc/proxlb/proxlb.conf (default) |
+| -d | --dry-run | Perform a dry-run without doing any actions. | Unset |
+| -j | --json | Return a JSON of the VM movement. | Unset |
 
 
 ### Grouping
