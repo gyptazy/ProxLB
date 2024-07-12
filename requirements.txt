@@ -1,5 +1,9 @@
 argparse
 configparser
+http.server
+json
 proxmoxer
+random
 requests
+threading
 urllib3

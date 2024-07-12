@@ -22,6 +22,11 @@
 
 import argparse
 import configparser
+try:
+    import http.server
+    _api_ = True
+except:
+    _api_ = False
 import json
 import logging
 import os
@@ -35,6 +40,7 @@ import re
 import requests
 import sys
 import time
+import threading
 import urllib3
 
 
@@ -44,6 +50,9 @@ __version__ = "0.9.9"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 
+
+# Global Vars
+node_statistics_rebalanced = {}
 
 # Classes
 ## Logging class
@@ -70,6 +79,38 @@ class SystemdHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
+
+class ProxLBAPIHandler(http.server.BaseHTTPRequestHandler):
+    """ Class to handle ProxLB API requests. """
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.send_header(__appname__, __version__)
+        self.end_headers()
+
+        if self.path == '/health':
+            http_content = '{"healthy": True, "action": True}'
+            
+            self.wfile.write(http_content.encode('utf-8'))
+
+        elif self.path == '/cluster/placement/nextnode':
+            self.wfile.write(json.dumps(global_nextnode).encode('utf-8'))
+
+        elif self.path == '/cluster/placement/statistics/current/vms':
+            self.wfile.write(json.dumps(global_vm_statistics).encode('utf-8'))
+
+        elif self.path == '/cluster/placement/statistics/current/nodes':
+            self.wfile.write(json.dumps(global_node_statistics).encode('utf-8'))
+
+        elif self.path == '/cluster/placement/statistics/rebalanced/vms':
+            self.wfile.write(json.dumps(global_vm_statistics_rebalanced).encode('utf-8'))
+
+        elif self.path == '/cluster/placement/statistics/rebalanced/nodes':
+            self.wfile.write(json.dumps(global_node_statistics_rebalanced).encode('utf-8'))
+
+        else:
+            http_content = '{"action": False}'
+            self.wfile.write(http_content.encode('utf-8'))
 
 # Functions
 def initialize_logger(log_level, log_handler):
@@ -194,6 +235,38 @@ def initialize_config_options(config_path):
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
          balanciness, ignore_nodes, ignore_vms, daemon, schedule
+
+def create_global_vars(node_statistics, vm_statistics, node_statistics_rebalanced,
+                        vm_statistics_rebalanced, balancing_method, balanciness):
+    """ Create global variables for ProxLB API. """
+    global global_node_statistics
+    global global_vm_statistics
+    global global_node_statistics_rebalanced
+    global global_vm_statistics_rebalanced
+    global global_balancing_method
+    global global_balanciness
+    global global_nextnode
+
+    global_node_statistics            = node_statistics
+    global_vm_statistics              = vm_statistics
+    global_node_statistics_rebalanced = node_statistics_rebalanced
+    global_vm_statistics_rebalanced   = vm_statistics_rebalanced
+    global_balancing_method           = balancing_method
+    global_balanciness                = balanciness
+    global_nextnode                   = __get_most_free_resources_node(balancing_method, node_statistics)
+
+
+def initialize_proxlb_api(_api_):
+    """ Initialize ProxLB API endpoint. """
+    error_prefix = 'Error: [proxlb-api]:'
+    info_prefix  = 'Info: [proxlb-api]:'
+
+    logging.info(f'{info_prefix} Starting ProxLB API endpoint.')
+    try:
+        httpd = http.server.HTTPServer(('0.0.0.0', 9091), ProxLBAPIHandler)
+        httpd.serve_forever()
+    except:
+        logging.critical(f'{error_prefix} ProxLB API could not be started.')
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -602,7 +675,7 @@ def print_table_cli(table):
 def main():
     """ Run ProxLB for balancing VM workloads across a Proxmox cluster. """
     # Initialize PAS.
-    initialize_logger('CRITICAL', 'SystemdHandler()')
+    initialize_logger('INFO', 'SystemdHandler()')
     app_args = initialize_args()
     config_path = initialize_config_path(app_args)
     pre_validations(config_path)
@@ -627,6 +700,11 @@ def main():
 
         # Validate for any errors
         post_validations()
+
+        # Start ProxLB API
+        if _api_:
+            create_global_vars(node_statistics, vm_statistics, node_statistics_rebalanced, vm_statistics_rebalanced, balancing_method, balanciness)
+            threading.Thread(target=initialize_proxlb_api(_api_), name="ProxLB_API").start()
 
         # Validate daemon service
         validate_daemon(daemon, schedule)
