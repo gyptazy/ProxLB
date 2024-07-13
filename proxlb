@@ -72,14 +72,18 @@ class SystemdHandler(logging.Handler):
 
 
 # Functions
-def initialize_logger(log_level, log_handler):
+def initialize_logger(log_level, update_log_verbosity=False):
     """ Initialize ProxLB logging handler. """
     info_prefix = 'Info: [logger]:'
 
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    root_logger.addHandler(SystemdHandler())
-    logging.info(f'{info_prefix} Logger got initialized.')
+
+    if not update_log_verbosity:
+        root_logger.addHandler(SystemdHandler())
+        logging.info(f'{info_prefix} Logger got initialized.')
+    else:
+        logging.info(f'{info_prefix} Logger verbosity got updated to: {log_level}.')
 
 
 def pre_validations(config_path):
@@ -181,6 +185,7 @@ def initialize_config_options(config_path):
         # Service
         daemon            = config['service'].get('daemon', 1)
         schedule          = config['service'].get('schedule', 24)
+        log_verbosity     = config['service'].get('log_verbosity', 'CRITICAL')
     except configparser.NoSectionError:
         logging.critical(f'{error_prefix} Could not find the required section.')
         sys.exit(2)
@@ -193,7 +198,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         balanciness, ignore_nodes, ignore_vms, daemon, schedule
+         balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -225,8 +230,8 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
 
 def get_node_statistics(api_object, ignore_nodes):
     """ Get statistics of cpu, memory and disk for each node in the cluster. """
-    info_prefix  = 'Info: [node-statistics]:'
-    node_statistics = {}
+    info_prefix       = 'Info: [node-statistics]:'
+    node_statistics   = {}
     ignore_nodes_list =  ignore_nodes.split(',')
 
     for node in api_object.nodes.get():
@@ -318,7 +323,7 @@ def __check_vm_name_wildcard_pattern(vm_name, ignore_vms_list):
 
 def __get_vm_tags(api_object, node, vmid):
     """ Get a comment for a VM from a given VMID. """
-    info_prefix  = 'Info: [api-get-vm-tags]:'
+    info_prefix = 'Info: [api-get-vm-tags]:'
 
     vm_config = api_object.nodes(node['node']).qemu(vmid).config.get()
     logging.info(f'{info_prefix} Got VM comment from API.')
@@ -327,7 +332,7 @@ def __get_vm_tags(api_object, node, vmid):
 
 def __get_proxlb_groups(vm_tags):
     """ Get ProxLB related include and exclude groups. """
-    info_prefix  = 'Info: [api-get-vm-include-exclude-tags]:'
+    info_prefix   = 'Info: [api-get-vm-include-exclude-tags]:'
     group_include = None
     group_exclude = None
     vm_ignore     = None
@@ -370,9 +375,9 @@ def balancing_calculations(balancing_method, node_statistics, vm_statistics, bal
 
         if rebalance:
             resource_highest_used_resources_vm, processed_vms   = __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms)
-            resource_highest_free_resources_node = __get_most_free_resources_node(balancing_method, node_statistics)
-            node_statistics, vm_statistics = __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node,
-                                                                            vm_statistics, node_statistics, balancing_method)
+            resource_highest_free_resources_node                = __get_most_free_resources_node(balancing_method, node_statistics)
+            node_statistics, vm_statistics                      = __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node,
+                                                                                                 vm_statistics, node_statistics, balancing_method)
 
     # Honour groupings for include and exclude groups for rebalancing VMs.
     node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method)
@@ -401,7 +406,7 @@ def __validate_balancing_method(balancing_method):
 
 def __validate_balanciness(balanciness, balancing_method, node_statistics):
     """ Validate for balanciness to ensure further rebalancing is needed. """
-    info_prefix                   = 'Info: [balanciness-validation]]:'
+    info_prefix                   = 'Info: [balanciness-validation]:'
     node_memory_free_percent_list = []
 
     for node_name, node_info in node_statistics.items():
@@ -412,42 +417,35 @@ def __validate_balanciness(balanciness, balancing_method, node_statistics):
     node_highest_percent                 = node_memory_free_percent_list_sorted[-1]
 
     if (node_lowest_percent + balanciness) < node_highest_percent:
-        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is needed.')
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is needed. Highest usage: {node_highest_percent}% | Lowest usage: {node_lowest_percent}%.')
         return True
     else:
-        logging.info(f'{info_prefix} Rebalancing is for {balancing_method} is not needed.')
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is not needed. Highest usage: {node_highest_percent}% | Lowest usage: {node_lowest_percent}%.')
         return False
 
 
 def __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms):
     """ Get and return the most used resources of a VM by the defined balancing method. """
-    if balancing_method == 'memory':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['memory_used'] if item[0] not in processed_vms else -float('inf'))
-        processed_vms.append(vm[0])
-        return vm, processed_vms
-    if balancing_method == 'disk':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['disk_used'] if item[0] not in processed_vms else -float('inf'))
-        processed_vms.append(vm[0])
-        return vm, processed_vms
-    if balancing_method == 'cpu':
-        vm = max(vm_statistics.items(), key=lambda item: item[1]['cpu_used'] if item[0] not in processed_vms else -float('inf'))
-        processed_vms.append(vm[0])
-        return vm, processed_vms
+    info_prefix = 'Info: [get-most-used-resources-vm]:'
+
+    vm = max(vm_statistics.items(), key=lambda item: item[1][f'{balancing_method}_used'] if item[0] not in processed_vms else -float('inf'))
+    processed_vms.append(vm[0])
+    logging.info(f'{info_prefix} {vm}')
+    return vm, processed_vms
 
 
 def __get_most_free_resources_node(balancing_method, node_statistics):
     """ Get and return the most free resources of a node by the defined balancing method. """
-    if balancing_method == 'memory':
-        return max(node_statistics.items(), key=lambda item: item[1]['memory_free'])
-    if balancing_method == 'disk':
-        return max(node_statistics.items(), key=lambda item: item[1]['disk_free'])
-    if balancing_method == 'cpu':
-        return max(node_statistics.items(), key=lambda item: item[1]['cpu_free'])
+    info_prefix = 'Info: [get-most-free-resources-nodes]:'
+
+    node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+    logging.info(f'{info_prefix} {node}')
+    return node
 
 
 def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method):
     """ Update VM and node resource statistics. """
-    info_prefix  = 'Info: [rebalancing-resource-statistics-update]:'
+    info_prefix = 'Info: [rebalancing-resource-statistics-update]:'
 
     if resource_highest_used_resources_vm[1]['node_parent'] != resource_highest_free_resources_node[0]:
         vm_name           = resource_highest_used_resources_vm[0]
@@ -476,7 +474,7 @@ def __update_resource_statistics(resource_highest_used_resources_vm, resource_hi
 
 def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method):
     """ Get VMs tags for include groups. """
-    info_prefix  = 'Info: [rebalancing-tags-group-include]:'
+    info_prefix = 'Info: [rebalancing-tags-group-include]:'
     tags_include_vms = {}
     processed_vm = []
 
@@ -512,7 +510,7 @@ def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_metho
 
 def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method):
     """ Get VMs tags for exclude groups. """
-    info_prefix  = 'Info: [rebalancing-tags-group-exclude]:'
+    info_prefix = 'Info: [rebalancing-tags-group-exclude]:'
     tags_exclude_vms = {}
     processed_vm = []
 
@@ -556,18 +554,29 @@ def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
     info_prefix  = 'Info: [rebalancing-executor]:'
 
     if not app_args.dry_run:
-        logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
-        for vm, value in vm_statistics_rebalanced.items():
 
-            try:
-                logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
-            except proxmoxer.core.ResourceException as error_resource:
-                logging.critical(f'{error_prefix} {error_resource}')
-        if app_args.json:
-            logging.info(f'{info_prefix} Printing json output of VM statistics.')
-            json.dumps(vm_statistics_rebalanced)
+        if len(vm_statistics_rebalanced) > 0:
+            logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
+            for vm, value in vm_statistics_rebalanced.items():
+
+                try:
+                    logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                    api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+                except proxmoxer.core.ResourceException as error_resource:
+                    logging.critical(f'{error_prefix} {error_resource}')
+
+            if app_args.json:
+                logging.info(f'{info_prefix} Printing json output of VM statistics.')
+                json.dumps(vm_statistics_rebalanced)
+
+        else:
+            logging.info(f'{info_prefix} No rebalancing needed.')
+            if app_args.json:
+                logging.info(f'{info_prefix} Printing json output of VM statistics.')
+                json.dumps(vm_statistics_rebalanced)
+
     else:
+
         logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
         _vm_to_node_list = []
         _vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
@@ -602,14 +611,17 @@ def print_table_cli(table):
 def main():
     """ Run ProxLB for balancing VM workloads across a Proxmox cluster. """
     # Initialize PAS.
-    initialize_logger('CRITICAL', 'SystemdHandler()')
+    initialize_logger('CRITICAL')
     app_args = initialize_args()
     config_path = initialize_config_path(app_args)
     pre_validations(config_path)
 
-    # Parse global config
+    # Parse global config.
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-        balanciness, ignore_nodes, ignore_vms, daemon, schedule = initialize_config_options(config_path)
+        balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+
+    # Overwrite logging handler with user defined log verbosity.
+    initialize_logger(log_verbosity, update_log_verbosity=True)
 
     while True:
         # API Authentication.
@@ -625,10 +637,10 @@ def main():
         # Rebalance vms to new nodes within the cluster.
         run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
 
-        # Validate for any errors
+        # Validate for any errors.
         post_validations()
 
-        # Validate daemon service
+        # Validate daemon service.
         validate_daemon(daemon, schedule)
 
 

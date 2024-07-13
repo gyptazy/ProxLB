@@ -90,6 +90,7 @@ The following options can be set in the `proxlb.conf` file:
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | schedule | 24 | Hours to rebalance in hours. (default: 24) |
+| log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
 
 An example of the configuration file looks like:
 ```
