@@ -1,0 +1,2 @@
+added:
+  - Add option to rebalance by assigned VM resources to avoid overprovisioning. [#16]

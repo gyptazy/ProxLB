@@ -6,30 +6,35 @@
 
 
 ## Table of Contents
-* [Introduction](#introduction)
-  * [Video of Migration](#video-of-migration)
-* [Features](#features)
-* [Usage](#usage)
-  * [Dependencies](#dependencies)
-  * [Options](#options)
-  * [Parameters](#parameters)
-  * [Grouping](#grouping)
-    * [Include (Stay Together)](#include-stay-together)
-    * [Exclude (Stay Separate)](#exclude-stay-separate)
-    * [Ignore VMs (tag style)](#ignore-vms-tag-style)
-  * [Systemd](#systemd)
-  * [Manual](#manual)
-  * [Proxmox GUI Integration](#proxmox-gui-integration)
-  * [Quick Start](#quick-start)
-  * [Container Quick Start (Docker/Podman)](#container-quick-start-dockerpodman)
-  * [Logging](#logging)
-* [Motivation](#motivation)
-* [References](#references)
-* [Packages / Container Images](#packages--container-images)
-* [Misc](#misc)
-  * [Bugs](#bugs)
-  * [Contributing](#contributing)
-  * [Author(s)](#authors)
+- [ProxLB - (Re)Balance VM Workloads in Proxmox Clusters](#proxlb---rebalance-vm-workloads-in-proxmox-clusters)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+    - [Video of Migration](#video-of-migration)
+  - [Features](#features)
+  - [Usage](#usage)
+    - [Dependencies](#dependencies)
+    - [Options](#options)
+    - [Parameters](#parameters)
+    - [Balancing](#balancing)
+      - [By Used Memmory of VMs](#by-used-memmory-of-vms)
+      - [By Assigned Memory of VMs](#by-assigned-memory-of-vms)
+    - [Grouping](#grouping)
+      - [Include (Stay Together)](#include-stay-together)
+      - [Exclude (Stay Separate)](#exclude-stay-separate)
+      - [Ignore VMs (Tag Style)](#ignore-vms-tag-style)
+    - [Systemd](#systemd)
+    - [Manual](#manual)
+    - [Proxmox GUI Integration](#proxmox-gui-integration)
+    - [Quick Start](#quick-start)
+    - [Container Quick Start (Docker/Podman)](#container-quick-start-dockerpodman)
+    - [Logging](#logging)
+  - [Motivation](#motivation)
+  - [References](#references)
+  - [Packages / Container Images](#packages--container-images)
+  - [Misc](#misc)
+    - [Bugs](#bugs)
+    - [Contributing](#contributing)
+    - [Author(s)](#authors)
 
 ## Introduction
 `ProxLB` (PLB) is an advanced tool designed to enhance the efficiency and performance of Proxmox clusters by optimizing the distribution of virtual machines (VMs) across the cluster nodes by using the Proxmox API. ProxLB meticulously gathers and analyzes a comprehensive set of resource metrics from both the cluster nodes and the running VMs. These metrics include CPU usage, memory consumption, and disk utilization, specifically focusing on local disk resources.
@@ -85,6 +90,7 @@ The following options can be set in the `proxlb.conf` file:
 | api_pass | FooBar | Password for the API. |
 | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
 | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
+| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
 | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
@@ -101,6 +107,7 @@ api_pass: FooBar
 verify_ssl: 1
 [balancing]
 method: memory
+mode: used
 # Balanciness defines how much difference may be
 # between the lowest & highest resource consumption
 # of nodes before rebalancing will be done.
@@ -123,6 +130,22 @@ The following options and parameters are currently supported:
 | -d | --dry-run | Perform a dry-run without doing any actions. | Unset |
 | -j | --json | Return a JSON of the VM movement. | Unset |
 
+### Balancing
+#### By Used Memmory of VMs
+By continuously monitoring the current resource usage of VMs, ProxLB intelligently reallocates workloads to prevent any single node from becoming overloaded. This approach ensures that resources are balanced efficiently, providing consistent and optimal performance across the entire cluster at all times. To activate this balancing mode, simply activate the following option in your ProxLB configuration:
+```
+mode: used
+```
+
+Afterwards, restart the service (if running in daemon mode) to activate this rebalancing mode.
+
+#### By Assigned Memory of VMs
+By ensuring that resources are always available for each VM, ProxLB prevents over-provisioning and maintains a balanced load across all nodes. This guarantees that users have consistent access to the resources they need. However, if the total assigned resources exceed the combined capacity of the cluster, ProxLB will issue a warning, indicating potential over-provisioning despite its best efforts to balance the load.  To activate this balancing mode, simply activate the following option in your ProxLB configuration:
+```
+mode: assigned
+```
+
+Afterwards, restart the service (if running in daemon mode) to activate this rebalancing mode.
 
 ### Grouping
 #### Include (Stay Together)

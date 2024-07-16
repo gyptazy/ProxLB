@@ -179,6 +179,7 @@ def initialize_config_options(config_path):
         proxmox_api_ssl_v = config['proxmox']['verify_ssl']
         # Balancing
         balancing_method  = config['balancing'].get('method', 'memory')
+        balancing_mode    = config['balancing'].get('mode', 'used')
         balanciness       = config['balancing'].get('balanciness', 10)
         ignore_nodes      = config['balancing'].get('ignore_nodes', None)
         ignore_vms        = config['balancing'].get('ignore_vms', None)
@@ -198,7 +199,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+         balancing_mode, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -237,18 +238,30 @@ def get_node_statistics(api_object, ignore_nodes):
     for node in api_object.nodes.get():
         if node['status'] == 'online' and node['node'] not in ignore_nodes_list:
             node_statistics[node['node']] = {}
-            node_statistics[node['node']]['cpu_total']            = node['maxcpu']
-            node_statistics[node['node']]['cpu_used']             = node['cpu']
-            node_statistics[node['node']]['cpu_free']             = int(node['maxcpu']) - int(node['cpu'])
-            node_statistics[node['node']]['cpu_free_percent']     = int((node_statistics[node['node']]['cpu_free']) / int(node['maxcpu']) * 100)
-            node_statistics[node['node']]['memory_total']         = node['maxmem']
-            node_statistics[node['node']]['memory_used']          = node['mem']
-            node_statistics[node['node']]['memory_free']          = int(node['maxmem']) - int(node['mem'])
-            node_statistics[node['node']]['memory_free_percent']  = int((node_statistics[node['node']]['memory_free']) / int(node['maxmem']) * 100)
-            node_statistics[node['node']]['disk_total']           = node['maxdisk']
-            node_statistics[node['node']]['disk_used']            = node['disk']
-            node_statistics[node['node']]['disk_free']            = int(node['maxdisk']) - int(node['disk'])
-            node_statistics[node['node']]['disk_free_percent']   = int((node_statistics[node['node']]['disk_free']) / int(node['maxdisk']) * 100)
+            node_statistics[node['node']]['cpu_total']                        = node['maxcpu']
+            node_statistics[node['node']]['cpu_assigned']                     = node['cpu']
+            node_statistics[node['node']]['cpu_assigned_percent']             = int((node_statistics[node['node']]['cpu_assigned']) / int(node_statistics[node['node']]['cpu_total']) * 100)
+            node_statistics[node['node']]['cpu_assigned_percent_last_run']    = 0
+            node_statistics[node['node']]['cpu_used']                         = 0
+            node_statistics[node['node']]['cpu_free']                         = int(node['maxcpu']) - int(node['cpu'])
+            node_statistics[node['node']]['cpu_free_percent']                 = int((node_statistics[node['node']]['cpu_free']) / int(node['maxcpu']) * 100)
+            node_statistics[node['node']]['cpu_free_percent_last_run']        = 0
+            node_statistics[node['node']]['memory_total']                     = node['maxmem']
+            node_statistics[node['node']]['memory_assigned']                  = 0
+            node_statistics[node['node']]['memory_assigned_percent']          = int((node_statistics[node['node']]['memory_assigned']) / int(node_statistics[node['node']]['memory_total']) * 100)
+            node_statistics[node['node']]['memory_assigned_percent_last_run'] = 0
+            node_statistics[node['node']]['memory_used']                      = node['mem']
+            node_statistics[node['node']]['memory_free']                      = int(node['maxmem']) - int(node['mem'])
+            node_statistics[node['node']]['memory_free_percent']              = int((node_statistics[node['node']]['memory_free']) / int(node['maxmem']) * 100)
+            node_statistics[node['node']]['memory_free_percent_last_run']     = 0
+            node_statistics[node['node']]['disk_total']                       = node['maxdisk']
+            node_statistics[node['node']]['disk_assigned']                    = 0
+            node_statistics[node['node']]['disk_assigned_percent']            = int((node_statistics[node['node']]['disk_assigned']) / int(node_statistics[node['node']]['disk_total']) * 100)
+            node_statistics[node['node']]['disk_assigned_percent_last_run']   = 0
+            node_statistics[node['node']]['disk_used']                        = node['disk']
+            node_statistics[node['node']]['disk_free']                        = int(node['maxdisk']) - int(node['disk'])
+            node_statistics[node['node']]['disk_free_percent']                = int((node_statistics[node['node']]['disk_free']) / int(node['maxdisk']) * 100)
+            node_statistics[node['node']]['disk_free_percent_last_run']       = 0
             logging.info(f'{info_prefix} Added node {node["node"]}.')
 
     logging.info(f'{info_prefix} Created node statistics.')
@@ -307,6 +320,33 @@ def get_vm_statistics(api_object, ignore_vms):
     return vm_statistics
 
 
+def update_node_statistics(node_statistics, vm_statistics):
+    """ Update node statistics by VMs statistics. """
+    info_prefix = 'Info: [node-update-statistics]:'
+    warn_prefix = 'Warning: [node-update-statistics]:'
+
+    for vm, vm_value in vm_statistics.items():
+        node_statistics[vm_value['node_parent']]['cpu_assigned']            = node_statistics[vm_value['node_parent']]['cpu_assigned'] + int(vm_value['cpu_total'])
+        node_statistics[vm_value['node_parent']]['cpu_assigned_percent']    = (node_statistics[vm_value['node_parent']]['cpu_assigned'] / node_statistics[vm_value['node_parent']]['cpu_total']) * 100
+        node_statistics[vm_value['node_parent']]['memory_assigned']         = node_statistics[vm_value['node_parent']]['memory_assigned'] + int(vm_value['memory_total'])
+        node_statistics[vm_value['node_parent']]['memory_assigned_percent'] = (node_statistics[vm_value['node_parent']]['memory_assigned'] / node_statistics[vm_value['node_parent']]['memory_total']) * 100
+        node_statistics[vm_value['node_parent']]['disk_assigned']           = node_statistics[vm_value['node_parent']]['disk_assigned'] + int(vm_value['disk_total'])
+        node_statistics[vm_value['node_parent']]['disk_assigned_percent']   = (node_statistics[vm_value['node_parent']]['disk_assigned'] / node_statistics[vm_value['node_parent']]['disk_total']) * 100
+
+        if node_statistics[vm_value['node_parent']]['cpu_assigned_percent'] > 99:
+            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for CPU by {int(node_statistics[vm_value["node_parent"]]["cpu_assigned_percent"])}%.')
+
+        if node_statistics[vm_value['node_parent']]['memory_assigned_percent'] > 99:
+            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for memory by {int(node_statistics[vm_value["node_parent"]]["memory_assigned_percent"])}%.')
+
+        if node_statistics[vm_value['node_parent']]['disk_assigned_percent'] > 99:
+            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for disk by {int(node_statistics[vm_value["node_parent"]]["disk_assigned_percent"])}%.')
+
+    logging.info(f'{info_prefix} Updated node resource assignments by all VMs.')
+    logging.debug('node_statistics')
+    return node_statistics
+
+
 def __validate_ignore_vm_wildcard(ignore_vms):
     """ Validate if a wildcard is used for ignored VMs. """
     if '*' in ignore_vms:
@@ -355,33 +395,30 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness):
+def balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
-    info_prefix        = 'Info: [rebalancing-calculator]:'
-    balanciness        = int(balanciness)
-    rebalance          = False
-    processed_vms      = []
-    rebalance          = True
-    emergency_counter  = 0
+    info_prefix  = 'Info: [rebalancing-calculator]:'
 
-    # Validate for a supported balancing method.
+    # Validate for a supported balancing method, mode and if rebalancing is required.
     __validate_balancing_method(balancing_method)
+    __validate_balancing_mode(balancing_mode)
+    rebalance = __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics)
 
-    # Rebalance VMs with the highest resource usage to a new
-    # node until reaching the desired balanciness.
-    while rebalance and emergency_counter < 10000:
-        emergency_counter = emergency_counter + 1
-        rebalance = __validate_balanciness(balanciness, balancing_method, node_statistics)
+    if rebalance:
+        # Get most used/assigned resources of the VM and the most free or less allocated node.
+        resources_vm_most_used, processed_vms  = __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms)
+        resources_node_most_free               = __get_most_free_resources_node(balancing_method, balancing_mode, node_statistics)
 
-        if rebalance:
-            resource_highest_used_resources_vm, processed_vms   = __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms)
-            resource_highest_free_resources_node                = __get_most_free_resources_node(balancing_method, node_statistics)
-            node_statistics, vm_statistics                      = __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node,
-                                                                                                 vm_statistics, node_statistics, balancing_method)
+        # Update resource statistics for VMs and nodes.
+        node_statistics, vm_statistics         = __update_resource_statistics(resources_vm_most_used, resources_node_most_free,
+                                                                             vm_statistics, node_statistics, balancing_method, balancing_mode)
+
+        # Start recursion until we do not have any needs to rebalance anymore.
+        balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
 
     # Honour groupings for include and exclude groups for rebalancing VMs.
-    node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method)
-    node_statistics, vm_statistics = __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method)
+    node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
+    node_statistics, vm_statistics = __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
 
     # Remove VMs that are not being relocated.
     vms_to_remove = [vm_name for vm_name, vm_info in vm_statistics.items() if 'node_rebalance' in vm_info and vm_info['node_rebalance'] == vm_info.get('node_parent')]
@@ -404,75 +441,133 @@ def __validate_balancing_method(balancing_method):
         logging.info(f'{info_prefix} Valid balancing method: {balancing_method}')
 
 
-def __validate_balanciness(balanciness, balancing_method, node_statistics):
+def __validate_balancing_mode(balancing_mode):
+    """ Validate for valid and supported balancing mode. """
+    error_prefix = 'Error: [balancing-mode-validation]:'
+    info_prefix  = 'Info: [balancing-mode-validation]]:'
+
+    if balancing_mode not in ['used', 'assigned']:
+        logging.error(f'{error_prefix} Invalid balancing method: {balancing_mode}')
+        sys.exit(2)
+    else:
+        logging.info(f'{info_prefix} Valid balancing method: {balancing_mode}')
+
+
+def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics):
     """ Validate for balanciness to ensure further rebalancing is needed. """
     info_prefix                   = 'Info: [balanciness-validation]:'
-    node_memory_free_percent_list = []
+    node_resource_percent_list    = []
+    node_assigned_percent_match = []
+
+    # Remap balancing mode to get the related values from nodes dict.
+    if balancing_mode == 'used':
+        node_resource_selector = 'free'
+    if balancing_mode == 'assigned':
+        node_resource_selector = 'assigned'
 
     for node_name, node_info in node_statistics.items():
-        node_memory_free_percent_list.append(node_info[f'{balancing_method}_free_percent'])
 
-    node_memory_free_percent_list_sorted = sorted(node_memory_free_percent_list)
-    node_lowest_percent                  = node_memory_free_percent_list_sorted[0]
-    node_highest_percent                 = node_memory_free_percent_list_sorted[-1]
+        # Save information of nodes from current run to compare them in the next recursion.
+        if node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_last_run'] == node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent']:
+            node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_match'] = True
+        else:
+            node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_match'] = False
+        # Update value to the current value of the recursion run.
+        node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_last_run'] = node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent']
 
-    if (node_lowest_percent + balanciness) < node_highest_percent:
-        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is needed. Highest usage: {node_highest_percent}% | Lowest usage: {node_lowest_percent}%.')
+        # If all node resources are unchanged, the recursion can be left.
+        for key, value in node_statistics.items():
+            node_assigned_percent_match.append(value.get(f'{balancing_method}_{node_resource_selector}_percent_match', False))
+
+        if False not in node_assigned_percent_match:
+            return False
+
+        # Add node information to resource list.
+        node_resource_percent_list.append(int(node_info[f'{balancing_method}_{node_resource_selector}_percent']))
+        logging.debug(f'{info_prefix} Node: {node_name} with values: {node_info}')
+
+    # Create a sorted list of the delta + balanciness between the node resources.
+    node_resource_percent_list_sorted    = sorted(node_resource_percent_list)
+    node_lowest_percent                  = node_resource_percent_list_sorted[0]
+    node_highest_percent                 = node_resource_percent_list_sorted[-1]
+
+    # Validate if the recursion should  be proceeded for further rebalancing.
+    if (int(node_lowest_percent) + int(balanciness)) < int(node_highest_percent):
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
         return True
     else:
-        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is not needed. Highest usage: {node_highest_percent}% | Lowest usage: {node_lowest_percent}%.')
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is not needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
         return False
 
 
-def __get_most_used_resources_vm(balancing_method, vm_statistics, processed_vms):
+def __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms):
     """ Get and return the most used resources of a VM by the defined balancing method. """
     info_prefix = 'Info: [get-most-used-resources-vm]:'
 
-    vm = max(vm_statistics.items(), key=lambda item: item[1][f'{balancing_method}_used'] if item[0] not in processed_vms else -float('inf'))
+    # Remap balancing mode to get the related values from nodes dict.
+    if balancing_mode == 'used':
+        vm_resource_selector = 'used'
+    if balancing_mode == 'assigned':
+        vm_resource_selector = 'total'
+
+    vm = max(vm_statistics.items(), key=lambda item: item[1][f'{balancing_method}_{vm_resource_selector}'] if item[0] not in processed_vms else -float('inf'))
     processed_vms.append(vm[0])
+
     logging.info(f'{info_prefix} {vm}')
     return vm, processed_vms
 
 
-def __get_most_free_resources_node(balancing_method, node_statistics):
+def __get_most_free_resources_node(balancing_method, balancing_mode, node_statistics):
     """ Get and return the most free resources of a node by the defined balancing method. """
     info_prefix = 'Info: [get-most-free-resources-nodes]:'
 
-    node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+    # Return the node information based on the balancing mode.
+    if balancing_mode == 'used':
+        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+    if balancing_mode == 'assigned':
+        node = min(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_assigned'] if item[1][f'{balancing_method}_assigned_percent'] > 0 or item[1][f'{balancing_method}_assigned_percent'] < 100 else -float('inf'))
+
     logging.info(f'{info_prefix} {node}')
     return node
 
 
-def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method):
+def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method, balancing_mode):
     """ Update VM and node resource statistics. """
     info_prefix = 'Info: [rebalancing-resource-statistics-update]:'
 
     if resource_highest_used_resources_vm[1]['node_parent'] != resource_highest_free_resources_node[0]:
-        vm_name           = resource_highest_used_resources_vm[0]
-        vm_node_parent    = resource_highest_used_resources_vm[1]['node_parent']
-        vm_node_rebalance = resource_highest_free_resources_node[0]
-        vm_resource_used  = vm_statistics[resource_highest_used_resources_vm[0]][f'{balancing_method}_used']
+        vm_name            = resource_highest_used_resources_vm[0]
+        vm_node_parent     = resource_highest_used_resources_vm[1]['node_parent']
+        vm_node_rebalance  = resource_highest_free_resources_node[0]
+        vm_resource_used   = vm_statistics[resource_highest_used_resources_vm[0]][f'{balancing_method}_used']
+        vm_resource_total  = vm_statistics[resource_highest_used_resources_vm[0]][f'{balancing_method}_total']
 
         # Update dictionaries for new values
         # Assign new rebalance node to vm
         vm_statistics[vm_name]['node_rebalance'] = vm_node_rebalance
 
+        logging.info(f'Moving {vm_name} from {vm_node_parent} to {vm_node_rebalance}')
+
         # Recalculate values for nodes
         ## Add freed resources to old parent node
-        node_statistics[vm_node_parent][f'{balancing_method}_used']            = int(node_statistics[vm_node_parent][f'{balancing_method}_used']) - int(vm_resource_used)
-        node_statistics[vm_node_parent][f'{balancing_method}_free']            = int(node_statistics[vm_node_parent][f'{balancing_method}_free']) + int(vm_resource_used)
-        node_statistics[vm_node_parent][f'{balancing_method}_free_percent']    = int(int(node_statistics[vm_node_parent][f'{balancing_method}_free']) / int(node_statistics[vm_node_parent][f'{balancing_method}_total']) * 100)
+        node_statistics[vm_node_parent][f'{balancing_method}_used']                = int(node_statistics[vm_node_parent][f'{balancing_method}_used']) - int(vm_resource_used)
+        node_statistics[vm_node_parent][f'{balancing_method}_free']                = int(node_statistics[vm_node_parent][f'{balancing_method}_free']) + int(vm_resource_used)
+        node_statistics[vm_node_parent][f'{balancing_method}_free_percent']        = int(int(node_statistics[vm_node_parent][f'{balancing_method}_free']) / int(node_statistics[vm_node_parent][f'{balancing_method}_total']) * 100)
+        node_statistics[vm_node_parent][f'{balancing_method}_assigned']            = int(node_statistics[vm_node_parent][f'{balancing_method}_assigned']) - int(vm_resource_total)
+        node_statistics[vm_node_parent][f'{balancing_method}_assigned_percent']    = int(int(node_statistics[vm_node_parent][f'{balancing_method}_assigned']) / int(node_statistics[vm_node_parent][f'{balancing_method}_total']) * 100)
 
         ## Removed newly allocated resources to new rebalanced node
-        node_statistics[vm_node_rebalance][f'{balancing_method}_used']         = int(node_statistics[vm_node_rebalance][f'{balancing_method}_used']) + int(vm_resource_used)
-        node_statistics[vm_node_rebalance][f'{balancing_method}_free']         = int(node_statistics[vm_node_rebalance][f'{balancing_method}_free']) - int(vm_resource_used)
-        node_statistics[vm_node_rebalance][f'{balancing_method}_free_percent'] = int(int(node_statistics[vm_node_rebalance][f'{balancing_method}_free']) / int(node_statistics[vm_node_rebalance][f'{balancing_method}_total']) * 100)
+        node_statistics[vm_node_rebalance][f'{balancing_method}_used']             = int(node_statistics[vm_node_rebalance][f'{balancing_method}_used']) + int(vm_resource_used)
+        node_statistics[vm_node_rebalance][f'{balancing_method}_free']             = int(node_statistics[vm_node_rebalance][f'{balancing_method}_free']) - int(vm_resource_used)
+        node_statistics[vm_node_rebalance][f'{balancing_method}_free_percent']     = int(int(node_statistics[vm_node_rebalance][f'{balancing_method}_free']) / int(node_statistics[vm_node_rebalance][f'{balancing_method}_total']) * 100)
+        node_statistics[vm_node_rebalance][f'{balancing_method}_assigned']         = int(node_statistics[vm_node_rebalance][f'{balancing_method}_assigned']) + int(vm_resource_total)
+        node_statistics[vm_node_rebalance][f'{balancing_method}_assigned_percent'] = int(int(node_statistics[vm_node_rebalance][f'{balancing_method}_assigned']) / int(node_statistics[vm_node_rebalance][f'{balancing_method}_total']) * 100)
 
     logging.info(f'{info_prefix} Updated VM and node statistics.')
     return node_statistics, vm_statistics
 
 
-def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method):
+def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode):
     """ Get VMs tags for include groups. """
     info_prefix = 'Info: [rebalancing-tags-group-include]:'
     tags_include_vms = {}
@@ -501,14 +596,13 @@ def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_metho
                     vm_node_rebalance = vm_statistics[vm_name]['node_rebalance']
                 else:
                     _mocked_vm_object = (vm_name, vm_statistics[vm_name])
-                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [vm_node_rebalance],
-                                                                                 vm_statistics, node_statistics, balancing_method)
+                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [vm_node_rebalance], vm_statistics, node_statistics, balancing_method, balancing_mode)
             processed_vm.append(vm_name)
 
     return node_statistics, vm_statistics
 
 
-def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method):
+def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode):
     """ Get VMs tags for exclude groups. """
     info_prefix = 'Info: [rebalancing-tags-group-exclude]:'
     tags_exclude_vms = {}
@@ -541,62 +635,55 @@ def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_metho
                         random_node = random.choice(list(node_statistics.keys()))
                 else:
                     _mocked_vm_object = (vm_name, vm_statistics[vm_name])
-                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [random_node],
-                                                                                 vm_statistics, node_statistics, balancing_method)
+                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [random_node], vm_statistics, node_statistics, balancing_method, balancing_mode)
             processed_vm.append(vm_name)
 
     return node_statistics, vm_statistics
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
-    """ Run rebalancing of vms to new nodes in cluster. """
+def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+    """ Run & execute the VM rebalancing via API. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
 
-    if not app_args.dry_run:
-
-        if len(vm_statistics_rebalanced) > 0:
-            logging.info(f'{info_prefix} Starting to rebalance vms to their new nodes.')
-            for vm, value in vm_statistics_rebalanced.items():
-
-                try:
-                    logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
-                except proxmoxer.core.ResourceException as error_resource:
-                    logging.critical(f'{error_prefix} {error_resource}')
-
-            if app_args.json:
-                logging.info(f'{info_prefix} Printing json output of VM statistics.')
-                json.dumps(vm_statistics_rebalanced)
-
-        else:
-            logging.info(f'{info_prefix} No rebalancing needed.')
-            if app_args.json:
-                logging.info(f'{info_prefix} Printing json output of VM statistics.')
-                json.dumps(vm_statistics_rebalanced)
-
+    if len(vm_statistics_rebalanced) > 0 and not app_args.dry_run:
+        for vm, value in vm_statistics_rebalanced.items():
+            try:
+                logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+            except proxmoxer.core.ResourceException as error_resource:
+                logging.critical(f'{error_prefix} {error_resource}')
     else:
-
-        logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
-        _vm_to_node_list = []
-        _vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
-
-        for vm_name, vm_values in vm_statistics_rebalanced.items():
-            _vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance']])
-
-        if app_args.json:
-            logging.info(f'{info_prefix} Printing json output of VM statistics.')
-            json.dumps(vm_statistics_rebalanced)
-        else:
-            if len(vm_statistics_rebalanced) > 0:
-                logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
-                print_table_cli(_vm_to_node_list)
-            else:
-                logging.info(f'{info_prefix} No rebalancing needed according to the defined balanciness.')
-                print('No rebalancing needed according to the defined balanciness.')
+        logging.info(f'{info_prefix} No rebalancing needed.')
 
 
-def print_table_cli(table):
+def __create_json_output(vm_statistics_rebalanced, app_args):
+    """ Create a machine parsable json output of VM rebalance statitics. """
+    info_prefix  = 'Info: [json-output-generator]:'
+
+    if app_args.json:
+        logging.info(f'{info_prefix} Printing json output of VM statistics.')
+        print(json.dumps(vm_statistics_rebalanced))
+
+
+def __create_dry_run_output(vm_statistics_rebalanced, app_args):
+    """ Create output for CLI when running in dry-run mode. """
+    info_prefix  = 'Info: [dry-run-output-generator]:'
+    vm_to_node_list = []
+
+    logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
+    vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
+    for vm_name, vm_values in vm_statistics_rebalanced.items():
+        vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance']])
+
+    if len(vm_statistics_rebalanced) > 0:
+        logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
+        __print_table_cli(vm_to_node_list)
+    else:
+        logging.info(f'{info_prefix} No rebalancing needed.')
+
+
+def __print_table_cli(table):
     """ Pretty print a given table to the cli. """
     longest_cols = [
         (max([len(str(row[i])) for row in table]) + 3)
@@ -608,6 +695,13 @@ def print_table_cli(table):
         print(row_format.format(*row))
 
 
+def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+    """ Run rebalancing of vms to new nodes in cluster. """
+    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
+    __create_json_output(vm_statistics_rebalanced, app_args)
+    __create_dry_run_output(vm_statistics_rebalanced, app_args)
+
+
 def main():
     """ Run ProxLB for balancing VM workloads across a Proxmox cluster. """
     # Initialize PAS.
@@ -617,7 +711,7 @@ def main():
     pre_validations(config_path)
 
     # Parse global config.
-    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
+    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
         balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
@@ -629,10 +723,11 @@ def main():
 
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)
-        vm_statistics = get_vm_statistics(api_object, ignore_vms)
+        vm_statistics   = get_vm_statistics(api_object, ignore_vms)
+        node_statistics = update_node_statistics(node_statistics, vm_statistics)
 
         # Calculate rebalancing of vms.
-        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, node_statistics, vm_statistics, balanciness)
+        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
 
         # Rebalance vms to new nodes within the cluster.
         run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
