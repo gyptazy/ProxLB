@@ -16,7 +16,7 @@
     - [Options](#options)
     - [Parameters](#parameters)
     - [Balancing](#balancing)
-      - [By Used Memmory of VMs](#by-used-memmory-of-vms)
+      - [By Used Memory of VMs](#by-used-memmory-of-vms)
       - [By Assigned Memory of VMs](#by-assigned-memory-of-vms)
     - [Grouping](#grouping)
       - [Include (Stay Together)](#include-stay-together)
