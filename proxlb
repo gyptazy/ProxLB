@@ -180,6 +180,7 @@ def initialize_config_options(config_path):
         # Balancing
         balancing_method  = config['balancing'].get('method', 'memory')
         balancing_mode    = config['balancing'].get('mode', 'used')
+        balancing_type    = config['balancing'].get('type', 'vm')
         balanciness       = config['balancing'].get('balanciness', 10)
         ignore_nodes      = config['balancing'].get('ignore_nodes', None)
         ignore_vms        = config['balancing'].get('ignore_vms', None)
@@ -199,7 +200,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         balancing_mode, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+         balancing_mode, balancing_type, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -268,9 +269,10 @@ def get_node_statistics(api_object, ignore_nodes):
     return node_statistics
 
 
-def get_vm_statistics(api_object, ignore_vms):
+def get_vm_statistics(api_object, ignore_vms, balancing_type):
     """ Get statistics of cpu, memory and disk for each vm in the cluster. """
     info_prefix        = 'Info: [vm-statistics]:'
+    warn_prefix        = 'Warn: [vm-statistics]:'
     vm_statistics      = {}
     ignore_vms_list    =  ignore_vms.split(',')
     group_include      = None
@@ -283,38 +285,80 @@ def get_vm_statistics(api_object, ignore_vms):
     vm_ignore_wildcard = __validate_ignore_vm_wildcard(ignore_vms)
 
     for node in api_object.nodes.get():
-        for vm in api_object.nodes(node['node']).qemu.get():
 
-            # Get the VM tags from API.
-            vm_tags       = __get_vm_tags(api_object, node, vm['vmid'])
-            if vm_tags is not None:
-                group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
+        # Add all virtual machines if type is vm or all.
+        if balancing_type == 'vm' or balancing_type == 'all':
+            for vm in api_object.nodes(node['node']).qemu.get():
 
-            # Get wildcard match for VMs to ignore if a wildcard pattern was
-            # previously found. Wildcards may slow down the task when using
-            # many patterns in the ignore list. Therefore, run this only if
-            # a wildcard pattern was found. We also do not need to validate
-            # this if the VM is already being ignored by a defined tag.
-            if vm_ignore_wildcard and not vm_ignore:
-                vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
+                # Get the VM tags from API.
+                vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'vm')
+                if vm_tags is not None:
+                    group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
 
-            if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
-                vm_statistics[vm['name']] = {}
-                vm_statistics[vm['name']]['group_include']  = group_include
-                vm_statistics[vm['name']]['group_exclude']  = group_exclude
-                vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
-                vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
-                vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
-                vm_statistics[vm['name']]['memory_used']    = vm['mem']
-                vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
-                vm_statistics[vm['name']]['disk_used']      = vm['disk']
-                vm_statistics[vm['name']]['vmid']           = vm['vmid']
-                vm_statistics[vm['name']]['node_parent']    = node['node']
-                # Rebalancing node will be overwritten after calculations.
-                # If the vm stays on the node, it will be removed at a
-                # later time.
-                vm_statistics[vm['name']]['node_rebalance'] = node['node']
-                logging.info(f'{info_prefix} Added vm {vm["name"]}.')
+                # Get wildcard match for VMs to ignore if a wildcard pattern was
+                # previously found. Wildcards may slow down the task when using
+                # many patterns in the ignore list. Therefore, run this only if
+                # a wildcard pattern was found. We also do not need to validate
+                # this if the VM is already being ignored by a defined tag.
+                if vm_ignore_wildcard and not vm_ignore:
+                    vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
+
+                if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
+                    vm_statistics[vm['name']] = {}
+                    vm_statistics[vm['name']]['group_include']  = group_include
+                    vm_statistics[vm['name']]['group_exclude']  = group_exclude
+                    vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
+                    vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
+                    vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
+                    vm_statistics[vm['name']]['memory_used']    = vm['mem']
+                    vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
+                    vm_statistics[vm['name']]['disk_used']      = vm['disk']
+                    vm_statistics[vm['name']]['vmid']           = vm['vmid']
+                    vm_statistics[vm['name']]['node_parent']    = node['node']
+                    vm_statistics[vm['name']]['type']           = 'vm'
+                    # Rebalancing node will be overwritten after calculations.
+                    # If the vm stays on the node, it will be removed at a
+                    # later time.
+                    vm_statistics[vm['name']]['node_rebalance'] = node['node']
+                    logging.info(f'{info_prefix} Added vm {vm["name"]}.')
+
+        # Add all containers if type is ct or all.
+        if balancing_type == 'ct' or balancing_type == 'all':
+            for vm in api_object.nodes(node['node']).lxc.get():
+
+                logging.warning(f'{warn_prefix} Rebalancing on LXC containers (CT) always requires them to shut down.')
+                logging.warning(f'{warn_prefix} {vm["name"]} is from type CT and cannot be live migrated!')
+                # Get the VM tags from API.
+                vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'ct')
+                if vm_tags is not None:
+                    group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
+
+                # Get wildcard match for VMs to ignore if a wildcard pattern was
+                # previously found. Wildcards may slow down the task when using
+                # many patterns in the ignore list. Therefore, run this only if
+                # a wildcard pattern was found. We also do not need to validate
+                # this if the VM is already being ignored by a defined tag.
+                if vm_ignore_wildcard and not vm_ignore:
+                    vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
+
+                if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
+                    vm_statistics[vm['name']] = {}
+                    vm_statistics[vm['name']]['group_include']  = group_include
+                    vm_statistics[vm['name']]['group_exclude']  = group_exclude
+                    vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
+                    vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
+                    vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
+                    vm_statistics[vm['name']]['memory_used']    = vm['mem']
+                    vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
+                    vm_statistics[vm['name']]['disk_used']      = vm['disk']
+                    vm_statistics[vm['name']]['vmid']           = vm['vmid']
+                    vm_statistics[vm['name']]['node_parent']    = node['node']
+                    vm_statistics[vm['name']]['type']           = 'ct'
+                    # Rebalancing node will be overwritten after calculations.
+                    # If the vm stays on the node, it will be removed at a
+                    # later time.
+                    vm_statistics[vm['name']]['node_rebalance'] = node['node']
+                    logging.info(f'{info_prefix} Added vm {vm["name"]}.')
 
     logging.info(f'{info_prefix} Created VM statistics.')
     return vm_statistics
@@ -361,12 +405,17 @@ def __check_vm_name_wildcard_pattern(vm_name, ignore_vms_list):
                 return True
 
 
-def __get_vm_tags(api_object, node, vmid):
-    """ Get a comment for a VM from a given VMID. """
+def __get_vm_tags(api_object, node, vmid, balancing_type):
+    """ Get tags for a VM/CT for a given VMID. """
     info_prefix = 'Info: [api-get-vm-tags]:'
 
-    vm_config = api_object.nodes(node['node']).qemu(vmid).config.get()
-    logging.info(f'{info_prefix} Got VM comment from API.')
+    if balancing_type == 'vm':
+        vm_config = api_object.nodes(node['node']).qemu(vmid).config.get()
+
+    if balancing_type == 'ct':
+        vm_config = api_object.nodes(node['node']).lxc(vmid).config.get()
+
+    logging.info(f'{info_prefix} Got VM/CT tag from API.')
     return vm_config.get('tags', None)
 
 
@@ -672,9 +721,9 @@ def __create_dry_run_output(vm_statistics_rebalanced, app_args):
     vm_to_node_list = []
 
     logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
-    vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node'])
+    vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node', 'VM Type'])
     for vm_name, vm_values in vm_statistics_rebalanced.items():
-        vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance']])
+        vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance'], vm_values['type']])
 
     if len(vm_statistics_rebalanced) > 0:
         logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
@@ -711,7 +760,7 @@ def main():
     pre_validations(config_path)
 
     # Parse global config.
-    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
+    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_type, \
         balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
@@ -723,7 +772,7 @@ def main():
 
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)
-        vm_statistics   = get_vm_statistics(api_object, ignore_vms)
+        vm_statistics   = get_vm_statistics(api_object, ignore_vms, balancing_type)
         node_statistics = update_node_statistics(node_statistics, vm_statistics)
 
         # Calculate rebalancing of vms.
