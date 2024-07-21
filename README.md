@@ -16,8 +16,9 @@
     - [Options](#options)
     - [Parameters](#parameters)
     - [Balancing](#balancing)
-      - [By Used Memory of VMs](#by-used-memmory-of-vms)
-      - [By Assigned Memory of VMs](#by-assigned-memory-of-vms)
+      - [General](#general)
+      - [By Used Memory of VMs/CTs](#by-used-memory-of-vmscts)
+      - [By Assigned Memory of VMs/CTs](#by-assigned-memory-of-vmscts)
     - [Grouping](#grouping)
       - [Include (Stay Together)](#include-stay-together)
       - [Exclude (Stay Separate)](#exclude-stay-separate)
@@ -37,7 +38,7 @@
     - [Author(s)](#authors)
 
 ## Introduction
-`ProxLB` (PLB) is an advanced tool designed to enhance the efficiency and performance of Proxmox clusters by optimizing the distribution of virtual machines (VMs) across the cluster nodes by using the Proxmox API. ProxLB meticulously gathers and analyzes a comprehensive set of resource metrics from both the cluster nodes and the running VMs. These metrics include CPU usage, memory consumption, and disk utilization, specifically focusing on local disk resources.
+`ProxLB` (PLB) is an advanced tool designed to enhance the efficiency and performance of Proxmox clusters by optimizing the distribution of virtual machines (VMs) or Containers (CTs) across the cluster nodes by using the Proxmox API. ProxLB meticulously gathers and analyzes a comprehensive set of resource metrics from both the cluster nodes and the running VMs. These metrics include CPU usage, memory consumption, and disk utilization, specifically focusing on local disk resources.
 
 PLB collects resource usage data from each node in the Proxmox cluster, including CPU, (local) disk and memory utilization. Additionally, it gathers resource usage statistics from all running VMs, ensuring a granular understanding of the cluster's workload distribution.
 
@@ -56,6 +57,10 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
 * Performing
   * Periodically
   * One-shot solution
+* Types
+  * Rebalance only VMs
+  * Rebalance only CTs
+  * Rebalance all (VMs and CTs)
 * Filter
   * Exclude nodes
   * Exclude virtual machines
@@ -91,6 +96,7 @@ The following options can be set in the `proxlb.conf` file:
 | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
 | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
 | mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
+| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
@@ -108,6 +114,7 @@ verify_ssl: 1
 [balancing]
 method: memory
 mode: used
+type: vm
 # Balanciness defines how much difference may be
 # between the lowest & highest resource consumption
 # of nodes before rebalancing will be done.
@@ -131,7 +138,10 @@ The following options and parameters are currently supported:
 | -j | --json | Return a JSON of the VM movement. | Unset |
 
 ### Balancing
-#### By Used Memmory of VMs
+#### General
+In general, virtual machines and containers can be rebalanced and moved around nodes in the cluster. Often, this also works without downtime without any further downtimes. However, this does **not** work with containers. LXC based containers will be shutdown, copied and started on the new node. Also to note, live migrations can work fluently without any issues but there are still several things to be considered. This is out of scope for ProxLB and applies in general to Proxmox and your cluster setup. You can find more details about this here: https://pve.proxmox.com/wiki/Migrate_to_Proxmox_VE.
+
+#### By Used Memory of VMs/CTs
 By continuously monitoring the current resource usage of VMs, ProxLB intelligently reallocates workloads to prevent any single node from becoming overloaded. This approach ensures that resources are balanced efficiently, providing consistent and optimal performance across the entire cluster at all times. To activate this balancing mode, simply activate the following option in your ProxLB configuration:
 ```
 mode: used
@@ -139,7 +149,7 @@ mode: used
 
 Afterwards, restart the service (if running in daemon mode) to activate this rebalancing mode.
 
-#### By Assigned Memory of VMs
+#### By Assigned Memory of VMs/CTs
 By ensuring that resources are always available for each VM, ProxLB prevents over-provisioning and maintains a balanced load across all nodes. This guarantees that users have consistent access to the resources they need. However, if the total assigned resources exceed the combined capacity of the cluster, ProxLB will issue a warning, indicating potential over-provisioning despite its best efforts to balance the load.  To activate this balancing mode, simply activate the following option in your ProxLB configuration:
 ```
 mode: assigned

@@ -1,2 +1,2 @@
 added:
-  - Add container (e.g., Docker, Podman) support. [#10 by @daanbosch]
+  - Add Docker/Podman support. [#10 by @daanbosch]
