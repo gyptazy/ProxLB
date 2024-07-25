@@ -495,11 +495,11 @@ def __validate_balancing_mode(balancing_mode):
     error_prefix = 'Error: [balancing-mode-validation]:'
     info_prefix  = 'Info: [balancing-mode-validation]]:'
 
-    if balancing_mode not in ['used', 'assigned']:
-        logging.error(f'{error_prefix} Invalid balancing method: {balancing_mode}')
+    if balancing_mode not in ['used', 'free_percent', 'assigned']:
+        logging.error(f'{error_prefix} Invalid balancing mode: {balancing_mode}')
         sys.exit(2)
     else:
-        logging.info(f'{info_prefix} Valid balancing method: {balancing_mode}')
+        logging.info(f'{info_prefix} Valid balancing mode: {balancing_mode}')
 
 
 def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics):
@@ -510,6 +510,8 @@ def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_s
 
     # Remap balancing mode to get the related values from nodes dict.
     if balancing_mode == 'used':
+        node_resource_selector = 'free'
+    if balancing_mode == 'free_percent':
         node_resource_selector = 'free'
     if balancing_mode == 'assigned':
         node_resource_selector = 'assigned'
@@ -556,6 +558,8 @@ def __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics
     # Remap balancing mode to get the related values from nodes dict.
     if balancing_mode == 'used':
         vm_resource_selector = 'used'
+    if balancing_mode == 'free_percent':
+        vm_resource_selector = 'used'
     if balancing_mode == 'assigned':
         vm_resource_selector = 'total'
 
@@ -573,6 +577,8 @@ def __get_most_free_resources_node(balancing_method, balancing_mode, node_statis
     # Return the node information based on the balancing mode.
     if balancing_mode == 'used':
         node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+    if balancing_mode == 'free_percent':
+        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free_percent'])
     if balancing_mode == 'assigned':
         node = min(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_assigned'] if item[1][f'{balancing_method}_assigned_percent'] > 0 or item[1][f'{balancing_method}_assigned_percent'] < 100 else -float('inf'))
 
