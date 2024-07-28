@@ -697,9 +697,18 @@ def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
 
     if len(vm_statistics_rebalanced) > 0 and not app_args.dry_run:
         for vm, value in vm_statistics_rebalanced.items():
+
             try:
-                logging.info(f'{info_prefix} Rebalancing vm {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+                # Migrate type VM (live migration).
+                if value['type'] == 'vm':
+                    logging.info(f'{info_prefix} Rebalancing VM {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                    api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+
+                # Migrate type CT (requires restart of container).
+                if value['type'] == 'ct':
+                    logging.info(f'{info_prefix} Rebalancing CT {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
+                    api_object.nodes(value['node_parent']).lxc(value['vmid']).migrate().post(target=value['node_rebalance'],restart=1)
+
             except proxmoxer.core.ResourceException as error_resource:
                 logging.critical(f'{error_prefix} {error_resource}')
     else:
