@@ -102,8 +102,9 @@ The following options can be set in the `proxlb.conf` file:
 | api_pass | FooBar | Password for the API. |
 | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
 | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
-| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
-| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
+| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
+| mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
+| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |

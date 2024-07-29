@@ -173,21 +173,22 @@ def initialize_config_options(config_path):
         config = configparser.ConfigParser()
         config.read(config_path)
         # Proxmox config
-        proxmox_api_host  = config['proxmox']['api_host']
-        proxmox_api_user  = config['proxmox']['api_user']
-        proxmox_api_pass  = config['proxmox']['api_pass']
-        proxmox_api_ssl_v = config['proxmox']['verify_ssl']
+        proxmox_api_host      = config['proxmox']['api_host']
+        proxmox_api_user      = config['proxmox']['api_user']
+        proxmox_api_pass      = config['proxmox']['api_pass']
+        proxmox_api_ssl_v     = config['proxmox']['verify_ssl']
         # Balancing
-        balancing_method  = config['balancing'].get('method', 'memory')
-        balancing_mode    = config['balancing'].get('mode', 'used')
-        balancing_type    = config['balancing'].get('type', 'vm')
-        balanciness       = config['balancing'].get('balanciness', 10)
-        ignore_nodes      = config['balancing'].get('ignore_nodes', None)
-        ignore_vms        = config['balancing'].get('ignore_vms', None)
+        balancing_method      = config['balancing'].get('method', 'memory')
+        balancing_mode        = config['balancing'].get('mode', 'used')
+        balancing_mode_option = config['balancing'].get('mode_option', 'bytes')
+        balancing_type        = config['balancing'].get('type', 'vm')
+        balanciness           = config['balancing'].get('balanciness', 10)
+        ignore_nodes          = config['balancing'].get('ignore_nodes', None)
+        ignore_vms            = config['balancing'].get('ignore_vms', None)
         # Service
-        daemon            = config['service'].get('daemon', 1)
-        schedule          = config['service'].get('schedule', 24)
-        log_verbosity     = config['service'].get('log_verbosity', 'CRITICAL')
+        daemon                = config['service'].get('daemon', 1)
+        schedule              = config['service'].get('schedule', 24)
+        log_verbosity         = config['service'].get('log_verbosity', 'CRITICAL')
     except configparser.NoSectionError:
         logging.critical(f'{error_prefix} Could not find the required section.')
         sys.exit(2)
@@ -199,8 +200,8 @@ def initialize_config_options(config_path):
         sys.exit(2)
 
     logging.info(f'{info_prefix} Configuration file loaded.')
-    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, \
-         balancing_mode, balancing_type, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
+         balancing_mode_option, balancing_type, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -444,26 +445,27 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
+def balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
     info_prefix  = 'Info: [rebalancing-calculator]:'
 
     # Validate for a supported balancing method, mode and if rebalancing is required.
     __validate_balancing_method(balancing_method)
     __validate_balancing_mode(balancing_mode)
+    __validate_vm_statistics(vm_statistics)
     rebalance = __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics)
 
     if rebalance:
         # Get most used/assigned resources of the VM and the most free or less allocated node.
         resources_vm_most_used, processed_vms  = __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms)
-        resources_node_most_free               = __get_most_free_resources_node(balancing_method, balancing_mode, node_statistics)
+        resources_node_most_free               = __get_most_free_resources_node(balancing_method, balancing_mode, balancing_mode_option, node_statistics)
 
         # Update resource statistics for VMs and nodes.
         node_statistics, vm_statistics         = __update_resource_statistics(resources_vm_most_used, resources_node_most_free,
                                                                              vm_statistics, node_statistics, balancing_method, balancing_mode)
 
         # Start recursion until we do not have any needs to rebalance anymore.
-        balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
+        balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
 
     # Honour groupings for include and exclude groups for rebalancing VMs.
     node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
@@ -500,6 +502,15 @@ def __validate_balancing_mode(balancing_mode):
         sys.exit(2)
     else:
         logging.info(f'{info_prefix} Valid balancing method: {balancing_mode}')
+
+
+def __validate_vm_statistics(vm_statistics):
+    """ Validate for at least a single object of type CT/VM to rebalance. """
+    error_prefix = 'Error: [balancing-vm-stats-validation]:'
+
+    if len(vm_statistics) == 0:
+        logging.error(f'{error_prefix} Not a single CT/VM found in cluster.')
+        sys.exit(1)
 
 
 def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics):
@@ -566,13 +577,15 @@ def __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics
     return vm, processed_vms
 
 
-def __get_most_free_resources_node(balancing_method, balancing_mode, node_statistics):
+def __get_most_free_resources_node(balancing_method, balancing_mode, balancing_mode_option, node_statistics):
     """ Get and return the most free resources of a node by the defined balancing method. """
     info_prefix = 'Info: [get-most-free-resources-nodes]:'
 
     # Return the node information based on the balancing mode.
-    if balancing_mode == 'used':
+    if balancing_mode == 'used' and balancing_mode_option == 'bytes':
         node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+    if balancing_mode == 'used' and balancing_mode_option == 'percent':
+        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free_percent'])
     if balancing_mode == 'assigned':
         node = min(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_assigned'] if item[1][f'{balancing_method}_assigned_percent'] > 0 or item[1][f'{balancing_method}_assigned_percent'] < 100 else -float('inf'))
 
@@ -724,40 +737,58 @@ def __create_json_output(vm_statistics_rebalanced, app_args):
         print(json.dumps(vm_statistics_rebalanced))
 
 
-def __create_dry_run_output(vm_statistics_rebalanced, app_args):
+def __create_cli_output(vm_statistics_rebalanced, app_args):
     """ Create output for CLI when running in dry-run mode. """
-    info_prefix  = 'Info: [dry-run-output-generator]:'
-    vm_to_node_list = []
+    info_prefix_dry_run  = 'Info: [cli-output-generator-dry-run]:'
+    info_prefix_run      = 'Info: [cli-output-generator]:'
+    vm_to_node_list      = []
 
-    logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
+    if app_args.dry_run:
+        info_prefix = info_prefix_dry_run
+        logging.info(f'{info_prefix} Starting dry-run to rebalance vms to their new nodes.')
+    else:
+        info_prefix = info_prefix_run
+        logging.info(f'{info_prefix} Start rebalancing vms to their new nodes.')
+
     vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node', 'VM Type'])
     for vm_name, vm_values in vm_statistics_rebalanced.items():
         vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance'], vm_values['type']])
 
     if len(vm_statistics_rebalanced) > 0:
         logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
-        __print_table_cli(vm_to_node_list)
+        __print_table_cli(vm_to_node_list, app_args.dry_run)
     else:
         logging.info(f'{info_prefix} No rebalancing needed.')
 
 
-def __print_table_cli(table):
+def __print_table_cli(table, dry_run=False):
     """ Pretty print a given table to the cli. """
+    info_prefix_dry_run  = 'Info: [cli-output-generator-table-dryn-run]:'
+    info_prefix_run      = 'Info: [cli-output-generator-table]:'
+    info_prefix          = info_prefix_run
+
     longest_cols = [
         (max([len(str(row[i])) for row in table]) + 3)
         for i in range(len(table[0]))
     ]
 
     row_format = "".join(["{:>" + str(longest_col) + "}" for longest_col in longest_cols])
+
     for row in table:
-        print(row_format.format(*row))
+        # Print CLI output when running in dry-run mode to make the user's life easier.
+        if dry_run:
+            info_prefix = info_prefix_dry_run
+            print(row_format.format(*row))
+
+        # Log all items in info mode.
+        logging.info(f'{info_prefix} {row_format.format(*row)}')
 
 
 def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
     """ Run rebalancing of vms to new nodes in cluster. """
     __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
     __create_json_output(vm_statistics_rebalanced, app_args)
-    __create_dry_run_output(vm_statistics_rebalanced, app_args)
+    __create_cli_output(vm_statistics_rebalanced, app_args)
 
 
 def main():
@@ -769,7 +800,7 @@ def main():
     pre_validations(config_path)
 
     # Parse global config.
-    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_type, \
+    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, balancing_type, \
         balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
@@ -785,7 +816,8 @@ def main():
         node_statistics = update_node_statistics(node_statistics, vm_statistics)
 
         # Calculate rebalancing of vms.
-        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, balancing_mode, node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
+        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, balancing_mode, balancing_mode_option,
+                                                                                      node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
 
         # Rebalance vms to new nodes within the cluster.
         run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
