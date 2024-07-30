@@ -1,0 +1,2 @@
+added:
+  - Add option_mode to rebalance by node's free resources in percent (instead of bytes). [#29]
