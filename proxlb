@@ -40,7 +40,7 @@ import urllib3
 
 # Constants
 __appname__ = "ProxLB"
-__version__ = "0.9.9"
+__version__ = "1.0.0"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 

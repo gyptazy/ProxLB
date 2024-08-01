@@ -1,4 +1,4 @@
 added:
    - Add feature to make log verbosity configurable [#17].
- changed:
+changed:
    - Adjusted general logging and log more details.
