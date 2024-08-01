@@ -32,7 +32,10 @@
     - [Logging](#logging)
   - [Motivation](#motivation)
   - [References](#references)
-  - [Packages / Container Images](#packages--container-images)
+  - [Downloads](#downloads)
+    - [Packages](#packages)
+    - [Repository](#repository)
+    - [Container Images (Docker/Podman)](#container-images-dockerpodman)
   - [Misc](#misc)
     - [Bugs](#bugs)
     - [Contributing](#contributing)
@@ -212,7 +215,7 @@ Creating a container image of ProxLB is straightforward using the provided Docke
 ```bash
 git clone https://github.com/gyptazy/ProxLB.git
 cd ProxLB
-build -t proxlb .
+docker build -t proxlb .
 ```
 
 Afterwards simply adjust the config file to your needs:
@@ -255,13 +258,38 @@ Here you can find some overviews of references for and about the ProxLB (PLB):
 | General introduction into ProxLB | https://gyptazy.ch/blog/proxlb-rebalancing-vm-workloads-across-nodes-in-proxmox-clusters/ |
 | Howto install and use ProxLB on Debian to rebalance vm workloads in a Proxmox cluster | https://gyptazy.ch/howtos/howto-install-and-use-proxlb-to-rebalance-vm-workloads-across-nodes-in-proxmox-clusters/ |
 
-## Packages / Container Images
+## Downloads
+ProxLB can be obtained in man different ways, depending on which use case you prefer. You can use simply copy the code from GitHub, use created packages for Debian or RedHat based systems, use a Repository to keep ProxLB always up to date or simply use a Container image for Docker/Podman.
+
+### Packages
 Ready to use packages can be found at:
 * https://cdn.gyptazy.ch/files/amd64/debian/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/ubuntu/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/redhat/proxlb/
 * https://cdn.gyptazy.ch/files/amd64/freebsd/proxlb/
 
+
+### Repository
+Debian based systems can also use the repository by adding the following line to their apt sources:
+
+```
+deb https://repo.gyptazy.ch/ /
+```
+
+The Repository's GPG key can be found at: `https://repo.gyptazy.ch/repo/KEY.gpg`
+
+You can also simply import it by running:
+
+```
+# KeyID:  DEB76ADF7A0BAADB51792782FD6A7A70C11226AA
+# SHA256: 5e44fffa09c747886ee37cc6e9e7eaf37c6734443cc648eaf0a9241a89084383  KEY.gpg
+
+wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.ch/repo/KEY.gpg
+```
+
+*Note: The defined repositories `repo.gyptazy.ch` and `repo.proxlb.de` are the same!*
+
+### Container Images (Docker/Podman)
 Container Images for Podman, Docker etc., can be found at:
 | Version | Image |
 |------|:------:|
