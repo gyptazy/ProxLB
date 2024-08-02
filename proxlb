@@ -33,6 +33,7 @@ except ImportError:
 import random
 import re
 import requests
+import socket
 import sys
 import time
 import urllib3
@@ -40,7 +41,7 @@ import urllib3
 
 # Constants
 __appname__ = "ProxLB"
-__version__ = "1.0.0"
+__version__ = "1.1.0b"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 
@@ -95,7 +96,7 @@ def pre_validations(config_path):
     logging.info(f'{info_prefix} All pre-validations done.')
 
 
-def post_validations():
+def post_validations(api_object, node_requires_reboot):
     """ Run post-validations as sanity checks. """
     error_prefix = 'Error: [post-validations]:'
     info_prefix  = 'Info: [post-validations]:'
@@ -104,6 +105,8 @@ def post_validations():
         logging.critical(f'{error_prefix} Not all post-validations succeeded. Please validate!')
     else:
         logging.info(f'{info_prefix} All post-validations succeeded.')
+        # Reboot node if necessary and all validations were performed.
+        run_node_reboot(api_object, node_requires_reboot)
 
 
 def validate_daemon(daemon, schedule):
@@ -112,7 +115,7 @@ def validate_daemon(daemon, schedule):
 
     if bool(int(daemon)):
         logging.info(f'{info_prefix} Running in daemon mode. Next run in {schedule} hours.')
-        time.sleep(int(schedule) * 60)
+        time.sleep(int(schedule) * 60 * 60)
     else:
         logging.info(f'{info_prefix} Not running in daemon mode. Quitting.')
         sys.exit(0)
@@ -183,9 +186,11 @@ def initialize_config_options(config_path):
         balancing_mode_option = config['balancing'].get('mode_option', 'bytes')
         balancing_type        = config['balancing'].get('type', 'vm')
         balanciness           = config['balancing'].get('balanciness', 10)
+        parallel_migrations   = config['balancing'].get('parallel_migrations', 1)
         ignore_nodes          = config['balancing'].get('ignore_nodes', None)
         ignore_vms            = config['balancing'].get('ignore_vms', None)
         # Service
+        master_only           = config['service'].get('master_only', 0)
         daemon                = config['service'].get('daemon', 1)
         schedule              = config['service'].get('schedule', 24)
         log_verbosity         = config['service'].get('log_verbosity', 'CRITICAL')
@@ -200,8 +205,8 @@ def initialize_config_options(config_path):
         sys.exit(2)
 
     logging.info(f'{info_prefix} Configuration file loaded.')
-    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
-         balancing_mode_option, balancing_type, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, \
+         balancing_type, balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -229,6 +234,130 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
 
     logging.info(f'{info_prefix} API connection succeeded to host: {proxmox_api_host}.')
     return api_object
+
+
+def get_cluster_master(api_object):
+    """ Get the current master of the Proxmox cluster. """
+    error_prefix = 'Error: [cluster-master-getter]:'
+    info_prefix  = 'Info: [cluster-master-getter]:'
+
+    logging.info(f'{info_prefix} Getting master node from cluster.')
+    try:
+        ha_status_object = api_object.cluster().ha().status().manager_status().get()
+        logging.info(f'{info_prefix} Master node: {ha_status_object["manager_status"]["master_node"]}')
+    except urllib3.exceptions.NameResolutionError:
+        logging.critical(f'{error_prefix} Could not resolve the API.')
+        sys.exit(2)
+    except requests.exceptions.ConnectTimeout:
+        logging.critical(f'{error_prefix} Connection time out to API.')
+        sys.exit(2)
+    except requests.exceptions.SSLError:
+        logging.critical(f'{error_prefix} SSL certificate verification failed for API.')
+        sys.exit(2)
+
+    return ha_status_object['manager_status']['master_node']
+
+
+def validate_cluster_master(cluster_master):
+    """ Validate if the current execution node is the cluster master. """
+    info_prefix  = 'Info: [cluster-master-validator]:'
+
+    node_executor_hostname = socket.gethostname()
+    logging.info(f'{info_prefix} Node executor hostname is: {node_executor_hostname}')
+
+    if node_executor_hostname != cluster_master:
+        logging.info(f'{info_prefix} {node_executor_hostname} is not the cluster master ({cluster_master}).')
+        return False
+    else:
+        return True
+
+
+def get_node_update_status(api_object):
+    """ Get the current update status of the current executing host node in the cluster. """
+    info_prefix   = 'Info: [node-update-status-getter]:'
+    error_prefix  = 'Error: [node-update-status-getter]:'
+
+    node_executor_hostname = socket.gethostname()
+    logging.info(f'{info_prefix} Get update status for node: {node_executor_hostname}.')
+
+    try:
+        update_status_object = api_object.nodes(node_executor_hostname).apt().update.get()
+    except proxmoxer.core.ResourceException:
+        logging.critical(f'{info_prefix} Unknown node in cluster: {node_executor_hostname}.')
+        sys.exit(2)
+
+    if len(update_status_object) > 0:
+        logging.info(f'{info_prefix} Updates available for node: {node_executor_hostname}.')
+        return True
+    else:
+        logging.info(f'{info_prefix} No updates available for node: {node_executor_hostname}.')
+        return False
+
+
+def run_node_update(api_object, node_requires_updates):
+    """ Run the update execution on node. """
+    info_prefix   = 'Info: [node-update-executor]:'
+    error_prefix  = 'Error: [node-update-executor]:'
+
+    node_executor_hostname = socket.gethostname()
+
+    if node_requires_updates:
+        logging.info(f'{info_prefix} Execute updates on node: {node_executor_hostname}.')
+        try:
+            update_status_object = api_object.nodes(node_executor_hostname).status().post(command='upgrade')
+        except proxmoxer.core.ResourceException:
+            logging.critical(f'{error_prefix} Missing API endpoint on node: {node_executor_hostname}. Please make sure to have the package proxlb-additions installed.')
+            sys.exit(2)
+        logging.info(f'{info_prefix} Sucessfully integrated updates to node: {node_executor_hostname}.')
+
+
+def extend_ignore_node_list(ignore_nodes):
+    """ Extend the node ignore list by this node. """
+    info_prefix   = 'Info: [node-ignore-list-adder]:'
+    error_prefix  = 'Error: [node-ignore-list-adder]:'
+
+    node_executor_hostname = socket.gethostname()
+    logging.info(f'{info_prefix} Adding node {node_executor_hostname} to ignore list.')
+    ignore_nodes = ignore_nodes + f',{node_executor_hostname}'
+    logging.info(f'{info_prefix} Ignored nodes are now: {ignore_nodes}.')
+
+    return ignore_nodes
+
+
+def get_node_reboot_status():
+    """ Get the current reboot status of the current executing host node in the cluster. """
+    info_prefix        = 'Info: [node-reboot-status-getter]:'
+    error_prefix       = 'Error: [node-reboot-status-getter]:'
+    reboot_status_file = '/var/run/reboot-required'
+
+    node_executor_hostname = socket.gethostname()
+    logging.info(f'{info_prefix} Get reboot status for node: {node_executor_hostname}.')
+
+    reboot_status_object = os.path.exists(reboot_status_file)
+
+    if reboot_status_object:
+        logging.info(f'{info_prefix} Reboot required for node: {node_executor_hostname}.')
+        return True
+    else:
+        logging.info(f'{info_prefix} No reboot required for node: {node_executor_hostname}.')
+        return False
+
+
+def run_node_reboot(api_object, node_requires_reboot):
+    """ Run the update execution on node. """
+    info_prefix   = 'Info: [node-reboot-executor]:'
+    error_prefix  = 'Error: [node-reboot-executor]:'
+
+    node_executor_hostname = socket.gethostname()
+
+    if node_requires_reboot:
+        logging.info(f'{info_prefix} Execute reboot on node: {node_executor_hostname}.')
+        try:
+            update_status_object = api_object.nodes(node_executor_hostname).status().post(command='reboot')
+        except proxmoxer.core.ResourceException:
+            logging.critical(f'{error_prefix} Missing API endpoint on node: {node_executor_hostname}. Please make sure to have the package proxlb-additions installed.')
+            sys.exit(2)
+        logging.info(f'{info_prefix} Rebooting node now: {node_executor_hostname}.')
 
 
 def get_node_statistics(api_object, ignore_nodes):
@@ -365,27 +494,29 @@ def get_vm_statistics(api_object, ignore_vms, balancing_type):
     return vm_statistics
 
 
-def update_node_statistics(node_statistics, vm_statistics):
+def update_node_statistics(node_statistics, vm_statistics, ignore_nodes):
     """ Update node statistics by VMs statistics. """
-    info_prefix = 'Info: [node-update-statistics]:'
-    warn_prefix = 'Warning: [node-update-statistics]:'
+    info_prefix       = 'Info: [node-update-statistics]:'
+    warn_prefix       = 'Warning: [node-update-statistics]:'
+    ignore_nodes_list =  ignore_nodes.split(',')
 
     for vm, vm_value in vm_statistics.items():
-        node_statistics[vm_value['node_parent']]['cpu_assigned']            = node_statistics[vm_value['node_parent']]['cpu_assigned'] + int(vm_value['cpu_total'])
-        node_statistics[vm_value['node_parent']]['cpu_assigned_percent']    = (node_statistics[vm_value['node_parent']]['cpu_assigned'] / node_statistics[vm_value['node_parent']]['cpu_total']) * 100
-        node_statistics[vm_value['node_parent']]['memory_assigned']         = node_statistics[vm_value['node_parent']]['memory_assigned'] + int(vm_value['memory_total'])
-        node_statistics[vm_value['node_parent']]['memory_assigned_percent'] = (node_statistics[vm_value['node_parent']]['memory_assigned'] / node_statistics[vm_value['node_parent']]['memory_total']) * 100
-        node_statistics[vm_value['node_parent']]['disk_assigned']           = node_statistics[vm_value['node_parent']]['disk_assigned'] + int(vm_value['disk_total'])
-        node_statistics[vm_value['node_parent']]['disk_assigned_percent']   = (node_statistics[vm_value['node_parent']]['disk_assigned'] / node_statistics[vm_value['node_parent']]['disk_total']) * 100
+        if not vm_value['node_parent'] in ignore_nodes_list:
+            node_statistics[vm_value['node_parent']]['cpu_assigned']            = node_statistics[vm_value['node_parent']]['cpu_assigned'] + int(vm_value['cpu_total'])
+            node_statistics[vm_value['node_parent']]['cpu_assigned_percent']    = (node_statistics[vm_value['node_parent']]['cpu_assigned'] / node_statistics[vm_value['node_parent']]['cpu_total']) * 100
+            node_statistics[vm_value['node_parent']]['memory_assigned']         = node_statistics[vm_value['node_parent']]['memory_assigned'] + int(vm_value['memory_total'])
+            node_statistics[vm_value['node_parent']]['memory_assigned_percent'] = (node_statistics[vm_value['node_parent']]['memory_assigned'] / node_statistics[vm_value['node_parent']]['memory_total']) * 100
+            node_statistics[vm_value['node_parent']]['disk_assigned']           = node_statistics[vm_value['node_parent']]['disk_assigned'] + int(vm_value['disk_total'])
+            node_statistics[vm_value['node_parent']]['disk_assigned_percent']   = (node_statistics[vm_value['node_parent']]['disk_assigned'] / node_statistics[vm_value['node_parent']]['disk_total']) * 100
 
-        if node_statistics[vm_value['node_parent']]['cpu_assigned_percent'] > 99:
-            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for CPU by {int(node_statistics[vm_value["node_parent"]]["cpu_assigned_percent"])}%.')
+            if node_statistics[vm_value['node_parent']]['cpu_assigned_percent'] > 99:
+                logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for CPU by {int(node_statistics[vm_value["node_parent"]]["cpu_assigned_percent"])}%.')
 
-        if node_statistics[vm_value['node_parent']]['memory_assigned_percent'] > 99:
-            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for memory by {int(node_statistics[vm_value["node_parent"]]["memory_assigned_percent"])}%.')
+            if node_statistics[vm_value['node_parent']]['memory_assigned_percent'] > 99:
+                logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for memory by {int(node_statistics[vm_value["node_parent"]]["memory_assigned_percent"])}%.')
 
-        if node_statistics[vm_value['node_parent']]['disk_assigned_percent'] > 99:
-            logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for disk by {int(node_statistics[vm_value["node_parent"]]["disk_assigned_percent"])}%.')
+            if node_statistics[vm_value['node_parent']]['disk_assigned_percent'] > 99:
+                logging.warning(f'{warn_prefix} Node {vm_value["node_parent"]} is overprovisioned for disk by {int(node_statistics[vm_value["node_parent"]]["disk_assigned_percent"])}%.')
 
     logging.info(f'{info_prefix} Updated node resource assignments by all VMs.')
     logging.debug('node_statistics')
@@ -445,7 +576,7 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
+def balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, ignore_nodes, rebalance, processed_vms):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
     info_prefix  = 'Info: [rebalancing-calculator]:'
 
@@ -462,14 +593,14 @@ def balancing_calculations(balancing_method, balancing_mode, balancing_mode_opti
 
         # Update resource statistics for VMs and nodes.
         node_statistics, vm_statistics         = __update_resource_statistics(resources_vm_most_used, resources_node_most_free,
-                                                                             vm_statistics, node_statistics, balancing_method, balancing_mode)
+                                                                             vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes)
 
         # Start recursion until we do not have any needs to rebalance anymore.
-        balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
+        balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, ignore_nodes, rebalance, processed_vms)
 
     # Honour groupings for include and exclude groups for rebalancing VMs.
-    node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
-    node_statistics, vm_statistics = __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
+    node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes)
+    node_statistics, vm_statistics = __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes)
 
     # Remove VMs that are not being relocated.
     vms_to_remove = [vm_name for vm_name, vm_info in vm_statistics.items() if 'node_rebalance' in vm_info and vm_info['node_rebalance'] == vm_info.get('node_parent')]
@@ -593,11 +724,12 @@ def __get_most_free_resources_node(balancing_method, balancing_mode, balancing_m
     return node
 
 
-def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method, balancing_mode):
+def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes):
     """ Update VM and node resource statistics. """
     info_prefix = 'Info: [rebalancing-resource-statistics-update]:'
+    ignore_nodes_list =  ignore_nodes.split(',')
 
-    if resource_highest_used_resources_vm[1]['node_parent'] != resource_highest_free_resources_node[0]:
+    if resource_highest_used_resources_vm[1]['node_parent'] != resource_highest_free_resources_node[0] and resource_highest_used_resources_vm[1]['node_parent'] not in ignore_nodes_list:
         vm_name            = resource_highest_used_resources_vm[0]
         vm_node_parent     = resource_highest_used_resources_vm[1]['node_parent']
         vm_node_rebalance  = resource_highest_free_resources_node[0]
@@ -629,7 +761,7 @@ def __update_resource_statistics(resource_highest_used_resources_vm, resource_hi
     return node_statistics, vm_statistics
 
 
-def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode):
+def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes):
     """ Get VMs tags for include groups. """
     info_prefix = 'Info: [rebalancing-tags-group-include]:'
     tags_include_vms = {}
@@ -658,13 +790,13 @@ def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_metho
                     vm_node_rebalance = vm_statistics[vm_name]['node_rebalance']
                 else:
                     _mocked_vm_object = (vm_name, vm_statistics[vm_name])
-                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [vm_node_rebalance], vm_statistics, node_statistics, balancing_method, balancing_mode)
+                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [vm_node_rebalance], vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes)
             processed_vm.append(vm_name)
 
     return node_statistics, vm_statistics
 
 
-def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode):
+def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes):
     """ Get VMs tags for exclude groups. """
     info_prefix = 'Info: [rebalancing-tags-group-exclude]:'
     tags_exclude_vms = {}
@@ -697,13 +829,37 @@ def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_metho
                         random_node = random.choice(list(node_statistics.keys()))
                 else:
                     _mocked_vm_object = (vm_name, vm_statistics[vm_name])
-                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [random_node], vm_statistics, node_statistics, balancing_method, balancing_mode)
+                    node_statistics, vm_statistics = __update_resource_statistics(_mocked_vm_object, [random_node], vm_statistics, node_statistics, balancing_method, balancing_mode, ignore_nodes)
             processed_vm.append(vm_name)
 
     return node_statistics, vm_statistics
 
 
-def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+def __wait_job_finalized(api_object, node_name, job_id, counter):
+    """ Wait for a job to be finalized. """
+    error_prefix = 'Error: [job-status-getter]:'
+    info_prefix  = 'Info: [job-status-getter]:'
+
+    logging.info(f'{info_prefix} Getting job status for job {job_id}.')
+    task = api_object.nodes(node_name).tasks(job_id).status().get()
+    logging.info(f'{info_prefix} {task}')
+
+    if task['status'] == 'running':
+        logging.info(f'{info_prefix} Validating job {job_id} for the {counter} run.')
+
+        # Do not run for infinity this recursion and fail when reaching the limit.
+        if counter == 300:
+            logging.critical(f'{error_prefix} The job {job_id} on node {node_name} did not finished in time for migration.')
+
+        time.sleep(5)
+        counter = counter + 1
+        logging.info(f'{info_prefix} Revalidating job {job_id} in a next run.')
+        __wait_job_finalized(api_object, node_name, job_id, counter)
+
+    logging.info(f'{info_prefix} Job {job_id} for migration from {node_name} terminiated succesfully.')
+
+
+def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
     """ Run & execute the VM rebalancing via API. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
@@ -715,15 +871,23 @@ def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
                 # Migrate type VM (live migration).
                 if value['type'] == 'vm':
                     logging.info(f'{info_prefix} Rebalancing VM {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+                    job_id = api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
 
                 # Migrate type CT (requires restart of container).
                 if value['type'] == 'ct':
                     logging.info(f'{info_prefix} Rebalancing CT {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    api_object.nodes(value['node_parent']).lxc(value['vmid']).migrate().post(target=value['node_rebalance'],restart=1)
+                    job_id = api_object.nodes(value['node_parent']).lxc(value['vmid']).migrate().post(target=value['node_rebalance'],restart=1)
 
             except proxmoxer.core.ResourceException as error_resource:
                 logging.critical(f'{error_prefix} {error_resource}')
+
+            # Wait for migration to be finished unless running parallel migrations.
+            if not bool(int(parallel_migrations)):
+                logging.info(f'{info_prefix} Rebalancing will be performed sequentially.')
+                __wait_job_finalized(api_object, value['node_parent'], job_id, counter=1)
+            else:
+                logging.info(f'{info_prefix} Rebalancing will be performed parallely.')
+
     else:
         logging.info(f'{info_prefix} No rebalancing needed.')
 
@@ -784,9 +948,9 @@ def __print_table_cli(table, dry_run=False):
         logging.info(f'{info_prefix} {row_format.format(*row)}')
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
     """ Run rebalancing of vms to new nodes in cluster. """
-    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
+    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
     __create_json_output(vm_statistics_rebalanced, app_args)
     __create_cli_output(vm_statistics_rebalanced, app_args)
 
@@ -801,7 +965,7 @@ def main():
 
     # Parse global config.
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, balancing_type, \
-        balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+        balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
     initialize_logger(log_verbosity, update_log_verbosity=True)
@@ -810,20 +974,40 @@ def main():
         # API Authentication.
         api_object = api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v)
 
+        # Get master node of cluster and ensure that ProxLB is only performed on the
+        # cluster master node to avoid ongoing rebalancing.
+        if bool(int(master_only)):
+            cluster_master_node = get_cluster_master(api_object)
+            cluster_master = validate_cluster_master(cluster_master_node)
+            # Validate daemon service and skip following tasks when not being the cluster master.
+            if not cluster_master:
+                validate_daemon(daemon, schedule)
+                continue
+
+        # Validate for node auto update in cluster for rolling updates.
+        # Note: This requires proxlb-additions with a patched Proxmox API!
+        #rolling_updates = 1
+        if bool(int(rolling_updates)):
+            node_requires_updates = get_node_update_status(api_object)
+            run_node_update(api_object, node_requires_updates)
+            node_requires_reboot = get_node_reboot_status()
+            if node_requires_reboot:
+                ignore_nodes = extend_ignore_node_list(ignore_nodes)
+
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)
         vm_statistics   = get_vm_statistics(api_object, ignore_vms, balancing_type)
-        node_statistics = update_node_statistics(node_statistics, vm_statistics)
+        node_statistics = update_node_statistics(node_statistics, vm_statistics, ignore_nodes)
 
         # Calculate rebalancing of vms.
         node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, balancing_mode, balancing_mode_option,
-                                                                                      node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
+                                                                                      node_statistics, vm_statistics, balanciness, ignore_nodes, rebalance=False, processed_vms=[])
 
         # Rebalance vms to new nodes within the cluster.
-        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
+        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
 
         # Validate for any errors.
-        post_validations()
+        post_validations(api_object, node_requires_reboot)
 
         # Validate daemon service.
         validate_daemon(daemon, schedule)

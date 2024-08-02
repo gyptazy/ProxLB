@@ -1,0 +1,11 @@
+proxlb (1.0.0) unstable; urgency=low
+
+  * Initial release of ProxLB.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Thu, 01 Aug 2024 17:04:12 +0200
+
+proxlb (0.9.0) unstable; urgency=low
+
+  * Initial development release of ProxLB as a tech preview.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Sun, 07 Jul 2024 05:38:41 +0200
