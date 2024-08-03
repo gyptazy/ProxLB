@@ -183,6 +183,7 @@ def initialize_config_options(config_path):
         balancing_mode_option = config['balancing'].get('mode_option', 'bytes')
         balancing_type        = config['balancing'].get('type', 'vm')
         balanciness           = config['balancing'].get('balanciness', 10)
+        parallel_migrations   = config['balancing'].get('parallel_migrations', 1)
         ignore_nodes          = config['balancing'].get('ignore_nodes', None)
         ignore_vms            = config['balancing'].get('ignore_vms', None)
         # Service
@@ -201,7 +202,7 @@ def initialize_config_options(config_path):
 
     logging.info(f'{info_prefix} Configuration file loaded.')
     return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
-         balancing_mode_option, balancing_type, balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+         balancing_mode_option, balancing_type, balanciness, parallel_migrations, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -703,7 +704,31 @@ def __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_metho
     return node_statistics, vm_statistics
 
 
-def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+def __wait_job_finalized(api_object, node_name, job_id, counter):
+    """ Wait for a job to be finalized. """
+    error_prefix = 'Error: [job-status-getter]:'
+    info_prefix  = 'Info: [job-status-getter]:'
+
+    logging.info(f'{info_prefix} Getting job status for job {job_id}.')
+    task = api_object.nodes(node_name).tasks(job_id).status().get()
+    logging.info(f'{info_prefix} {task}')
+
+    if task['status'] == 'running':
+        logging.info(f'{info_prefix} Validating job {job_id} for the {counter} run.')
+
+        # Do not run for infinity this recursion and fail when reaching the limit.
+        if counter == 300:
+            logging.critical(f'{error_prefix} The job {job_id} on node {node_name} did not finished in time for migration.')
+
+        time.sleep(5)
+        counter = counter + 1
+        logging.info(f'{info_prefix} Revalidating job {job_id} in a next run.')
+        __wait_job_finalized(api_object, node_name, job_id, counter)
+
+    logging.info(f'{info_prefix} Job {job_id} for migration from {node_name} terminiated succesfully.')
+
+
+def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
     """ Run & execute the VM rebalancing via API. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
@@ -715,15 +740,23 @@ def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
                 # Migrate type VM (live migration).
                 if value['type'] == 'vm':
                     logging.info(f'{info_prefix} Rebalancing VM {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+                    job_id = api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
 
                 # Migrate type CT (requires restart of container).
                 if value['type'] == 'ct':
                     logging.info(f'{info_prefix} Rebalancing CT {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    api_object.nodes(value['node_parent']).lxc(value['vmid']).migrate().post(target=value['node_rebalance'],restart=1)
+                    job_id = api_object.nodes(value['node_parent']).lxc(value['vmid']).migrate().post(target=value['node_rebalance'],restart=1)
 
             except proxmoxer.core.ResourceException as error_resource:
                 logging.critical(f'{error_prefix} {error_resource}')
+
+            # Wait for migration to be finished unless running parallel migrations.
+            if not bool(int(parallel_migrations)):
+                logging.info(f'{info_prefix} Rebalancing will be performed sequentially.')
+                __wait_job_finalized(api_object, value['node_parent'], job_id, counter=1)
+            else:
+                logging.info(f'{info_prefix} Rebalancing will be performed parallely.')
+
     else:
         logging.info(f'{info_prefix} No rebalancing needed.')
 
@@ -784,9 +817,9 @@ def __print_table_cli(table, dry_run=False):
         logging.info(f'{info_prefix} {row_format.format(*row)}')
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args):
+def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
     """ Run rebalancing of vms to new nodes in cluster. """
-    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
+    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
     __create_json_output(vm_statistics_rebalanced, app_args)
     __create_cli_output(vm_statistics_rebalanced, app_args)
 
@@ -801,7 +834,7 @@ def main():
 
     # Parse global config.
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, balancing_type, \
-        balanciness, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+        balanciness, parallel_migrations, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
     initialize_logger(log_verbosity, update_log_verbosity=True)
@@ -820,7 +853,7 @@ def main():
                                                                                       node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
 
         # Rebalance vms to new nodes within the cluster.
-        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args)
+        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
 
         # Validate for any errors.
         post_validations()
