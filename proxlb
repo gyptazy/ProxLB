@@ -33,6 +33,7 @@ except ImportError:
 import random
 import re
 import requests
+import socket
 import sys
 import time
 import urllib3
@@ -40,7 +41,7 @@ import urllib3
 
 # Constants
 __appname__ = "ProxLB"
-__version__ = "1.0.0"
+__version__ = "1.1.0b"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 
@@ -187,6 +188,7 @@ def initialize_config_options(config_path):
         ignore_nodes          = config['balancing'].get('ignore_nodes', None)
         ignore_vms            = config['balancing'].get('ignore_vms', None)
         # Service
+        master_only           = config['service'].get('master_only', 0)
         daemon                = config['service'].get('daemon', 1)
         schedule              = config['service'].get('schedule', 24)
         log_verbosity         = config['service'].get('log_verbosity', 'CRITICAL')
@@ -201,8 +203,8 @@ def initialize_config_options(config_path):
         sys.exit(2)
 
     logging.info(f'{info_prefix} Configuration file loaded.')
-    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, \
-         balancing_mode_option, balancing_type, balanciness, parallel_migrations, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity
+    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, \
+         balancing_type, balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -230,6 +232,42 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
 
     logging.info(f'{info_prefix} API connection succeeded to host: {proxmox_api_host}.')
     return api_object
+
+
+def get_cluster_master(api_object):
+    """ Get the current master of the Proxmox cluster. """
+    error_prefix = 'Error: [cluster-master-getter]:'
+    info_prefix  = 'Info: [cluster-master-getter]:'
+
+    logging.info(f'{info_prefix} Getting master node from cluster.')
+    try:
+        ha_status_object = api_object.cluster().ha().status().manager_status().get()
+        logging.info(f'{info_prefix} Master node: {ha_status_object["manager_status"]["master_node"]}')
+    except urllib3.exceptions.NameResolutionError:
+        logging.critical(f'{error_prefix} Could not resolve the API.')
+        sys.exit(2)
+    except requests.exceptions.ConnectTimeout:
+        logging.critical(f'{error_prefix} Connection time out to API.')
+        sys.exit(2)
+    except requests.exceptions.SSLError:
+        logging.critical(f'{error_prefix} SSL certificate verification failed for API.')
+        sys.exit(2)
+
+    return ha_status_object['manager_status']['master_node']
+
+
+def validate_cluster_master(cluster_master):
+    """ Validate if the current execution node is the cluster master. """
+    info_prefix  = 'Info: [cluster-master-validator]:'
+
+    node_executor_hostname = socket.gethostname()
+    logging.info(f'{info_prefix} Node executor hostname is: {node_executor_hostname}')
+
+    if node_executor_hostname != cluster_master:
+        logging.info(f'{info_prefix} {node_executor_hostname} is not the cluster master ({cluster_master}).')
+        return False
+    else:
+        return True
 
 
 def get_node_statistics(api_object, ignore_nodes):
@@ -834,7 +872,7 @@ def main():
 
     # Parse global config.
     proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, balancing_type, \
-        balanciness, parallel_migrations, ignore_nodes, ignore_vms, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+        balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
     initialize_logger(log_verbosity, update_log_verbosity=True)
@@ -842,6 +880,16 @@ def main():
     while True:
         # API Authentication.
         api_object = api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v)
+
+        # Get master node of cluster and ensure that ProxLB is only performed on the
+        # cluster master node to avoid ongoing rebalancing.
+        if bool(int(master_only)):
+            cluster_master_node = get_cluster_master(api_object)
+            cluster_master = validate_cluster_master(cluster_master_node)
+            # Validate daemon service and skip following tasks when not being the cluster master.
+            if not cluster_master:
+                validate_daemon(daemon, schedule)
+                continue
 
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)

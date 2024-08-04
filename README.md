@@ -112,6 +112,7 @@ The following options can be set in the `proxlb.conf` file:
 | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
+| master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | schedule | 24 | Hours to rebalance in hours. (default: 24) |
 | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
@@ -140,6 +141,10 @@ parallel_migrations: 1
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
 [service]
+# The master_only option might be usuful if running ProxLB on all nodes in a cluster
+# but only a single one should do the balancing. The master node is obtained from the Proxmox
+# HA status.
+master_only: 0
 daemon: 1
 ```
 
