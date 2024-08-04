@@ -109,6 +109,7 @@ The following options can be set in the `proxlb.conf` file:
 | mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
 | type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
+| parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
@@ -133,6 +134,9 @@ type: vm
 # Rebalancing:     node01: 41% memory consumption :: node02: 52% consumption
 # No rebalancing:  node01: 43% memory consumption :: node02: 50% consumption
 balanciness: 10
+# Enable parallel migrations. If set to 0 it will wait for completed migrations
+# before starting next migration.
+parallel_migrations: 1
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
 [service]
