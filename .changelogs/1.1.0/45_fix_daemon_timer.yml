@@ -1,0 +1,2 @@
+changed:
+  - Fix daemon timer to use hours instead of minutes. [#45]

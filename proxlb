@@ -113,7 +113,7 @@ def validate_daemon(daemon, schedule):
 
     if bool(int(daemon)):
         logging.info(f'{info_prefix} Running in daemon mode. Next run in {schedule} hours.')
-        time.sleep(int(schedule) * 60)
+        time.sleep(int(schedule) * 60 * 60)
     else:
         logging.info(f'{info_prefix} Not running in daemon mode. Quitting.')
         sys.exit(0)
