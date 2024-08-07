@@ -109,8 +109,10 @@ The following options can be set in the `proxlb.conf` file:
 | mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
 | type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
+| parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
 | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
+| master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
 | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | schedule | 24 | Hours to rebalance in hours. (default: 24) |
 | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
@@ -133,9 +135,16 @@ type: vm
 # Rebalancing:     node01: 41% memory consumption :: node02: 52% consumption
 # No rebalancing:  node01: 43% memory consumption :: node02: 50% consumption
 balanciness: 10
+# Enable parallel migrations. If set to 0 it will wait for completed migrations
+# before starting next migration.
+parallel_migrations: 1
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
 [service]
+# The master_only option might be usuful if running ProxLB on all nodes in a cluster
+# but only a single one should do the balancing. The master node is obtained from the Proxmox
+# HA status.
+master_only: 0
 daemon: 1
 ```
 

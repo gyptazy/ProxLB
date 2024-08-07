@@ -272,6 +272,7 @@ def validate_cluster_master(cluster_master):
         return True
 
 
+<<<<<<< HEAD
 def get_node_update_status(api_object):
     """ Get the current update status of the current executing host node in the cluster. """
     info_prefix   = 'Info: [node-update-status-getter]:'
@@ -360,6 +361,8 @@ def run_node_reboot(api_object, node_requires_reboot):
         logging.info(f'{info_prefix} Rebooting node now: {node_executor_hostname}.')
 
 
+=======
+>>>>>>> main
 def get_node_statistics(api_object, ignore_nodes):
     """ Get statistics of cpu, memory and disk for each node in the cluster. """
     info_prefix       = 'Info: [node-statistics]:'
@@ -984,6 +987,7 @@ def main():
                 validate_daemon(daemon, schedule)
                 continue
 
+<<<<<<< HEAD
         # Validate for node auto update in cluster for rolling updates.
         # Note: This requires proxlb-additions with a patched Proxmox API!
         #rolling_updates = 1
@@ -994,6 +998,8 @@ def main():
             if node_requires_reboot:
                 ignore_nodes = extend_ignore_node_list(ignore_nodes)
 
+=======
+>>>>>>> main
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)
         vm_statistics   = get_vm_statistics(api_object, ignore_vms, balancing_type)
