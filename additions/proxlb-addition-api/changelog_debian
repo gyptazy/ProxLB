@@ -1,0 +1,5 @@
+proxlb-addition-api (0.0.9) unstable; urgency=low
+
+  * Initial release of ProxLB API additions.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Thu, 01 Aug 2024 17:04:12 +0200

@@ -59,6 +59,9 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
   * Memory
   * Disk (only local storage)
   * CPU
+* Rolling Updates
+  * Auto Node Patching
+  * Moving workloads to other nodes
 * Performing
   * Periodically
   * One-shot solution
@@ -78,6 +81,7 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
   * JSON output for further parsing
 * Migrate VM workloads away (e.g. maintenance preparation)
 * Fully based on Proxmox API
+* ProxLB API (own API)
 * Usage
   * One-Shot (one-shot)
   * Periodically (daemon)
@@ -98,24 +102,28 @@ Running PLB is easy and it runs almost everywhere since it just depends on `Pyth
 ### Options
 The following options can be set in the `proxlb.conf` file:
 
-| Option | Example | Description |
-|------|:------:|:------:|
-| api_host | hypervisor01.gyptazy.ch | Host or IP address of the remote Proxmox API. |
-| api_user | root@pam | Username for the API. |
-| api_pass | FooBar | Password for the API. |
-| verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
-| method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
-| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
-| mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
-| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
-| balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
-| parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
-| ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
-| ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
-| master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
-| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
-| schedule | 24 | Hours to rebalance in hours. (default: 24) |
-| log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
+| Option | Example | Description | Default |
+|------|:------:|:------:|:------:|
+| api_host | hypervisor01.gyptazy.ch | Host or IP address of the remote Proxmox API. | `hypervisor01.gyptazy.ch` |
+| api_user | root@pam | Username for the API. | `root@pam` |
+| api_pass | FooBar | Password for the API. | `FooBar` |
+| verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). | `1` |
+| method | memory | Defines the balancing method where you can use `memory`, `disk` or `cpu`. | `memory` |
+| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. | `used` |
+| mode_option | bytes | Rebalance by node's resources in `bytes` or `percent`. | `bytes` |
+| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). | `vm` |
+| balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. | `10` |
+| parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. | `1` |
+| ignore_nodes | virt01,dev-virt* | Defines a comma separated list of nodes to exclude. | `None` |
+| ignore_vms | mysql01 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) | `testvm01,testvm02` |
+| master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). | `0` |
+| daemon | 1 | Run as a daemon (1) or one-shot (0). | `1` |
+| schedule | 24 | Hours to rebalance in hours. | `24` |
+| log_verbosity | INFO | Defines the log level where you can use `INFO`, `WARN` or `CRITICAL`. | `CRITICAL` |
+| proxlb_api_enable | 0 | Enables (1) the ProxLB own API. | `0` |
+| proxlb_api_listener | 0.0.0.0 | Defines the listener address for the ProxLB API. | `0.0.0.0` |
+| proxlb_api_port | 8008 | Defines the tcp port for the ProxLB API to listen. | `8008` |
+| rolling_updates | 0 | Defines if rolling updates (auto node patching) should be activated. | `0` |
 
 An example of the configuration file looks like:
 ```
@@ -146,6 +154,10 @@ ignore_vms: testvm01,testvm02
 # HA status.
 master_only: 0
 daemon: 1
+[api]
+enable: 0
+[misc]
+rolling_updates: 0
 ```
 
 ### Parameters
@@ -187,6 +199,53 @@ Afterwards, restart the service (if running in daemon mode) to activate this reb
 #### Ignore VMs (Tag Style)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
 
+### Rolling Updates
+**Warning**: This feature is still in beta! Do **NOT** use this on production systems!
+
+Rolling updates ensure that the cluster and its nodes are always up to date by integrating the pending updates from the defined system repository. With every run of the rebalancing, the executing node will also check is the ProxLB API (`proxlb_api_enable`) and the rolling update feature (`rolling_updates`) are enabled. Both ones activated, will perform the following logic:
+* Check if updates are present
+* Install updates
+* Validate if updates require a reboot:
+    * -> No Reboot:
+        * -> Done
+    * -> Reboot required:
+        * -> Set self to maintenance mode in ProxLB API
+        * -> Query all other nodes on the cluster on the ProxLB API
+        * -> Any Node in maintenance:
+            * -> Stop
+        * -> No other Node in maintenance:
+            * -> Move all VMs/CTs to other nodes
+            * -> Reboot Node
+
+Please take note, that this feature requires a patched Proxmox API file. All actions should only be performed by the Proxmox or ProxLB API. Currently, the Proxmox API does not have any method to perform and install updates. Therefore, a patched API node file is required. ProxLB will vlaidate if the needed API endpoint is needed and if missing stop the rolling update functionality. The patched API functionality can be integrated by installing the package `proxlb-addition-api.deb` and is required on **all** nodes in a cluster. This package is not listed in the regular repository because if overwrites the present file(s). This is highly WIP and should **not** be used on production systems right now!
+
+**Note: This feature requires you to activate the ProxLB API and also the package `proxlb-addition-api.deb`.**
+
+### ProxLB API
+<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-api-swagger.jpg"/>
+ProxLB comes with its own API. The API is based on Python's `FastAPI` and provides additional features. The API is required when using the rolling updates feature.
+
+#### Configuration
+The API has some configuration parameters. By defalult, it listens on `0.0.0.0` and the tcp port `8008` and is from any host accessable and does not require any authentiocation yet. You may firewall or add authentications with a reverse proxy. Currently, you can define to enable it, the listener and the port.
+
+| Option | Example | Description | Default |
+|------|:------:|:------:|:------:|
+| proxlb_api_enable | 0 | Enables (1) the ProxLB own API. | `0` |
+| proxlb_api_listener | 0.0.0.0 | Defines the listener address for the ProxLB API. | `0.0.0.0` |
+| proxlb_api_port | 8008 | Defines the tcp port for the ProxLB API to listen. | `8008` |
+
+
+#### Features
+This sections just covers a few exmaples what the API provides to have a rough overview.
+
+| Path | Method | Return Example | Description |
+|------|:------:|------:|------:|
+| /status | get | {'status': 'running', 'code': 0, 'monitoring': 'OK'} | Returns a JSON health monitoing output. |
+| /updates/self/run | get | 0/1 | Triggers a node to be actively performing updates. |
+| /updates/self/status| get | 0/1 | Returns the node's update status. |
+
+You can find all API functions in its Swagger interface. When running ProxLB with an enabled API interface, the docs can be accesed on the content path `/docs`. For example, simply open up `https://hypervisor01.gyptazy.ch:8008/docs`.
+
 ### Systemd
 When installing a Linux distribution (such as .deb or .rpm) file, this will be shipped with a systemd unit file. The default configuration file will be sourced from `/etc/proxlb/proxlb.conf`.
 
@@ -202,7 +261,7 @@ A manual installation is possible and also supports BSD based systems. Proxmox R
 The executable must be able to read the config file, if no dedicated config file is given by the `-c` argument, PLB tries to read it from `/etc/proxlb/proxlb.conf`.
 
 ### Proxmox GUI Integration
-<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxmoxlb-service-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
+<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `proxlb-addition-ui.deb` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
 * Rebalancing VM workloads
 * Migrate VM workloads away from a defined node (e.g. maintenance preparation)
 

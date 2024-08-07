@@ -30,7 +30,7 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_SUMMARY "ProxLB - Rebalance VM workloads across nodes in Proxmox clusters.")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ProxLB - Rebalance VM workloads across nodes in Proxmox clusters.")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/changelog_debian")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3, python3-proxmoxer, python3-fastapi")
 set(CPACK_DEBIAN_PACKAGE_LICENSE "GPL 3.0")
 
 
