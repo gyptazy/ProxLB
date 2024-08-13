@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.2] - 2024-08-13
+
+### Added
+
+- Add option to run migration in parallel or sequentially. [#41]
+- Add option to run ProxLB only on the Proxmox's master node in the cluster (reg. HA feature). [#40]
+
+### Changed
+
+- Fix daemon timer to use hours instead of minutes. [#45]
+- Fix CMake packaging for Debian package to avoid overwriting the config file. [#49]
+- Fix wonkey code style.
+
+
 ## [1.0.0] - 2024-08-01
 
 ### Added
