@@ -41,7 +41,7 @@ import urllib3
 
 # Constants
 __appname__ = "ProxLB"
-__version__ = "1.1.0b"
+__version__ = "1.0.2"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 
@@ -146,7 +146,7 @@ def __validate_config_file(config_path):
 def initialize_args():
     """ Initialize given arguments for ProxLB. """
     argparser = argparse.ArgumentParser(description='ProxLB')
-    argparser.add_argument('-c', '--config',  type=str, help='Path to config file.', required=True)
+    argparser.add_argument('-c', '--config',  type=str, help='Path to config file.', required=False)
     argparser.add_argument('-d', '--dry-run', help='Perform a dry-run without doing any actions.', action='store_true', required=False)
     argparser.add_argument('-j', '--json',    help='Return a JSON of the VM movement.', action='store_true', required=False)
     return argparser.parse_args()
@@ -234,15 +234,29 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
     return api_object
 
 
+def execute_rebalancing_only_by_master(api_object, master_only):
+    """ Validate if balancing should only be done by the cluster master. Afterwards, validate if this node is the cluster master. """
+    info_prefix  = 'Info: [only-on-master-executor]:'
+    master_only = bool(int(master_only))
+
+    if bool(int(master_only)):
+        logging.info(f'{info_prefix} Master only rebalancing is defined. Starting validation.')
+        cluster_master_node = get_cluster_master(api_object)
+        cluster_master = validate_cluster_master(cluster_master_node)
+        return cluster_master, master_only
+    else:
+        logging.info(f'{info_prefix} No master only rebalancing is defined. Skipping validation.')
+        return False, master_only
+
+
 def get_cluster_master(api_object):
     """ Get the current master of the Proxmox cluster. """
     error_prefix = 'Error: [cluster-master-getter]:'
     info_prefix  = 'Info: [cluster-master-getter]:'
 
-    logging.info(f'{info_prefix} Getting master node from cluster.')
     try:
         ha_status_object = api_object.cluster().ha().status().manager_status().get()
-        logging.info(f'{info_prefix} Master node: {ha_status_object["manager_status"]["master_node"]}')
+        logging.info(f'{info_prefix} Master node: {ha_status_object.get("manager_status", None).get("master_node", None)}')
     except urllib3.exceptions.NameResolutionError:
         logging.critical(f'{error_prefix} Could not resolve the API.')
         sys.exit(2)
@@ -253,7 +267,13 @@ def get_cluster_master(api_object):
         logging.critical(f'{error_prefix} SSL certificate verification failed for API.')
         sys.exit(2)
 
-    return ha_status_object['manager_status']['master_node']
+    cluster_master = ha_status_object.get("manager_status", None).get("master_node", None)
+
+    if cluster_master:
+        return cluster_master
+    else:
+        logging.critical(f'{error_prefix} Could not obtain cluster master. Please check your configuration - stopping.')
+        sys.exit(2)
 
 
 def validate_cluster_master(cluster_master):
@@ -522,7 +542,7 @@ def balancing_calculations(balancing_method, balancing_mode, balancing_mode_opti
 def __validate_balancing_method(balancing_method):
     """ Validate for valid and supported balancing method. """
     error_prefix = 'Error: [balancing-method-validation]:'
-    info_prefix  = 'Info: [balancing-method-validation]]:'
+    info_prefix  = 'Info: [balancing-method-validation]:'
 
     if balancing_method not in ['memory', 'disk', 'cpu']:
         logging.error(f'{error_prefix} Invalid balancing method: {balancing_method}')
@@ -534,7 +554,7 @@ def __validate_balancing_method(balancing_method):
 def __validate_balancing_mode(balancing_mode):
     """ Validate for valid and supported balancing mode. """
     error_prefix = 'Error: [balancing-mode-validation]:'
-    info_prefix  = 'Info: [balancing-mode-validation]]:'
+    info_prefix  = 'Info: [balancing-mode-validation]:'
 
     if balancing_mode not in ['used', 'assigned']:
         logging.error(f'{error_prefix} Invalid balancing method: {balancing_mode}')
@@ -883,13 +903,12 @@ def main():
 
         # Get master node of cluster and ensure that ProxLB is only performed on the
         # cluster master node to avoid ongoing rebalancing.
-        if bool(int(master_only)):
-            cluster_master_node = get_cluster_master(api_object)
-            cluster_master = validate_cluster_master(cluster_master_node)
-            # Validate daemon service and skip following tasks when not being the cluster master.
-            if not cluster_master:
-                validate_daemon(daemon, schedule)
-                continue
+        cluster_master, master_only = execute_rebalancing_only_by_master(api_object, master_only)
+
+        # Validate daemon service and skip following tasks when not being the cluster master.
+        if not cluster_master and master_only:
+            validate_daemon(daemon, schedule)
+            continue
 
         # Get metric & statistics for vms and nodes.
         node_statistics = get_node_statistics(api_object, ignore_nodes)

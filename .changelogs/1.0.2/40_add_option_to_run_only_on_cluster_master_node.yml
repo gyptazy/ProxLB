@@ -1,0 +1,2 @@
+added:
+  - Add option to run ProxLB only on the Proxmox's master node in the cluster (reg. HA feature). [#40]

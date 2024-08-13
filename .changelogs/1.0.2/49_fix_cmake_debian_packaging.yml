@@ -1,0 +1,2 @@
+fixed:
+  - Fix CMake packaging for Debian package to avoid overwriting the config file. [#49]

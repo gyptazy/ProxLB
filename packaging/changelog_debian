@@ -1,3 +1,13 @@
+proxlb (1.0.2) unstable; urgency=low
+
+  * Add option to run migration in parallel or sequentially.
+  * Add option to run ProxLB only on a Proxmox cluster master (req. HA feature).
+  * Fix daemon timer to use hours instead of minutes.
+  * Fix CMake packaging for Debian package to avoid overwriting the config file.
+  * Fix some wonkey code styles.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Tue, 13 Aug 2024 17:28:14 +0200
+
 proxlb (1.0.0) unstable; urgency=low
 
   * Initial release of ProxLB.

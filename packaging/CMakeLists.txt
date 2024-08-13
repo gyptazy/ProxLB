@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(proxmox-rebalancing-service VERSION 1.0.0)
+project(proxmox-rebalancing-service VERSION 1.0.2)
 
 install(PROGRAMS ../proxlb DESTINATION /bin)
 install(FILES ../proxlb.conf DESTINATION /etc/proxlb)
@@ -30,12 +30,11 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_SUMMARY "ProxLB - Rebalance VM workloads across nodes in Proxmox clusters.")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ProxLB - Rebalance VM workloads across nodes in Proxmox clusters.")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/changelog_debian")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3, python3-proxmoxer")
 set(CPACK_DEBIAN_PACKAGE_LICENSE "GPL 3.0")
-
 
 # Install
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/postinst")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/postinst;${CMAKE_CURRENT_SOURCE_DIR}/conffiles")
 set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/postinst")
 include(CPack)

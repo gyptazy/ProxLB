@@ -1,3 +1,9 @@
+* Tue Aug 13 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
+- Add option to run migration in parallel or sequentially.
+- Add option to run ProxLB only on a Proxmox cluster master (req. HA feature).
+- Fixed daemon timer to use hours instead of minutes.
+- Fixed some wonkey code styles.
+
 * Thu Aug 01 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
 - Initial release of ProxLB.
 
