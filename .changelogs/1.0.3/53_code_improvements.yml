@@ -1,0 +1,6 @@
+added:
+  - Added convert function to cast all bool alike options from configparser to bools. [#53]
+  - Added config parser options for future features. [#53]
+  - Added a config versio schema that must be supported by ProxLB. [#53]
+changed:
+  - Improved the underlying code base for future implementations. [#53]
