@@ -1,0 +1,2 @@
+fixed:
+  - Fixed `master_only` function by inverting the condition.

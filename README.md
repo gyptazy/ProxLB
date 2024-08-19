@@ -98,24 +98,29 @@ Running PLB is easy and it runs almost everywhere since it just depends on `Pyth
 ### Options
 The following options can be set in the `proxlb.conf` file:
 
-| Option | Example | Description |
-|------|:------:|:------:|
-| api_host | hypervisor01.gyptazy.ch | Host or IP address of the remote Proxmox API. |
-| api_user | root@pam | Username for the API. |
-| api_pass | FooBar | Password for the API. |
-| verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
-| method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
-| mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
-| mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
-| type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
-| balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
-| parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
-| ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
-| ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
-| master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
-| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
-| schedule | 24 | Hours to rebalance in hours. (default: 24) |
-| log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
+| Section | Option | Example | Description |
+|------|:------:|:------:|:------:|
+| `proxmox` | api_host | hypervisor01.gyptazy.ch | Host or IP address of the remote Proxmox API. |
+| | api_user | root@pam | Username for the API. |
+| | api_pass | FooBar | Password for the API. |
+| | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
+| `vm_balancing` | enable | 1 | Enables VM/CT balancing. |
+| | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
+| | mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
+| | mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
+| | type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
+| | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
+| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
+| | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
+| | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
+| | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
+| `storage_balancing` | enable | 0 | Enables storage balancing. |
+| `update_service` | enable | 0 | Enables the automated update service (rolling updates). |
+| `api` | enable | 0 | Enables the ProxLB API. |
+| | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
+| | schedule | 24 | Hours to rebalance in hours. (default: 24) |
+| | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
+| | config_version | 3 | Defines the current config version schema for ProxLB |
 
 An example of the configuration file looks like:
 ```
@@ -124,7 +129,8 @@ api_host: hypervisor01.gyptazy.ch
 api_user: root@pam
 api_pass: FooBar
 verify_ssl: 1
-[balancing]
+[vm_balancing]
+enable: 1
 method: memory
 mode: used
 type: vm
@@ -146,6 +152,7 @@ ignore_vms: testvm01,testvm02
 # HA status.
 master_only: 0
 daemon: 1
+config_version: 3
 ```
 
 ### Parameters
@@ -154,8 +161,9 @@ The following options and parameters are currently supported:
 | Option | Long Option | Description | Default |
 |------|:------:|------:|------:|
 | -c | --config | Path to a config file. | /etc/proxlb/proxlb.conf (default) |
-| -d | --dry-run | Perform a dry-run without doing any actions. | Unset |
-| -j | --json | Return a JSON of the VM movement. | Unset |
+| -d | --dry-run | Performs a dry-run without doing any actions. | Unset |
+| -j | --json | Returns a JSON of the VM movement. | Unset |
+| -b | --best-node | Returns the best next node for a VM/CT placement (useful for further usage with Terraform/Ansible). | Unset |
 
 ### Balancing
 #### General
