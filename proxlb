@@ -41,7 +41,7 @@ import urllib3
 
 # Constants
 __appname__ = "ProxLB"
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __author__  = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__ = False
 
@@ -174,24 +174,30 @@ def initialize_config_options(config_path):
         config = configparser.ConfigParser()
         config.read(config_path)
         # Proxmox config
-        proxmox_api_host      = config['proxmox']['api_host']
-        proxmox_api_user      = config['proxmox']['api_user']
-        proxmox_api_pass      = config['proxmox']['api_pass']
-        proxmox_api_ssl_v     = config['proxmox']['verify_ssl']
-        # Balancing
-        balancing_method      = config['balancing'].get('method', 'memory')
-        balancing_mode        = config['balancing'].get('mode', 'used')
-        balancing_mode_option = config['balancing'].get('mode_option', 'bytes')
-        balancing_type        = config['balancing'].get('type', 'vm')
-        balanciness           = config['balancing'].get('balanciness', 10)
-        parallel_migrations   = config['balancing'].get('parallel_migrations', 1)
-        ignore_nodes          = config['balancing'].get('ignore_nodes', None)
-        ignore_vms            = config['balancing'].get('ignore_vms', None)
+        proxmox_api_host              = config['proxmox']['api_host']
+        proxmox_api_user              = config['proxmox']['api_user']
+        proxmox_api_pass              = config['proxmox']['api_pass']
+        proxmox_api_ssl_v             = config['proxmox']['verify_ssl']
+        # VM Balancing
+        vm_balancing_enable           = config['vm_balancing'].get('enable', 1)
+        vm_balancing_method           = config['vm_balancing'].get('method', 'memory')
+        vm_balancing_mode             = config['vm_balancing'].get('mode', 'used')
+        vm_balancing_mode_option      = config['vm_balancing'].get('mode_option', 'bytes')
+        vm_balancing_type             = config['vm_balancing'].get('type', 'vm')
+        vm_balanciness                = config['vm_balancing'].get('balanciness', 10)
+        vm_parallel_migrations        = config['vm_balancing'].get('parallel_migrations', 1)
+        vm_ignore_nodes               = config['vm_balancing'].get('ignore_nodes', None)
+        vm_ignore_vms                 = config['vm_balancing'].get('ignore_vms', None)
+        # Storage Balancing
+        storage_balancing_enable      = config['storage_balancing'].get('enable', 0)
+        storage_balancing_method      = config['storage_balancing'].get('method', 'disk_space')
+        storage_balancing_balanciness = config['storage_balancing'].get('balanciness', 10)
+        storage_parallel_migrations   = config['storage_balancing'].get('parallel_migrations', 0)
         # Service
-        master_only           = config['service'].get('master_only', 0)
-        daemon                = config['service'].get('daemon', 1)
-        schedule              = config['service'].get('schedule', 24)
-        log_verbosity         = config['service'].get('log_verbosity', 'CRITICAL')
+        master_only                   = config['service'].get('master_only', 0)
+        daemon                        = config['service'].get('daemon', 1)
+        schedule                      = config['service'].get('schedule', 24)
+        log_verbosity                 = config['service'].get('log_verbosity', 'CRITICAL')
     except configparser.NoSectionError:
         logging.critical(f'{error_prefix} Could not find the required section.')
         sys.exit(2)
@@ -203,8 +209,8 @@ def initialize_config_options(config_path):
         sys.exit(2)
 
     logging.info(f'{info_prefix} Configuration file loaded.')
-    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, \
-         balancing_type, balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity
+    return proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, vm_balancing_enable, vm_balancing_method, vm_balancing_mode, vm_balancing_mode_option, \
+         vm_balancing_type, vm_balanciness, vm_parallel_migrations, vm_ignore_nodes, vm_ignore_vms, storage_balancing_enable, storage_balancing_method, storage_balancing_balanciness, storage_parallel_migrations, master_only, daemon, schedule, log_verbosity
 
 
 def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
@@ -375,7 +381,37 @@ def get_vm_statistics(api_object, ignore_vms, balancing_type):
                     vm_statistics[vm['name']]['disk_used']      = vm['disk']
                     vm_statistics[vm['name']]['vmid']           = vm['vmid']
                     vm_statistics[vm['name']]['node_parent']    = node['node']
+                    vm_statistics[vm['name']]['storages']       = {}
                     vm_statistics[vm['name']]['type']           = 'vm'
+
+                    # Get disk details of the related object.
+                    _vm_details = api_object.nodes(node['node']).qemu(vm['vmid']).config.get()
+                    _vm_details_storage_allowed = ['ide', 'nvme', 'scsi', 'virtio', 'sata']
+                    logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
+
+                    for vm_detail_key, vm_detail_value in _vm_details.items():
+                        vm_detail_key_validator = re.sub("\d+$", "", vm_detail_key)
+
+                        if vm_detail_key_validator in _vm_details_storage_allowed:
+                            vm_statistics[vm['name']]['storages'][vm_detail_key] = {}
+                            match = re.match(r'([^:]+):[^/]+/(.+),iothread=\d+,size=(\d+G)', _vm_details[vm_detail_key])
+
+                            # Create an efficient match group and split the strings to assign them to the storage information.
+                            if match:
+                                _volume    = match.group(1)
+                                _disk_name = match.group(2)
+                                _disk_size = match.group(3)
+
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['name']               = _disk_name
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['device_name']        = vm_detail_key
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['volume']             = _volume
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['storage_parent']     = _volume
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['storage_rebalance']  = None
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['size']               = _disk_size
+                                logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
+                            else:
+                                logging.info(f'{info_prefix} No disks for {vm["name"]} found.')
+
                     # Rebalancing node will be overwritten after calculations.
                     # If the vm stays on the node, it will be removed at a
                     # later time.
@@ -413,7 +449,37 @@ def get_vm_statistics(api_object, ignore_vms, balancing_type):
                     vm_statistics[vm['name']]['disk_used']      = vm['disk']
                     vm_statistics[vm['name']]['vmid']           = vm['vmid']
                     vm_statistics[vm['name']]['node_parent']    = node['node']
+                    vm_statistics[vm['name']]['storages']       = {}
                     vm_statistics[vm['name']]['type']           = 'ct'
+
+                    # Get disk details of the related object.
+                    _vm_details = api_object.nodes(node['node']).qemu(vm['vmid']).config.get()
+                    _vm_details_storage_allowed = ['ide', 'nvme', 'scsi']
+                    logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
+
+                    for vm_detail_key, vm_detail_value in _vm_details.items():
+                        vm_detail_key_validator = re.sub("\d+$", "", vm_detail_key)
+
+                        if vm_detail_key_validator in _vm_details_storage_allowed:
+                            vm_statistics[vm['name']]['storages'][vm_detail_key] = {}
+                            match = re.match(r'([^:]+):[^/]+/(.+),iothread=\d+,size=(\d+G)', _vm_details[vm_detail_key])
+
+                            # Create an efficient match group and split the strings to assign them to the storage information.
+                            if match:
+                                _volume    = match.group(1)
+                                _disk_name = match.group(2)
+                                _disk_size = match.group(3)
+
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['name']               = _disk_name
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['device_name']        = vm_detail_key
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['volume']             = _volume
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['storage_parent']     = _volume
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['storage_rebalance']  = None
+                                vm_statistics[vm['name']]['storages'][vm_detail_key]['size']               = _disk_size
+                                logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
+                            else:
+                                logging.info(f'{info_prefix} No disks for {vm["name"]} found.')
+
                     # Rebalancing node will be overwritten after calculations.
                     # If the vm stays on the node, it will be removed at a
                     # later time.
@@ -422,6 +488,58 @@ def get_vm_statistics(api_object, ignore_vms, balancing_type):
 
     logging.info(f'{info_prefix} Created VM statistics.')
     return vm_statistics
+
+
+def get_storage_statistics(api_object):
+    """ Get statistics of all storages in the cluster. """
+    info_prefix        = 'Info: [storage-statistics]:'
+    warn_prefix        = 'Warn: [storage-statistics]:'
+    storage_statistics = {}
+
+    for node in api_object.nodes.get():
+
+        for storage in api_object.nodes(node['node']).storage.get():
+
+            # Only add enabled and active storage repositories that might be suitable for further
+            # storage balancing.
+            if storage['enabled'] and storage['active'] and storage['shared']:
+                storage_statistics[storage['storage']]                          = {}
+                storage_statistics[storage['storage']]['name']                  = storage['storage']
+                storage_statistics[storage['storage']]['total']                 = storage['total']
+                storage_statistics[storage['storage']]['used']                  = storage['used']
+                storage_statistics[storage['storage']]['used_percent']          = storage['used'] / storage['total'] * 100
+                storage_statistics[storage['storage']]['used_percent_last_run'] = 0
+                storage_statistics[storage['storage']]['free']                  = storage['total'] - storage['used']
+                storage_statistics[storage['storage']]['free_percent']          = storage_statistics[storage['storage']]['free'] / storage['total'] * 100
+                storage_statistics[storage['storage']]['used_fraction']         = storage['used_fraction']
+                storage_statistics[storage['storage']]['type']                  = storage['type']
+                storage_statistics[storage['storage']]['content']               = storage['content']
+                storage_statistics[storage['storage']]['usage_type']            = ''
+
+                # Split the Proxmox returned values to a list and validate the supported
+                # types of the underlying storage for further migrations.
+                storage_content_list =  storage['content'].split(',')
+                usage_ct             = False
+                usage_vm             = False
+
+                if 'rootdir' in storage_content_list:
+                    usage_ct = True
+                    storage_statistics[storage['storage']]['usage_type']        = 'ct'
+                    logging.info(f'{info_prefix} Storage {storage["storage"]} support CTs.')
+
+                if 'images' in storage_content_list:
+                    usage_vm = True
+                    storage_statistics[storage['storage']]['usage_type']        = 'vm'
+                    logging.info(f'{info_prefix} Storage {storage["storage"]} support VMs.')
+
+                if usage_ct and usage_vm:
+                    storage_statistics[storage['storage']]['usage_type']        = 'all'
+                    logging.info(f'{info_prefix} Updateing storage {storage["storage"]} support to CTs and VMs.')
+
+                logging.info(f'{info_prefix} Added storage {storage["storage"]}.')
+
+    logging.info(f'{info_prefix} Created storage statistics.')
+    return storage_statistics
 
 
 def update_node_statistics(node_statistics, vm_statistics):
@@ -504,15 +622,15 @@ def __get_proxlb_groups(vm_tags):
     return group_include, group_exclude, vm_ignore
 
 
-def balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
+def balancing_vm_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms):
     """ Calculate re-balancing of VMs on present nodes across the cluster. """
-    info_prefix  = 'Info: [rebalancing-calculator]:'
+    info_prefix  = 'Info: [vm-rebalancing-calculator]:'
 
     # Validate for a supported balancing method, mode and if rebalancing is required.
     __validate_balancing_method(balancing_method)
     __validate_balancing_mode(balancing_mode)
     __validate_vm_statistics(vm_statistics)
-    rebalance = __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics)
+    rebalance = __validate_vm_balanciness(balanciness, balancing_method, balancing_mode, node_statistics)
 
     if rebalance:
         # Get most used/assigned resources of the VM and the most free or less allocated node.
@@ -524,7 +642,7 @@ def balancing_calculations(balancing_method, balancing_mode, balancing_mode_opti
                                                                              vm_statistics, node_statistics, balancing_method, balancing_mode)
 
         # Start recursion until we do not have any needs to rebalance anymore.
-        balancing_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
+        balancing_vm_calculations(balancing_method, balancing_mode, balancing_mode_option, node_statistics, vm_statistics, balanciness, rebalance, processed_vms)
 
     # Honour groupings for include and exclude groups for rebalancing VMs.
     node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
@@ -537,6 +655,43 @@ def balancing_calculations(balancing_method, balancing_mode, balancing_mode_opti
 
     logging.info(f'{info_prefix} Balancing calculations done.')
     return node_statistics, vm_statistics
+
+
+def balancing_storage_calculations(storage_balancing_method, storage_statistics, vm_statistics, balanciness, rebalance, processed_vms):
+    """ Calculate re-balancing of storage on present datastores across the cluster. """
+    info_prefix  = 'Info: [storage-rebalancing-calculator]:'
+
+    # Validate for a supported balancing method, mode and if rebalancing is required.
+    __validate_vm_statistics(vm_statistics)
+
+    rebalance = __validate_storage_balanciness(balanciness, storage_balancing_method, storage_statistics)
+
+    if rebalance:
+        vm_name, vm_disk_device, vm_disk_name  = __get_most_used_resources_vm_storage(vm_statistics)
+        if vm_name not in processed_vms:
+            processed_vms.append(vm_name)
+            resources_storage_most_free            = __get_most_free_storage(storage_balancing_method, storage_statistics)
+
+            # Update resource statistics for VMs and storage.
+            storage_statistics, vm_statistics      = __update_resource_storage_statistics(storage_statistics, resources_storage_most_free, vm_statistics, vm_name, vm_disk_device)
+
+            # Start recursion until we do not have any needs to rebalance anymore.
+            balancing_storage_calculations(storage_balancing_method, storage_statistics, vm_statistics, balanciness, rebalance, processed_vms)
+
+    # Remove VMs where their storage is not being relocated.
+    vms_to_remove = [vm_name for vm_name, vm_info in vm_statistics.items() if all(storage.get('storage_rebalance') is None for storage in vm_info.get('storages', {}).values())]
+    for vm_name in vms_to_remove:
+        del vm_statistics[vm_name]
+
+    logging.info(f'{info_prefix} Balancing calculations done.')
+    return storage_statistics, vm_statistics
+
+
+def size_in_bytes(size_str):
+    size_unit = size_str[-1].upper()
+    size_value = float(size_str[:-1])
+    size_multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4}
+    return size_value * size_multipliers.get(size_unit, 1)
 
 
 def __validate_balancing_method(balancing_method):
@@ -556,7 +711,7 @@ def __validate_balancing_mode(balancing_mode):
     error_prefix = 'Error: [balancing-mode-validation]:'
     info_prefix  = 'Info: [balancing-mode-validation]:'
 
-    if balancing_mode not in ['used', 'assigned']:
+    if balancing_mode not in ['used', 'assigned', 'io']:
         logging.error(f'{error_prefix} Invalid balancing method: {balancing_mode}')
         sys.exit(2)
     else:
@@ -572,10 +727,10 @@ def __validate_vm_statistics(vm_statistics):
         sys.exit(1)
 
 
-def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics):
-    """ Validate for balanciness to ensure further rebalancing is needed. """
-    info_prefix                   = 'Info: [balanciness-validation]:'
-    node_resource_percent_list    = []
+def __validate_vm_balanciness(balanciness, balancing_method, balancing_mode, node_statistics):
+    """ Validate for balanciness for VMs/CTs to ensure further rebalancing is needed. """
+    info_prefix                 = 'Info: [vm-balanciness-validation]:'
+    node_resource_percent_list  = []
     node_assigned_percent_match = []
 
     # Remap balancing mode to get the related values from nodes dict.
@@ -591,6 +746,7 @@ def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_s
             node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_match'] = True
         else:
             node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_match'] = False
+
         # Update value to the current value of the recursion run.
         node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent_last_run'] = node_statistics[node_name][f'{balancing_method}_{node_resource_selector}_percent']
 
@@ -612,10 +768,66 @@ def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_s
 
     # Validate if the recursion should  be proceeded for further rebalancing.
     if (int(node_lowest_percent) + int(balanciness)) < int(node_highest_percent):
-        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} of VMs/CTs is needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
         return True
     else:
-        logging.info(f'{info_prefix} Rebalancing for {balancing_method} is not needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
+        logging.info(f'{info_prefix} Rebalancing for {balancing_method} of VMs/CTs is not needed. Highest usage: {int(node_highest_percent)}% | Lowest usage: {int(node_lowest_percent)}%.')
+        return False
+
+
+def __validate_storage_balanciness(balanciness, storage_balancing_method, storage_statistics):
+    """ Validate for balanciness of storage to ensure further rebalancing is needed. """
+    info_prefix                    = 'Info: [storage-balanciness-validation]:'
+    error_prefix                   = 'Error: [storage-balanciness-validation]:'
+    storage_resource_percent_list  = []
+    storage_assigned_percent_match = []
+
+    # Validate for an allowed balancing method and define the storage resource selector.
+    if storage_balancing_method == 'disk_space':
+        logging.info(f'{info_prefix} Getting most free storage volume by disk size..')
+        storage_resource_selector = 'used'
+    elif storage_balancing_method == 'disk_io':
+        logging.error(f'{error_prefix} Getting most free storage volume by disk IO is not yet supported.')
+        sys.exit(2)
+    else:
+        logging.error(f'{error_prefix} Getting most free storage volume by disk IO is not yet supported.')
+        sys.exit(2)
+
+    # Obtain the metrics
+    for storage_name, storage_info in storage_statistics.items():
+
+        logging.info(f'{info_prefix} Validating storage: {storage_name} for balanciness for usage with: {storage_balancing_method}.')
+        # Save information of nodes from current run to compare them in the next recursion.
+        if storage_statistics[storage_name][f'{storage_resource_selector}_percent_last_run'] == storage_statistics[storage_name][f'{storage_resource_selector}_percent']:
+            storage_statistics[storage_name][f'{storage_resource_selector}_percent_match'] = True
+        else:
+            storage_statistics[storage_name][f'{storage_resource_selector}_percent_match'] = False
+
+        # Update value to the current value of the recursion run.
+        storage_statistics[storage_name][f'{storage_resource_selector}_percent_last_run'] = storage_statistics[storage_name][f'{storage_resource_selector}_percent']
+
+        # If all node resources are unchanged, the recursion can be left.
+        for key, value in storage_statistics.items():
+            storage_assigned_percent_match.append(value.get(f'{storage_resource_selector}_percent_match', False))
+
+        if False not in storage_assigned_percent_match:
+            return False
+
+        # Add node information to resource list.
+        storage_resource_percent_list.append(int(storage_info[f'{storage_resource_selector}_percent']))
+        logging.info(f'{info_prefix} Storage: {storage_name} with values: {storage_info}')
+
+    # Create a sorted list of the delta + balanciness between the node resources.
+    storage_resource_percent_list_sorted    = sorted(storage_resource_percent_list)
+    storage_lowest_percent                  = storage_resource_percent_list_sorted[0]
+    storage_highest_percent                 = storage_resource_percent_list_sorted[-1]
+
+    # Validate if the recursion should  be proceeded for further rebalancing.
+    if (int(storage_lowest_percent) + int(balanciness)) < int(storage_highest_percent):
+        logging.info(f'{info_prefix} Rebalancing for type "{storage_resource_selector}" of storage is needed. Highest usage: {int(storage_highest_percent)}% | Lowest usage: {int(storage_lowest_percent)}%.')
+        return True
+    else:
+        logging.info(f'{info_prefix} Rebalancing for type "{storage_resource_selector}" of storage is not needed. Highest usage: {int(storage_highest_percent)}% | Lowest usage: {int(storage_lowest_percent)}%.')
         return False
 
 
@@ -652,6 +864,68 @@ def __get_most_free_resources_node(balancing_method, balancing_mode, balancing_m
     return node
 
 
+def __get_most_used_resources_vm_storage(vm_statistics):
+    """ Get and return the most used disk of a VM by storage. """
+    info_prefix = 'Info: [get-most-used-disks-resources-vm]:'
+    biggest_entry = None
+    vm_name       = None
+    max_size = 0
+
+    # Get the biggest storage of a VM/CT. A VM/CT can hold multiple disks. Therefore, we need to iterate
+    # over all assigned disks to get the biggest one.  
+    vm_biggest_storage = sorted(
+        vm_statistics.items(), 
+        key=lambda x: max(
+            (size_in_bytes(storage['size']) for storage in x[1].get('storages', {}).values() if 'size' in storage),
+            default=0
+        ), 
+        reverse=True
+    )
+
+    # Iterate over all attached disks to the VM that were returned for the VM object holding the biggest disk.
+    # Return: disk name and parent stroage volume for further calculations and migrations
+    for key, value in vm_biggest_storage[0][1]['storages'].items():
+        if 'size' in value and value['size']:
+            size_str = value['size'].upper()
+            if size_str.endswith('G'):
+                size = float(size_str[:-1]) * 1024  # Convert GB to MB
+            elif size_str.endswith('M'):
+                size = float(size_str[:-1])
+            elif size_str.endswith('T'):
+                size = float(size_str[:-1]) * 1024 * 1024  # Convert TB to MB
+            else:
+                size = 0
+
+            if size > max_size:
+                max_size = size
+                vm_name = vm_biggest_storage[0][0]
+                biggest_entry = value
+
+    if biggest_entry:
+        return vm_name, biggest_entry['device_name'], biggest_entry['storage_parent']
+    else:
+        return None
+
+
+def __get_most_free_storage(storage_balancing_method, storage_statistics):
+    """ Get the storage with the most free space or IO, depending on the balancing mode. """
+    info_prefix    = 'Info: [get-most-free-storage]:'
+    error_prefix   = 'Error: [get-most-free-storage]:'
+    storage_volume = None
+    logging.info(f'{info_prefix} Starting to evaluate the most free storage volume.')
+
+    if storage_balancing_method == 'disk_space':
+        logging.info(f'{info_prefix} Getting most free storage volume by disk space.')
+        storage_volume = max(storage_statistics, key=lambda x: storage_statistics[x]['free_percent'])
+
+    if storage_balancing_method == 'disk_io':
+        logging.info(f'{info_prefix} Getting most free storage volume by disk IO.')
+        logging.error(f'{error_prefix} Getting most free storage volume by disk IO is not yet supported.')
+        sys.exit(2)
+
+    return storage_volume
+
+
 def __update_resource_statistics(resource_highest_used_resources_vm, resource_highest_free_resources_node, vm_statistics, node_statistics, balancing_method, balancing_mode):
     """ Update VM and node resource statistics. """
     info_prefix = 'Info: [rebalancing-resource-statistics-update]:'
@@ -666,7 +940,6 @@ def __update_resource_statistics(resource_highest_used_resources_vm, resource_hi
         # Update dictionaries for new values
         # Assign new rebalance node to vm
         vm_statistics[vm_name]['node_rebalance'] = vm_node_rebalance
-
         logging.info(f'Moving {vm_name} from {vm_node_parent} to {vm_node_rebalance}')
 
         # Recalculate values for nodes
@@ -686,6 +959,39 @@ def __update_resource_statistics(resource_highest_used_resources_vm, resource_hi
 
     logging.info(f'{info_prefix} Updated VM and node statistics.')
     return node_statistics, vm_statistics
+
+
+def __update_resource_storage_statistics(storage_statistics, resources_storage_most_free, vm_statistics, vm_name, vm_disk_device):
+    """ Update VM and storage resource statistics. """
+    info_prefix           = 'Info: [rebalancing-storage-resource-statistics-update]:'
+    current_storage       = vm_statistics[vm_name]['storages'][vm_disk_device]['storage_parent']
+    rebalance_storage     = resources_storage_most_free
+    vm_storage_size       = vm_statistics[vm_name]['storages'][vm_disk_device]['size'][:-1]
+    vm_storage_size_bytes = int(vm_storage_size) * 1024**3
+
+    # Assign new storage device to vm
+    logging.info(f'{info_prefix} Validating VM {vm_name} for potential storage rebalancing.')
+    if vm_statistics[vm_name]['storages'][vm_disk_device]['storage_rebalance'] is None and vm_statistics[vm_name]['storages'][vm_disk_device]['storage_rebalance'] != vm_statistics[vm_name]['storages'][vm_disk_device]['storage_parent']:
+        logging.info(f'{info_prefix} Setting VM {vm_name} from {current_storage} to {rebalance_storage} storage.')
+        vm_statistics[vm_name]['storages'][vm_disk_device]['storage_rebalance'] = resources_storage_most_free
+    else:
+        logging.info(f'{info_prefix} Setting VM {vm_name} from {current_storage} to {rebalance_storage} storage.')
+
+    # Recalculate values for storage
+    ## Add freed resources to old parent storage device
+    storage_statistics[current_storage]['used']           = storage_statistics[current_storage]['used'] - vm_storage_size_bytes
+    storage_statistics[current_storage]['free']           = storage_statistics[current_storage]['free'] + vm_storage_size_bytes
+    storage_statistics[current_storage]['free_percent']   = (storage_statistics[current_storage]['free'] / storage_statistics[current_storage]['total']) * 100
+    storage_statistics[current_storage]['used_percent']   = (storage_statistics[current_storage]['used'] / storage_statistics[current_storage]['total']) * 100
+
+    ## Removed newly allocated resources to new rebalanced storage device
+    storage_statistics[rebalance_storage]['used']         = storage_statistics[rebalance_storage]['used'] + vm_storage_size_bytes
+    storage_statistics[rebalance_storage]['free']         = storage_statistics[rebalance_storage]['free'] - vm_storage_size_bytes
+    storage_statistics[rebalance_storage]['free_percent'] = (storage_statistics[rebalance_storage]['free'] / storage_statistics[rebalance_storage]['total']) * 100
+    storage_statistics[rebalance_storage]['used_percent'] = (storage_statistics[rebalance_storage]['used'] / storage_statistics[rebalance_storage]['total']) * 100
+
+    logging.info(f'{info_prefix} Updated VM and storage statistics.')
+    return storage_statistics, vm_statistics
 
 
 def __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode):
@@ -786,13 +1092,13 @@ def __wait_job_finalized(api_object, node_name, job_id, counter):
     logging.info(f'{info_prefix} Job {job_id} for migration from {node_name} terminiated succesfully.')
 
 
-def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
+def __run_vm_rebalancing(api_object, vm_statistics, app_args, parallel_migrations):
     """ Run & execute the VM rebalancing via API. """
     error_prefix = 'Error: [rebalancing-executor]:'
     info_prefix  = 'Info: [rebalancing-executor]:'
 
-    if len(vm_statistics_rebalanced) > 0 and not app_args.dry_run:
-        for vm, value in vm_statistics_rebalanced.items():
+    if len(vm_statistics) > 0 and not app_args.dry_run:
+        for vm, value in vm_statistics.items():
 
             try:
                 # Migrate type VM (live migration).
@@ -814,6 +1120,35 @@ def __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, paralle
                 __wait_job_finalized(api_object, value['node_parent'], job_id, counter=1)
             else:
                 logging.info(f'{info_prefix} Rebalancing will be performed parallely.')
+
+    else:
+        logging.info(f'{info_prefix} No rebalancing needed.')
+
+
+def __run_storage_rebalancing(api_object, vm_statistics, app_args, parallel_migrations):
+    """ Run & execute the storage rebalancing via API. """
+    error_prefix = 'Error: [rebalancing-executor]:'
+    info_prefix  = 'Info: [rebalancing-executor]:'
+
+    if len(vm_statistics) > 0 and not app_args.dry_run:
+        for vm, value in vm_statistics.items():
+            for disk, disk_info in value['storages'].items():
+
+                if disk_info.get('storage_rebalance', None) is not None:
+                    try:
+                        # Migrate type VM (live migration).
+                        logging.info(f'{info_prefix} Rebalancing storage of VM {vm} from node.')
+                        job_id = api_object.nodes(value['node_parent']).qemu(value['vmid']).move_disk().post(disk=disk,storage=disk_info.get('storage_rebalance', None), delete=1)
+
+                    except proxmoxer.core.ResourceException as error_resource:
+                        logging.critical(f'{error_prefix} {error_resource}')
+
+                    # Wait for migration to be finished unless running parallel migrations.
+                    if not bool(int(parallel_migrations)):
+                        logging.info(f'{info_prefix} Rebalancing will be performed sequentially.')
+                        __wait_job_finalized(api_object, value['node_parent'], job_id, counter=1)
+                    else:
+                        logging.info(f'{info_prefix} Rebalancing will be performed parallely.')
 
     else:
         logging.info(f'{info_prefix} No rebalancing needed.')
@@ -841,9 +1176,10 @@ def __create_cli_output(vm_statistics_rebalanced, app_args):
         info_prefix = info_prefix_run
         logging.info(f'{info_prefix} Start rebalancing vms to their new nodes.')
 
-    vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node', 'VM Type'])
+    vm_to_node_list.append(['VM', 'Current Node', 'Rebalanced Node', 'Current Storage', 'Rebalanced Storage', 'VM Type'])
     for vm_name, vm_values in vm_statistics_rebalanced.items():
-        vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance'], vm_values['type']])
+        for disk, disk_info in vm_values['storages'].items():
+            vm_to_node_list.append([vm_name, vm_values['node_parent'], vm_values['node_rebalance'], disk_info.get('storage_parent', 'NA'), disk_info.get('storage_rebalance', 'NA'), vm_values['type']])
 
     if len(vm_statistics_rebalanced) > 0:
         logging.info(f'{info_prefix} Printing cli output of VM rebalancing.')
@@ -875,11 +1211,21 @@ def __print_table_cli(table, dry_run=False):
         logging.info(f'{info_prefix} {row_format.format(*row)}')
 
 
-def run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations):
+def run_rebalancing(api_object, vm_statistics, app_args, parallel_migrations, balance_type):
     """ Run rebalancing of vms to new nodes in cluster. """
-    __run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
-    __create_json_output(vm_statistics_rebalanced, app_args)
-    __create_cli_output(vm_statistics_rebalanced, app_args)
+    error_prefix = 'Error: [rebalancing-executor]:'
+    info_prefix  = 'Info: [rebalancing-executor]:'
+
+    if balance_type == 'vm':
+        logging.info(f'{info_prefix} Starting executor for type vm.')
+        __run_vm_rebalancing(api_object, vm_statistics, app_args, parallel_migrations)
+
+    if balance_type == 'storage':
+        logging.info(f'{info_prefix} Starting executor for type vm.')
+        __run_storage_rebalancing(api_object, vm_statistics, app_args, parallel_migrations)
+
+    __create_json_output(vm_statistics, app_args)
+    __create_cli_output(vm_statistics, app_args)
 
 
 def main():
@@ -891,8 +1237,7 @@ def main():
     pre_validations(config_path)
 
     # Parse global config.
-    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, balancing_method, balancing_mode, balancing_mode_option, balancing_type, \
-        balanciness, parallel_migrations, ignore_nodes, ignore_vms, master_only, daemon, schedule, log_verbosity = initialize_config_options(config_path)
+    proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, vm_balancing_enable, vm_balancing_method, vm_balancing_mode, vm_balancing_mode_option, vm_balancing_type, vm_balanciness, vm_parallel_migrations, vm_ignore_nodes, vm_ignore_vms, storage_balancing_enable, storage_balancing_method, storage_balancing_balanciness, storage_parallel_migrations, master_only, daemon, schedule, log_verbosity = initialize_config_options(config_path)
 
     # Overwrite logging handler with user defined log verbosity.
     initialize_logger(log_verbosity, update_log_verbosity=True)
@@ -911,16 +1256,23 @@ def main():
             continue
 
         # Get metric & statistics for vms and nodes.
-        node_statistics = get_node_statistics(api_object, ignore_nodes)
-        vm_statistics   = get_vm_statistics(api_object, ignore_vms, balancing_type)
-        node_statistics = update_node_statistics(node_statistics, vm_statistics)
+        node_statistics    = get_node_statistics(api_object, vm_ignore_nodes)
+        vm_statistics      = get_vm_statistics(api_object, vm_ignore_vms, vm_balancing_type)
+        storage_statistics = get_storage_statistics(api_object)
+        node_statistics    = update_node_statistics(node_statistics, vm_statistics)
 
         # Calculate rebalancing of vms.
-        node_statistics_rebalanced, vm_statistics_rebalanced = balancing_calculations(balancing_method, balancing_mode, balancing_mode_option,
-                                                                                      node_statistics, vm_statistics, balanciness, rebalance=False, processed_vms=[])
+        vm_balancing_enable = False
+        if vm_balancing_enable:
+            node_statistics, vm_statistics = balancing_vm_calculations(vm_balancing_method, vm_balancing_mode, vm_balancing_mode_option, node_statistics, vm_statistics, vm_balanciness, rebalance=False, processed_vms=[])
+            run_rebalancing(api_object, vm_statistics, app_args, vm_parallel_migrations, balance_type='vm')
 
-        # Rebalance vms to new nodes within the cluster.
-        run_vm_rebalancing(api_object, vm_statistics_rebalanced, app_args, parallel_migrations)
+        # Calculate rebalancing of storage.
+        storage_balancing_enable = True
+        #storage_balancing_method = 'disk_space'
+        if storage_balancing_enable:
+            storage_statistics, vm_statistics = balancing_storage_calculations(storage_balancing_method, storage_statistics, vm_statistics, storage_balancing_balanciness, rebalance=False, processed_vms=[])
+            run_rebalancing(api_object, vm_statistics, app_args, storage_parallel_migrations, balance_type='storage')
 
         # Validate for any errors.
         post_validations()
