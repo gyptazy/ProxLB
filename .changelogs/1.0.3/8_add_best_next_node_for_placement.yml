@@ -1,2 +1,2 @@
 added:
-  - Added cli arg `-b` to return the next best node for next VM/CT placement. [#8]
+  - Add cli arg `-b` to return the next best node for next VM/CT placement. [#8]

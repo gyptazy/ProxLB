@@ -27,6 +27,16 @@ ProxLB is a load-balancing system designed to optimize the distribution of virtu
 
 Before starting any migrations, ProxLB validates that rebalancing actions are necessary and beneficial. Depending on the selected balancing mode — such as CPU, memory, or disk — it creates a balancing matrix. This matrix sorts the VMs by their maximum used or assigned resources, identifying the VM with the highest usage. ProxLB then places this VM on the node with the most free resources in the selected balancing type. This process runs recursively until the operator-defined Balanciness is achieved. Balancing can be defined for the used or max. assigned resources of VMs/CTs.
 
+### ProxLB config version is too low
+ProxLB may run into an error when the used config schema version is too low. This might happen after major changes that require new config options. Please make sure, to use a supported config version in addition to your running ProxLB config.
+
+Example Error:
+```
+Error: [config-version-validator]: ProxLB config version 2 is too low. Required: 3.
+```
+
+The easiest way to solve this, is by taking the minimum required config schema version from a git tag, representing the ProxLB version.
+
 ### Logging
 ProxLB uses the `SystemdHandler` for logging. You can find all your logs in your systemd unit log or in the `journalctl`. In default, ProxLB only logs critical events. However, for further understanding of the balancing it might be useful to change this to `INFO` or `DEBUG` which can simply be done in the [proxlb.conf](https://github.com/gyptazy/ProxLB/blob/main/proxlb.conf#L14) file by changing the `log_verbosity` parameter.
 
