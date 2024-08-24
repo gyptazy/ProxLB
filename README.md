@@ -20,9 +20,10 @@
       - [General](#general)
       - [By Used Memory of VMs/CTs](#by-used-memory-of-vmscts)
       - [By Assigned Memory of VMs/CTs](#by-assigned-memory-of-vmscts)
-    - [Grouping](#grouping)
-      - [Include (Stay Together)](#include-stay-together)
-      - [Exclude (Stay Separate)](#exclude-stay-separate)
+      - [Storage Balancing](#storage-balancing)
+    - [Affinity Rules / Grouping Relationships](#affinity-rules--grouping-relationships)
+      - [Affinity (Stay Together)](#affinity-stay-together)
+      - [Anti-Affinity (Keep Apart)](#anti-affinity-keep-apart)
       - [Ignore VMs (Tag Style)](#ignore-vms-tag-style)
     - [Systemd](#systemd)
     - [Manual](#manual)
@@ -55,10 +56,14 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
 <img src="https://cdn.gyptazy.ch/images/proxlb-rebalancing-demo.gif"/>
 
 ## Features
-* Rebalance the cluster by:
+* Rebalance VMs/CTs in the cluster by:
   * Memory
   * Disk (only local storage)
   * CPU
+* Rebalance Storage in the cluster
+  * Rebalance VMs/CTs disks to other storage pools
+  * Rebalance by used storage
+* Get best Node for new VM/CT placement in cluster
 * Performing
   * Periodically
   * One-shot solution
@@ -66,6 +71,7 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
   * Rebalance only VMs
   * Rebalance only CTs
   * Rebalance all (VMs and CTs)
+  * Rebalance VM/CT disks (Storage)
 * Filter
   * Exclude nodes
   * Exclude virtual machines
@@ -100,7 +106,7 @@ The following options can be set in the `proxlb.conf` file:
 
 | Section | Option | Example | Description |
 |------|:------:|:------:|:------:|
-| `proxmox` | api_host | hypervisor01.gyptazy.ch | Host or IP address of the remote Proxmox API. |
+| `proxmox` | api_host | hypervisor01.gyptazy.ch | Host or IP address (or comma separated list) of the remote Proxmox API. |
 | | api_user | root@pam | Username for the API. |
 | | api_pass | FooBar | Password for the API. |
 | | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
@@ -115,9 +121,11 @@ The following options can be set in the `proxlb.conf` file:
 | | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
 | `storage_balancing` | enable | 0 | Enables storage balancing. |
+| | balanciness | 10 | Value of the percentage of lowest and highest storage consumption may differ before rebalancing. (default: 10) |
+| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
 | `update_service` | enable | 0 | Enables the automated update service (rolling updates). |
 | `api` | enable | 0 | Enables the ProxLB API. |
-| | daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
+| `service`| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | | schedule | 24 | Hours to rebalance in hours. (default: 24) |
 | | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
 | | config_version | 3 | Defines the current config version schema for ProxLB |
@@ -167,7 +175,7 @@ The following options and parameters are currently supported:
 
 ### Balancing
 #### General
-In general, virtual machines and containers can be rebalanced and moved around nodes in the cluster. Often, this also works without downtime without any further downtimes. However, this does **not** work with containers. LXC based containers will be shutdown, copied and started on the new node. Also to note, live migrations can work fluently without any issues but there are still several things to be considered. This is out of scope for ProxLB and applies in general to Proxmox and your cluster setup. You can find more details about this here: https://pve.proxmox.com/wiki/Migrate_to_Proxmox_VE.
+In general, virtual machines (VMs), containers (CTs) can be rebalanced and moved around nodes or shared storage (storage balancing) in the cluster. Often, this also works without downtime without any further downtimes. However, this does **not** work with containers. LXC based containers will be shutdown, copied and started on the new node. Also to note, live migrations can work fluently without any issues but there are still several things to be considered. This is out of scope for ProxLB and applies in general to Proxmox and your cluster setup. You can find more details about this here: https://pve.proxmox.com/wiki/Migrate_to_Proxmox_VE.
 
 #### By Used Memory of VMs/CTs
 By continuously monitoring the current resource usage of VMs, ProxLB intelligently reallocates workloads to prevent any single node from becoming overloaded. This approach ensures that resources are balanced efficiently, providing consistent and optimal performance across the entire cluster at all times. To activate this balancing mode, simply activate the following option in your ProxLB configuration:
@@ -185,11 +193,26 @@ mode: assigned
 
 Afterwards, restart the service (if running in daemon mode) to activate this rebalancing mode.
 
-### Grouping
-#### Include (Stay Together)
+#### Storage Balancing
+Starting with ProxLB 1.0.3, ProxLB also supports the balancing of underlying shared storage. In this case, all attached disks (`rootfs` in a context of a CT) of a VM or CT are being fetched and evaluated. If a VM has multiple disks attached, the disks can also be distributed over different storages. As a result, only shared storage is supported. Non shared storage would require to move the whole VM including all attached disks to the parent's node local storage.
+
+Limitations:
+* Only shared storage
+* Only supported for the following VM disk types:
+    * ide (only disks, not CD)
+    * nvme
+    * scsi
+    * virtio
+    * sata
+    * rootfs (Container)
+
+*Note: Storage balancing is currently in beta and should be used carefully.*
+
+### Affinity Rules / Grouping Relationships
+#### Affinity (Stay Together)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-include-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_include_ followed by your unique identifier, for example, plb_include_group1. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be included in the group.
 
-#### Exclude (Stay Separate)
+#### Anti-Affinity (Keep Apart)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-exclude-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_exclude_ followed by your unique identifier, for example, plb_exclude_critical. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be excluded from being on the same node.
 
 #### Ignore VMs (Tag Style)
@@ -323,12 +346,12 @@ Bugs can be reported via the GitHub issue tracker [here](https://github.com/gypt
 Feel free to add further documentation, to adjust already existing one or to contribute with code. Please take care about the style guide and naming conventions. You can find more in our [CONTRIBUTING.md](https://github.com/gyptazy/ProxLB/blob/main/CONTRIBUTING.md) file.
 
 ### Support
-If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.ch) in Matrix and on Reddit. Join our community for real-time help, advice, and discussions. Connect with us in our dedicated chat room for immediate support and live interaction with other users and developers. You can also visit our [Reddit community](https://www.reddit.com/r/Proxmox/comments/1e78ap3/introducing_proxlb_rebalance_your_vm_workloads/) to post your queries, share your experiences, and get support from fellow community members and moderators. You may also just open directly an issue [here](https://github.com/gyptazy/ProxLB/issues) on GitHub. We are here to help and ensure you have the best experience possible.
+If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.ch) in Matrix and on Reddit. Join our community for real-time help, advice, and discussions. Connect with us in our dedicated chat room for immediate support and live interaction with other users and developers. You can also visit our [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/) to post your queries, share your experiences, and get support from fellow community members and moderators. You may also just open directly an issue [here](https://github.com/gyptazy/ProxLB/issues) on GitHub. We are here to help and ensure you have the best experience possible.
 
 | Support Channel | Link |
 |------|:------:|
 | Matrix | [#proxlb:gyptazy.ch](https://matrix.to/#/#proxlb:gyptazy.ch) |
-| Reddit | [Reddit community](https://www.reddit.com/r/Proxmox/comments/1e78ap3/introducing_proxlb_rebalance_your_vm_workloads/)  |
+| GitHub Community | [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/)
 | GitHub | [ProxLB GitHub](https://github.com/gyptazy/ProxLB/issues) |
 
 ### Author(s)
