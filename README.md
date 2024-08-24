@@ -154,6 +154,12 @@ balanciness: 10
 parallel_migrations: 1
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
+[storage_balancing]
+enable: 0
+[update_service]
+enable: 0
+[api]
+enable: 0
 [service]
 # The master_only option might be usuful if running ProxLB on all nodes in a cluster
 # but only a single one should do the balancing. The master node is obtained from the Proxmox
