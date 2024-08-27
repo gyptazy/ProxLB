@@ -89,13 +89,19 @@ def initialize_logger(log_level, update_log_verbosity=False):
         logging.info(f'{info_prefix} Logger verbosity got updated to: {log_level}.')
 
 
-def pre_validations(config_path):
+def pre_validations(config_path, proxlb_config=False):
     """ Run pre-validations as sanity checks. """
     info_prefix = 'Info: [pre-validations]:'
 
-    __validate_imports()
-    __validate_config_file(config_path)
-    logging.info(f'{info_prefix} All pre-validations done.')
+    if proxlb_config:
+        logging.info(f'{info_prefix} Validating ProxLB config file content.')
+        __validate_config_content(proxlb_config)
+        logging.info(f'{info_prefix} ProxLB config file content validation done.')
+    else:
+        logging.info(f'{info_prefix} Validating basic configuration.')
+        __validate_imports()
+        __validate_config_file(config_path)
+        logging.info(f'{info_prefix} All pre-validations done.')
 
 
 def post_validations():
@@ -143,6 +149,56 @@ def __validate_config_file(config_path):
         sys.exit(2)
     else:
         logging.info(f'{info_prefix} Configuration file loaded from: {config_path}.')
+
+
+def __validate_config_content(proxlb_config):
+    """ Validate the user's config options. """
+    error_prefix = 'Error: [config]:'
+    info_prefix  = 'Info: [config]:'
+
+    validate_bool_options = [
+        'proxmox_api_ssl_v',
+        'vm_balancing_enable',
+        'vm_parallel_migrations',
+        'storage_balancing_enable',
+        'storage_parallel_migrations',
+        'update_service',
+        'api',
+        'master_only',
+        'daemon'
+    ]
+
+    for bool_val in validate_bool_options:
+        if type(proxlb_config.get(bool_val, None)) == bool:
+            logging.info(f'{info_prefix} Config option {bool_val} is in a correct format.')
+        else:
+            logging.critical(f'{error_prefix} Config option {bool_val} is incorrect: {proxlb_config.get(bool_val, None)}')
+            sys.exit(2)
+
+    validate_string_options = [
+        'vm_balancing_method',
+        'vm_balancing_mode',
+        'vm_balancing_mode_option',
+        'vm_balancing_type',
+        'storage_balancing_method',
+        'log_verbosity'
+    ]
+
+    whitelist_string_options = {
+        'vm_balancing_method': ['memory', 'disk', 'cpu'],
+        'vm_balancing_mode': ['used', 'assigned'],
+        'vm_balancing_mode_option': ['bytes', 'percent'],
+        'vm_balancing_type': ['vm', 'ct', 'all'],
+        'storage_balancing_method': ['disk_space'],
+        'log_verbosity': ['INFO', 'CRITICAL']
+    }
+
+    for string_val in validate_string_options:
+        if proxlb_config[string_val] in whitelist_string_options[string_val]:
+            logging.info(f'{info_prefix} Config option {string_val} is in a correct format.')
+        else:
+            logging.critical(f'{error_prefix} Config option {string_val} is incorrect: {proxlb_config.get(string_val, None)}')
+            sys.exit(2)
 
 
 def initialize_args():
@@ -271,6 +327,9 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
 
     try:
         api_object = proxmoxer.ProxmoxAPI(proxmox_api_host, user=proxmox_api_user, password=proxmox_api_pass, verify_ssl=proxmox_api_ssl_v)
+    except proxmoxer.backends.https.AuthenticationError as proxmox_api_error:
+        logging.critical(f'{error_prefix} Provided credentials do not work: {proxmox_api_error}')
+        sys.exit(2)
     except urllib3.exceptions.NameResolutionError:
         logging.critical(f'{error_prefix} Could not resolve the given host: {proxmox_api_host}.')
         sys.exit(2)
@@ -1343,6 +1402,7 @@ def main():
 
     # Parse global config.
     proxlb_config = initialize_config_options(config_path)
+    pre_validations(config_path, proxlb_config)
 
     # Overwrite logging handler with user defined log verbosity.
     initialize_logger(proxlb_config['log_verbosity'], update_log_verbosity=True)

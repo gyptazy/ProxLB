@@ -351,6 +351,9 @@ Bugs can be reported via the GitHub issue tracker [here](https://github.com/gypt
 ### Contributing
 Feel free to add further documentation, to adjust already existing one or to contribute with code. Please take care about the style guide and naming conventions. You can find more in our [CONTRIBUTING.md](https://github.com/gyptazy/ProxLB/blob/main/CONTRIBUTING.md) file.
 
+### Documentation
+You can also find additional and more detailed documentation within the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory.
+
 ### Support
 If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.ch) in Matrix and on Reddit. Join our community for real-time help, advice, and discussions. Connect with us in our dedicated chat room for immediate support and live interaction with other users and developers. You can also visit our [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/) to post your queries, share your experiences, and get support from fellow community members and moderators. You may also just open directly an issue [here](https://github.com/gyptazy/ProxLB/issues) on GitHub. We are here to help and ensure you have the best experience possible.
 

@@ -24,3 +24,14 @@ Afterwards, restart the service (if running in daemon mode) to activate this reb
 
 ### Ignore VMs (tag style)
 <img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
+
+## Authentication / User Account / User / Permissions
+### Authentication
+ProxLB also supports different accounts in ProxLB. Therefore, you can simply create a new user and group and add the required roles permissions.
+
+### Required Roles
+When using ProxLB with a dedicated account, you might also keep the assigned roles low. Therefore, you need to ensure that the newly created user is at least assigned to the following roles:
+* Datastore.Audit (Required for storage evaluation)
+* Sys.Audit (Required to get resource metrics of the nodes)
+* VM.Audit  (Requited to get resource metrics of VMs/CTs)
+* VM.Migrate (Required for migration of VMs/CTs)
