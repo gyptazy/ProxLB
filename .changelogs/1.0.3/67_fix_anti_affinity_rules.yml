@@ -1,0 +1,2 @@
+fixed:
+  - Fix anti-affinity rules not evaluating a new and different node. [#67]

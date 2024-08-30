@@ -1,0 +1,2 @@
+fixed:
+  - Fix handling of unset `ignore_nodes` and `ignore_vms` resulted in an attribute error. [#71]
