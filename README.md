@@ -169,6 +169,19 @@ daemon: 1
 config_version: 3
 ```
 
+#### Notes
+* If running ProxLB on more than one Proxmox node you can set `api_host` to a comma-separated list of each node's IP address or hostname. (Example: `api_host: node01.gyptazy.ch,node02.gyptazy.ch,node03.gyptazy.ch`)
+* The `verify_ssl` parameter can switch between the mode to verificate trusted remote certificates. Keep in mind, that even local ones are **not** trusted by default and need to be imported to the truststore.
+* Even when using only the `vm_balancing` mode, ensure to have the other sections listed in your config:
+```
+[storage_balancing]
+enable: 0
+[update_service]
+enable: 0
+[api]
+enable: 0
+```
+
 ### Parameters
 The following options and parameters are currently supported:
 

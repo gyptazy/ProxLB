@@ -29,6 +29,17 @@ Afterwards, restart the service (if running in daemon mode) to activate this reb
 ### Authentication
 ProxLB also supports different accounts in ProxLB. Therefore, you can simply create a new user and group and add the required roles permissions.
 
+### Creating Dedicated User for Balanciung
+It is recommended to not use the `root@pam` user for balancing. Therefore, creating a new user might be suitable and is very easy to create.
+A new user can be created by the gui, api and cli. The required roles are stated in the next chapter, but you can also use the following lines
+to create a user on the cli with the required roles to balance VMs & CTs.
+
+```
+pveum role add ProxLBAdmin --privs Datastore.Audit,Sys.Audit,VM.Audit,VM.Migrate
+pveum user add proxlb_admin@pve --password <password>
+pveum acl modify / --roles ProxLBAdmin --users proxlb_admin@pve
+```
+
 ### Required Roles
 When using ProxLB with a dedicated account, you might also keep the assigned roles low. Therefore, you need to ensure that the newly created user is at least assigned to the following roles:
 * Datastore.Audit (Required for storage evaluation)

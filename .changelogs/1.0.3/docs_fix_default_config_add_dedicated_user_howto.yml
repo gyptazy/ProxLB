@@ -1,0 +1,4 @@
+fixed:
+  - Fix bug in the `proxlb.conf` in the vm_balancing section.
+added:
+  - Add doc how to add dedicated user for authentication. (by @Dulux-Oz) 
