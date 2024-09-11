@@ -1,0 +1,2 @@
+fixed:
+  - Fix documentation for the master_only parameter placed in the wrong config section. [#74]
