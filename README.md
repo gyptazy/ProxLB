@@ -15,6 +15,7 @@
   - [Usage](#usage)
     - [Dependencies](#dependencies)
     - [Options](#options)
+      - [Notes](#notes)
     - [Parameters](#parameters)
     - [Balancing](#balancing)
       - [General](#general)
@@ -40,6 +41,7 @@
   - [Misc](#misc)
     - [Bugs](#bugs)
     - [Contributing](#contributing)
+    - [Documentation](#documentation)
     - [Support](#support)
     - [Author(s)](#authors)
 
@@ -119,7 +121,6 @@ The following options can be set in the `proxlb.conf` file:
 | | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
 | | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
-| | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
 | `storage_balancing` | enable | 0 | Enables storage balancing. |
 | | balanciness | 10 | Value of the percentage of lowest and highest storage consumption may differ before rebalancing. (default: 10) |
 | | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
@@ -127,6 +128,7 @@ The following options can be set in the `proxlb.conf` file:
 | `api` | enable | 0 | Enables the ProxLB API. |
 | `service`| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
 | | schedule | 24 | Hours to rebalance in hours. (default: 24) |
+| | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
 | | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
 | | config_version | 3 | Defines the current config version schema for ProxLB |
 
@@ -161,7 +163,7 @@ enable: 0
 [api]
 enable: 0
 [service]
-# The master_only option might be usuful if running ProxLB on all nodes in a cluster
+# The master_only option might be useful if running ProxLB on all nodes in a cluster
 # but only a single one should do the balancing. The master node is obtained from the Proxmox
 # HA status.
 master_only: 0
@@ -171,7 +173,7 @@ config_version: 3
 
 #### Notes
 * If running ProxLB on more than one Proxmox node you can set `api_host` to a comma-separated list of each node's IP address or hostname. (Example: `api_host: node01.gyptazy.ch,node02.gyptazy.ch,node03.gyptazy.ch`)
-* The `verify_ssl` parameter can switch between the mode to verificate trusted remote certificates. Keep in mind, that even local ones are **not** trusted by default and need to be imported to the truststore.
+* The `verify_ssl` parameter can switch between the mode to verify trusted remote certificates. Keep in mind, that even local ones are **not** trusted by default and need to be imported to the truststore.
 * Even when using only the `vm_balancing` mode, ensure to have the other sections listed in your config:
 ```
 [storage_balancing]
