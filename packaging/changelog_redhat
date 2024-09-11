@@ -1,3 +1,20 @@
+* Wed Sep 12 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
+- Add a convert function to cast all bool alike options from configparser to bools.
+- Add a config parser options for future features.
+- Add a config versio schema that must be supported by ProxLB.
+- Add feature to allow the API hosts being provided as a comma separated list.
+- Add storage balancing function.
+- Add doc how to add dedicated user for authentication. (by @Dulux-Oz)
+- Add cli arg `-b` to return the next best node for next VM/CT placement.Fix some wonkey code styles.
+- Provide a more reasonable output when HA services are not active in a Proxmox cluster.
+- Improve the underlying code base for future implementations.
+- Fix documentation for the master_only parameter placed in the wrong config section.
+- Fixed `master_only` function by inverting the condition.
+- Improved the overall validation and error handling.
+- Fix bug in the `proxlb.conf` in the vm_balancing section.
+- Fix handling of unset `ignore_nodes` and `ignore_vms` resulted in an attribute error.
+- Fix anti-affinity rules not evaluating a new and different node.
+
 * Tue Aug 13 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
 - Add option to run migration in parallel or sequentially.
 - Add option to run ProxLB only on a Proxmox cluster master (req. HA feature).

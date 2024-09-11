@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.3] - 2024-09-12
+
+### Added
+
+- Add a convert function to cast all bool alike options from configparser to bools. [#53]
+- Add a config parser options for future features. [#53]
+- Add a config versio schema that must be supported by ProxLB. [#53]
+- Add feature to allow the API hosts being provided as a comma separated list. [#60]
+- Add storage balancing function. [#51]
+- Add doc how to add dedicated user for authentication. (by @Dulux-Oz)
+- Add cli arg `-b` to return the next best node for next VM/CT placement. [#8]
+
+### Changed
+
+- Provide a more reasonable output when HA services are not active in a Proxmox cluster. [#68]
+- Improve the underlying code base for future implementations. [#53]
+
+### Fixed
+
+- Fix documentation for the master_only parameter placed in the wrong config section. [#74]
+- Fixed `master_only` function by inverting the condition.
+- Improved the overall validation and error handling. [#64]
+- Fix bug in the `proxlb.conf` in the vm_balancing section.
+- Fix handling of unset `ignore_nodes` and `ignore_vms` resulted in an attribute error. [#71]
+- Fix anti-affinity rules not evaluating a new and different node. [#67]
+
+
 ## [1.0.2] - 2024-08-13
 
 ### Added
