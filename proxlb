@@ -42,7 +42,7 @@ import urllib3
 
 # Constants
 __appname__        = "ProxLB"
-__version__        = "1.0.3b"
+__version__        = "1.0.4b"
 __config_version__ = 3
 __author__         = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__         = False
@@ -680,6 +680,7 @@ def update_node_statistics(node_statistics, vm_statistics):
 def get_storage_statistics(api_object):
     """ Get statistics of all storage in the cluster. """
     info_prefix        = 'Info: [storage-statistics]:'
+    storage_whitelist  = ['nfs']
     storage_statistics = {}
 
     for node in api_object.nodes.get():
@@ -688,7 +689,7 @@ def get_storage_statistics(api_object):
 
             # Only add enabled and active storage repositories that might be suitable for further
             # storage balancing.
-            if storage['enabled'] and storage['active'] and storage['shared']:
+            if storage['enabled'] and storage['active'] and storage['shared'] and storage['type'] in storage_whitelist:
                 storage_statistics[storage['storage']]                          = {}
                 storage_statistics[storage['storage']]['name']                  = storage['storage']
                 storage_statistics[storage['storage']]['total']                 = storage['total']
@@ -1477,7 +1478,10 @@ def main():
             node_statistics    = get_node_statistics(api_object, proxlb_config['vm_ignore_nodes'])
             vm_statistics      = get_vm_statistics(api_object, proxlb_config['vm_ignore_vms'], proxlb_config['vm_balancing_type'])
             node_statistics    = update_node_statistics(node_statistics, vm_statistics)
-            storage_statistics = get_storage_statistics(api_object)
+            # Obtaining metrics for the storage may take longer times and is not needed for VM/CT balancing.
+            # We can save time by skipping this when not really needed.
+            if proxlb_config['storage_balancing_enable']:
+                storage_statistics = get_storage_statistics(api_object)
 
         # Execute VM/CT balancing sub-routines.
         if proxlb_config['vm_balancing_enable'] or app_args.best_node:

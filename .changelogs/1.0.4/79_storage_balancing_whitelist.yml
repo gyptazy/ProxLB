@@ -1,0 +1,3 @@
+changed:
+  - Run storage balancing only on supported shared storages. [#79]
+  - Run storage balancing only when needed to save time. [#79]
