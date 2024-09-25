@@ -1,5 +1,5 @@
 # ProxLB - (Re)Balance VM Workloads in Proxmox Clusters
-<img align="left" src="https://cdn.gyptazy.ch/images/Prox-LB-logo.jpg"/>
+<img align="left" src="https://cdn.gyptazy.com/images/Prox-LB-logo.jpg"/>
 <br>
 
 <p float="center"><img src="https://img.shields.io/github/license/gyptazy/ProxLB"/><img src="https://img.shields.io/github/contributors/gyptazy/ProxLB"/><img src="https://img.shields.io/github/last-commit/gyptazy/ProxLB/main"/><img src="https://img.shields.io/github/issues-raw/gyptazy/ProxLB"/><img src="https://img.shields.io/github/issues-pr/gyptazy/ProxLB"/></p>
@@ -37,6 +37,8 @@
   - [Downloads](#downloads)
     - [Packages](#packages)
     - [Repository](#repository)
+      - [Stable Releases](#stable-releases)
+      - [Beta/Testing Releases](#betatesting-releases)
     - [Container Images (Docker/Podman)](#container-images-dockerpodman)
   - [Misc](#misc)
     - [Bugs](#bugs)
@@ -55,7 +57,7 @@ Intelligent rebalancing is a key feature of ProxLB where it re-balances VMs base
 Automated rebalancing reduces the need for manual actions, allowing operators to focus on other critical tasks, thereby increasing operational efficiency.
 
 ### Video of Migration
-<img src="https://cdn.gyptazy.ch/images/proxlb-rebalancing-demo.gif"/>
+<img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
 
 ## Features
 * Rebalance VMs/CTs in the cluster by:
@@ -108,7 +110,7 @@ The following options can be set in the `proxlb.conf` file:
 
 | Section | Option | Example | Description |
 |------|:------:|:------:|:------:|
-| `proxmox` | api_host | hypervisor01.gyptazy.ch | Host or IP address (or comma separated list) of the remote Proxmox API. |
+| `proxmox` | api_host | hypervisor01.gyptazy.com | Host or IP address (or comma separated list) of the remote Proxmox API. |
 | | api_user | root@pam | Username for the API. |
 | | api_pass | FooBar | Password for the API. |
 | | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
@@ -135,7 +137,7 @@ The following options can be set in the `proxlb.conf` file:
 An example of the configuration file looks like:
 ```
 [proxmox]
-api_host: hypervisor01.gyptazy.ch
+api_host: hypervisor01.gyptazy.com
 api_user: root@pam
 api_pass: FooBar
 verify_ssl: 1
@@ -172,7 +174,7 @@ config_version: 3
 ```
 
 #### Notes
-* If running ProxLB on more than one Proxmox node you can set `api_host` to a comma-separated list of each node's IP address or hostname. (Example: `api_host: node01.gyptazy.ch,node02.gyptazy.ch,node03.gyptazy.ch`)
+* If running ProxLB on more than one Proxmox node you can set `api_host` to a comma-separated list of each node's IP address or hostname. (Example: `api_host: node01.gyptazy.com,node02.gyptazy.com,node03.gyptazy.com`)
 * The `verify_ssl` parameter can switch between the mode to verify trusted remote certificates. Keep in mind, that even local ones are **not** trusted by default and need to be imported to the truststore.
 * Even when using only the `vm_balancing` mode, ensure to have the other sections listed in your config:
 ```
@@ -231,13 +233,13 @@ Limitations:
 
 ### Affinity Rules / Grouping Relationships
 #### Affinity (Stay Together)
-<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-include-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_include_ followed by your unique identifier, for example, plb_include_group1. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be included in the group.
+<img align="left" src="https://cdn.gyptazy.com/images/plb-rebalancing-include-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_include_ followed by your unique identifier, for example, plb_include_group1. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be included in the group.
 
 #### Anti-Affinity (Keep Apart)
-<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-exclude-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_exclude_ followed by your unique identifier, for example, plb_exclude_critical. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be excluded from being on the same node.
+<img align="left" src="https://cdn.gyptazy.com/images/plb-rebalancing-exclude-balance-group.jpg"/> Access the Proxmox Web UI by opening your web browser and navigating to your Proxmox VE web interface, then log in with your credentials. Navigate to the VM you want to tag by selecting it from the left-hand navigation panel. Click on the "Options" tab to view the VM's options, then select "Edit" or "Add" (depending on whether you are editing an existing tag or adding a new one). In the tag field, enter plb_exclude_ followed by your unique identifier, for example, plb_exclude_critical. Save the changes to apply the tag to the VM. Repeat these steps for each VM that should be excluded from being on the same node.
 
 #### Ignore VMs (Tag Style)
-<img align="left" src="https://cdn.gyptazy.ch/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
+<img align="left" src="https://cdn.gyptazy.com/images/plb-rebalancing-ignore-vm.jpg"/>  In Proxmox, you can ensure that certain VMs are ignored during the rebalancing process by setting a specific tag within the Proxmox Web UI, rather than solely relying on configurations in the ProxLB config file. This can be achieved by adding the tag 'plb_ignore_vm' to the VM. Once this tag is applied, the VM will be excluded from any further rebalancing operations, simplifying the management process.
 
 ### Systemd
 When installing a Linux distribution (such as .deb or .rpm) file, this will be shipped with a systemd unit file. The default configuration file will be sourced from `/etc/proxlb/proxlb.conf`.
@@ -254,7 +256,7 @@ A manual installation is possible and also supports BSD based systems. Proxmox R
 The executable must be able to read the config file, if no dedicated config file is given by the `-c` argument, PLB tries to read it from `/etc/proxlb/proxlb.conf`.
 
 ### Proxmox GUI Integration
-<img align="left" src="https://cdn.gyptazy.ch/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxmoxlb-service-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxmoxlb-service-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
 * Rebalancing VM workloads
 * Migrate VM workloads away from a defined node (e.g. maintenance preparation)
 
@@ -262,7 +264,7 @@ The executable must be able to read the config file, if no dedicated config file
 The easiest way to get started is by using the ready-to-use packages that I provide on my CDN and to run it on a Linux Debian based system. This can also be one of the Proxmox nodes itself.
 
 ```
-wget https://cdn.gyptazy.ch/files/amd64/debian/proxlb/proxlb_1.0.3_amd64.deb
+wget https://cdn.gyptazy.com/files/os/debian/proxlb/proxlb_1.0.3_amd64.deb
 dpkg -i proxlb_1.0.3_amd64.deb
 # Adjust your config
 vi /etc/proxlb/proxlb.conf
@@ -316,49 +318,54 @@ Here you can find some overviews of references for and about the ProxLB (PLB):
 
 | Description | Link |
 |------|:------:|
-| General introduction into ProxLB | https://gyptazy.ch/blog/proxlb-rebalancing-vm-workloads-across-nodes-in-proxmox-clusters/ |
-| Howto install and use ProxLB on Debian to rebalance vm workloads in a Proxmox cluster | https://gyptazy.ch/howtos/howto-install-and-use-proxlb-to-rebalance-vm-workloads-across-nodes-in-proxmox-clusters/ |
+| General introduction into ProxLB | https://gyptazy.com/blog/proxlb-rebalancing-vm-workloads-across-nodes-in-proxmox-clusters/ |
+| Howto install and use ProxLB on Debian to rebalance vm workloads in a Proxmox cluster | https://gyptazy.com/howtos/howto-install-and-use-proxlb-to-rebalance-vm-workloads-across-nodes-in-proxmox-clusters/ |
 
 ## Downloads
 ProxLB can be obtained in man different ways, depending on which use case you prefer. You can use simply copy the code from GitHub, use created packages for Debian or RedHat based systems, use a Repository to keep ProxLB always up to date or simply use a Container image for Docker/Podman.
 
 ### Packages
 Ready to use packages can be found at:
-* https://cdn.gyptazy.ch/files/amd64/debian/proxlb/
-* https://cdn.gyptazy.ch/files/amd64/ubuntu/proxlb/
-* https://cdn.gyptazy.ch/files/amd64/redhat/proxlb/
-* https://cdn.gyptazy.ch/files/amd64/freebsd/proxlb/
-
+* https://cdn.gyptazy.com/files/os/debian/proxlb/
+* https://cdn.gyptazy.com/files/os/ubuntu/proxlb/
+* https://cdn.gyptazy.com/files/os/redhat/proxlb/
 
 ### Repository
 Debian based systems can also use the repository by adding the following line to their apt sources:
 
+#### Stable Releases
 ```
-deb https://repo.gyptazy.ch/ /
+deb https://repo.gyptazy.com/stable /
 ```
 
-The Repository's GPG key can be found at: `https://repo.gyptazy.ch/repo/KEY.gpg`
+#### Beta/Testing Releases
+```
+deb https://repo.gyptazy.com/testing /
+```
+
+The Repository's GPG key can be found at: `https://repo.gyptazy.com/repository.gpg`
 
 You can also simply import it by running:
 
 ```
-# KeyID:  DEB76ADF7A0BAADB51792782FD6A7A70C11226AA
-# SHA256: 5e44fffa09c747886ee37cc6e9e7eaf37c6734443cc648eaf0a9241a89084383  KEY.gpg
+# KeyID:  17169F23F9F71A14AD49EDADDB51D3EB01824F4C
+# UID:    gyptazy Solutions Repository <contact@gyptazy.com>
+# SHA256: 52c267e6f4ec799d40cdbdb29fa518533ac7942dab557fa4c217a76f90d6b0f3  repository.gpg
 
-wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.ch/repo/KEY.gpg
+wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.com/repository.gpg
 ```
 
-*Note: The defined repositories `repo.gyptazy.ch` and `repo.proxlb.de` are the same!*
+*Note: The defined repositories `repo.gyptazy.com` and `repo.proxlb.de` are the same!*
 
 ### Container Images (Docker/Podman)
 Container Images for Podman, Docker etc., can be found at:
 | Version | Image |
 |------|:------:|
-| latest | cr.gyptazy.ch/proxlb/proxlb:latest |
-| v1.0.3 | cr.gyptazy.ch/proxlb/proxlb:v1.0.3 |
-| v1.0.2 | cr.gyptazy.ch/proxlb/proxlb:v1.0.2 |
-| v1.0.0 | cr.gyptazy.ch/proxlb/proxlb:v1.0.0 |
-| v0.9.9 | cr.gyptazy.ch/proxlb/proxlb:v0.9.9 |
+| latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.0.3 | cr.gyptazy.com/proxlb/proxlb:v1.0.3 |
+| v1.0.2 | cr.gyptazy.com/proxlb/proxlb:v1.0.2 |
+| v1.0.0 | cr.gyptazy.com/proxlb/proxlb:v1.0.0 |
+| v0.9.9 | cr.gyptazy.com/proxlb/proxlb:v0.9.9 |
 
 ## Misc
 ### Bugs
@@ -371,13 +378,13 @@ Feel free to add further documentation, to adjust already existing one or to con
 You can also find additional and more detailed documentation within the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory.
 
 ### Support
-If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.ch) in Matrix and on Reddit. Join our community for real-time help, advice, and discussions. Connect with us in our dedicated chat room for immediate support and live interaction with other users and developers. You can also visit our [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/) to post your queries, share your experiences, and get support from fellow community members and moderators. You may also just open directly an issue [here](https://github.com/gyptazy/ProxLB/issues) on GitHub. We are here to help and ensure you have the best experience possible.
+If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.com) in Matrix and on Reddit. Join our community for real-time help, advice, and discussions. Connect with us in our dedicated chat room for immediate support and live interaction with other users and developers. You can also visit our [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/) to post your queries, share your experiences, and get support from fellow community members and moderators. You may also just open directly an issue [here](https://github.com/gyptazy/ProxLB/issues) on GitHub. We are here to help and ensure you have the best experience possible.
 
 | Support Channel | Link |
 |------|:------:|
-| Matrix | [#proxlb:gyptazy.ch](https://matrix.to/#/#proxlb:gyptazy.ch) |
+| Matrix | [#proxlb:gyptazy.com](https://matrix.to/#/#proxlb:gyptazy.com) |
 | GitHub Community | [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/)
 | GitHub | [ProxLB GitHub](https://github.com/gyptazy/ProxLB/issues) |
 
 ### Author(s)
- * Florian Paul Azim Hoberg @gyptazy (https://gyptazy.ch)
+ * Florian Paul Azim Hoberg @gyptazy (https://gyptazy.com)
