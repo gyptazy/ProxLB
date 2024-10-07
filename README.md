@@ -121,6 +121,7 @@ The following options can be set in the `proxlb.conf` file:
 | | type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
 | | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
+| | maintenance_nodes | dummynode03,dummynode04 | Defines a comma separated list of nodes to set them into maintenance mode and move VMs/CTs to other nodes. |
 | | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | `storage_balancing` | enable | 0 | Enables storage balancing. |
@@ -156,6 +157,7 @@ balanciness: 10
 # Enable parallel migrations. If set to 0 it will wait for completed migrations
 # before starting next migration.
 parallel_migrations: 1
+maintenance_nodes: dummynode03,dummynode04
 ignore_nodes: dummynode01,dummynode02
 ignore_vms: testvm01,testvm02
 [storage_balancing]
@@ -195,6 +197,7 @@ The following options and parameters are currently supported:
 | -d | --dry-run | Performs a dry-run without doing any actions. | Unset |
 | -j | --json | Returns a JSON of the VM movement. | Unset |
 | -b | --best-node | Returns the best next node for a VM/CT placement (useful for further usage with Terraform/Ansible). | Unset |
+| -m | --maintenance | Sets node(s) to maintenance mode & moves workloads away. | Unset |
 
 ### Balancing
 #### General

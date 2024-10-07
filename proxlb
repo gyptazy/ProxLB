@@ -204,10 +204,11 @@ def __validate_config_content(proxlb_config):
 def initialize_args():
     """ Initialize given arguments for ProxLB. """
     argparser = argparse.ArgumentParser(description='ProxLB')
-    argparser.add_argument('-c', '--config',    type=str, help='Path to config file.', required=False)
-    argparser.add_argument('-d', '--dry-run',   help='Perform a dry-run without doing any actions.', action='store_true', required=False)
-    argparser.add_argument('-j', '--json',      help='Return a JSON of the VM movement.',            action='store_true', required=False)
-    argparser.add_argument('-b', '--best-node', help='Returns the best next node.',                  action='store_true', required=False)
+    argparser.add_argument('-c', '--config',      help='Path to config file',                                   type=str,            required=False)
+    argparser.add_argument('-d', '--dry-run',     help='Perform a dry-run without doing any actions.',          action='store_true', required=False)
+    argparser.add_argument('-j', '--json',        help='Return a JSON of the VM movement.',                     action='store_true', required=False)
+    argparser.add_argument('-b', '--best-node',   help='Returns the best next node.',                           action='store_true', required=False)
+    argparser.add_argument('-m', '--maintenance', help='Sets node to maintenance mode & moves workloads away.', type=str,            required=False)
     return argparser.parse_args()
 
 
@@ -246,6 +247,7 @@ def initialize_config_options(config_path):
         proxlb_config['vm_balancing_type']           = config['vm_balancing'].get('type', 'vm')
         proxlb_config['vm_balanciness']              = config['vm_balancing'].get('balanciness', 10)
         proxlb_config['vm_parallel_migrations']      = config['vm_balancing'].get('parallel_migrations', 1)
+        proxlb_config['vm_maintenance_nodes']        = config['vm_balancing'].get('maintenance_nodes', '')
         proxlb_config['vm_ignore_nodes']             = config['vm_balancing'].get('ignore_nodes', '')
         proxlb_config['vm_ignore_vms']               = config['vm_balancing'].get('ignore_vms', '')
         proxlb_config['vm_enforce_affinity_groups']  = config['vm_balancing'].get('enforce_affinity_groups', 1)
@@ -366,6 +368,7 @@ def __api_connect_get_host(proxmox_api_host):
 
 
 def __api_connect_test_ipv4_host(proxmox_api_host, port):
+    """ Validate if a given host on the IPv4 management address is reachable. """
     error_prefix               = 'Error: [api-connect-test-host]:'
     info_prefix                = 'Info: [api-connect-test-host]:'
     proxmox_connection_timeout = 2
@@ -386,6 +389,7 @@ def __api_connect_test_ipv4_host(proxmox_api_host, port):
 
 
 def __api_connect_test_ipv6_host(proxmox_api_host, port):
+    """ Validate if a given host on the IPv6 management address is reachable. """
     error_prefix               = 'Error: [api-connect-test-host]:'
     info_prefix                = 'Info: [api-connect-test-host]:'
     proxmox_connection_timeout = 2
@@ -461,15 +465,18 @@ def validate_cluster_master(cluster_master):
         return True
 
 
-def get_node_statistics(api_object, ignore_nodes):
+def get_node_statistics(api_object, ignore_nodes, maintenance_nodes):
     """ Get statistics of cpu, memory and disk for each node in the cluster. """
-    info_prefix       = 'Info: [node-statistics]:'
-    node_statistics   = {}
-    ignore_nodes_list =  ignore_nodes.split(',')
+    info_prefix            = 'Info: [node-statistics]:'
+    node_statistics        = {}
+    ignore_nodes_list      =  ignore_nodes.split(',')
+    maintenance_nodes_list =  maintenance_nodes.split(',')
 
     for node in api_object.nodes.get():
-        if node['status'] == 'online' and node['node'] not in ignore_nodes_list:
+        if node['status'] == 'online':
             node_statistics[node['node']] = {}
+            node_statistics[node['node']]['maintenance']                      = False
+            node_statistics[node['node']]['ignore']                           = False
             node_statistics[node['node']]['cpu_total']                        = node['maxcpu']
             node_statistics[node['node']]['cpu_assigned']                     = node['cpu']
             node_statistics[node['node']]['cpu_assigned_percent']             = int((node_statistics[node['node']]['cpu_assigned']) / int(node_statistics[node['node']]['cpu_total']) * 100)
@@ -495,6 +502,15 @@ def get_node_statistics(api_object, ignore_nodes):
             node_statistics[node['node']]['disk_free_percent']                = int((node_statistics[node['node']]['disk_free']) / int(node['maxdisk']) * 100)
             node_statistics[node['node']]['disk_free_percent_last_run']       = 0
             logging.info(f'{info_prefix} Added node {node["node"]}.')
+
+            # Update node specific vars
+            if node['node'] in maintenance_nodes_list:
+                node_statistics[node['node']]['maintenance']                      = True
+                logging.info(f'{info_prefix} Maintenance mode: {node["node"]} is set to maintenance mode.')
+
+            if node['node'] in ignore_nodes_list:
+                node_statistics[node['node']]['ignore']                           = True
+                logging.info(f'{info_prefix} Ignore Node: {node["node"]} is set to be ignored.')
 
     logging.info(f'{info_prefix} Created node statistics.')
     return node_statistics
@@ -803,6 +819,7 @@ def balancing_vm_calculations(balancing_method, balancing_mode, balancing_mode_o
     __validate_vm_statistics(vm_statistics)
     rebalance = __validate_balanciness(balanciness, balancing_method, balancing_mode, node_statistics)
 
+    # Run rebalancing calculations.
     if rebalance:
         # Get most used/assigned resources of the VM and the most free or less allocated node.
         resources_vm_most_used, processed_vms  = __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms)
@@ -824,11 +841,39 @@ def balancing_vm_calculations(balancing_method, balancing_mode, balancing_mode_o
         logging.info(f'{info_prefix} Best next node for VM & CT placement: {best_next_node[0]}')
         sys.exit(0)
 
-    # # Honour groupings for include and exclude groups for rebalancing VMs.
-    # node_statistics, vm_statistics = __get_vm_tags_include_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
-    # node_statistics, vm_statistics = __get_vm_tags_exclude_groups(vm_statistics, node_statistics, balancing_method, balancing_mode)
-
     logging.info(f'{info_prefix} Balancing calculations done.')
+    return node_statistics, vm_statistics
+
+
+def balancing_vm_maintenance(proxlb_config, app_args, node_statistics, vm_statistics):
+    """ Calculate re-balancing of VMs that need to be moved away from maintenance nodes. """
+    info_prefix            = 'Info: [rebalancing-maintenance-vm-calculator]:'
+    maintenance_nodes_list = proxlb_config['vm_maintenance_nodes'].split(',')
+    nodes_present          = list(node_statistics.keys())
+    balancing_method       = proxlb_config['vm_balancing_method']
+    balancing_mode         = proxlb_config['vm_balancing_mode']
+    balancing_mode_option  = proxlb_config['vm_balancing_mode_option']
+
+    # Merge maintenance nodes from config and cli args.
+    if app_args.maintenance is not None:
+        logging.info(f'{info_prefix} Maintenance nodes from CLI arg and config will be merged.')
+        maintenance_nodes_list = maintenance_nodes_list + app_args.maintenance.split(',')
+
+    # Ensure that only existing nodes in the cluster will be used.
+    if len(proxlb_config['vm_maintenance_nodes']) > 1:
+        maintenance_nodes_list = set(maintenance_nodes_list) & set(nodes_present)
+        logging.info(f'{info_prefix} Maintenance mode for the following hosts defined: {maintenance_nodes_list}')
+    else:
+        logging.info(f'{info_prefix} No nodes for maintenance mode defined.')
+        return node_statistics, vm_statistics
+
+    for node_name in maintenance_nodes_list:
+        node_vms = sorted(vm_statistics.items(), key=lambda item: item[0] if item[1]['node_parent'] == node_name else [])
+        # Update resource statistics for VMs and nodes.
+        for vm in node_vms:
+            resources_node_most_free        = __get_most_free_resources_node(balancing_method, balancing_mode, balancing_mode_option, node_statistics)
+            node_statistics, vm_statistics  = __update_vm_resource_statistics(vm, resources_node_most_free, vm_statistics, node_statistics, balancing_method, balancing_mode)
+
     return node_statistics, vm_statistics
 
 
@@ -935,11 +980,11 @@ def __get_most_free_resources_node(balancing_method, balancing_mode, balancing_m
 
     # Return the node information based on the balancing mode.
     if balancing_mode == 'used' and balancing_mode_option == 'bytes':
-        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'])
+        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free'] if not item[1]['maintenance'] else -float('inf'))
     if balancing_mode == 'used' and balancing_mode_option == 'percent':
-        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free_percent'])
+        node = max(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_free_percent'] if not item[1]['maintenance'] else -float('inf'))
     if balancing_mode == 'assigned':
-        node = min(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_assigned'] if item[1][f'{balancing_method}_assigned_percent'] > 0 or item[1][f'{balancing_method}_assigned_percent'] < 100 else -float('inf'))
+        node = min(node_statistics.items(), key=lambda item: item[1][f'{balancing_method}_assigned'] if not item[1]['maintenance'] and (item[1][f'{balancing_method}_assigned_percent'] > 0 or item[1][f'{balancing_method}_assigned_percent'] < 100) else -float('inf'))
 
     logging.info(f'{info_prefix} {node}')
     return node
@@ -1473,9 +1518,9 @@ def main():
             validate_daemon(proxlb_config['daemon'], proxlb_config['schedule'])
             continue
 
-        # Get metric & statistics for vms and nodes.
+        # Get metrics & statistics for vms and nodes.
         if proxlb_config['vm_balancing_enable'] or proxlb_config['storage_balancing_enable'] or app_args.best_node:
-            node_statistics    = get_node_statistics(api_object, proxlb_config['vm_ignore_nodes'])
+            node_statistics    = get_node_statistics(api_object, proxlb_config['vm_ignore_nodes'], proxlb_config['vm_maintenance_nodes'])
             vm_statistics      = get_vm_statistics(api_object, proxlb_config['vm_ignore_vms'], proxlb_config['vm_balancing_type'])
             node_statistics    = update_node_statistics(node_statistics, vm_statistics)
             # Obtaining metrics for the storage may take longer times and is not needed for VM/CT balancing.
@@ -1486,6 +1531,7 @@ def main():
         # Execute VM/CT balancing sub-routines.
         if proxlb_config['vm_balancing_enable'] or app_args.best_node:
             node_statistics, vm_statistics = balancing_vm_calculations(proxlb_config['vm_balancing_method'], proxlb_config['vm_balancing_mode'], proxlb_config['vm_balancing_mode_option'], node_statistics, vm_statistics, proxlb_config['vm_balanciness'], app_args, rebalance=False, processed_vms=[])
+            node_statistics, vm_statistics = balancing_vm_maintenance(proxlb_config, app_args, node_statistics, vm_statistics)
             node_statistics, vm_statistics = balancing_vm_affinity_groups(node_statistics, vm_statistics, proxlb_config['vm_balancing_method'], proxlb_config['vm_balancing_mode'],)
             vm_output_statistics = run_rebalancing(api_object, vm_statistics, app_args, proxlb_config['vm_parallel_migrations'], 'vm')
 
