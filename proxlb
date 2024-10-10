@@ -247,6 +247,7 @@ def initialize_config_options(config_path):
         proxlb_config['proxmox_api_user']            = config['proxmox']['api_user']
         proxlb_config['proxmox_api_pass']            = config['proxmox']['api_pass']
         proxlb_config['proxmox_api_ssl_v']           = config['proxmox']['verify_ssl']
+        proxlb_config['proxmox_api_timeout']         = config['proxmox'].get('timeout', 10)
         # VM Balancing
         proxlb_config['vm_balancing_enable']         = config['vm_balancing'].get('enable', 1)
         proxlb_config['vm_balancing_method']         = config['vm_balancing'].get('method', 'memory')
@@ -323,7 +324,7 @@ def validate_config_minimum_version(proxlb_config):
         logging.info(f'{info_prefix} ProxLB config version {proxlb_config["config_version"]} is fine. Required: {__config_version__}.')
 
 
-def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v):
+def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_api_ssl_v, proxmox_api_timeout):
     """ Connect and authenticate to the Proxmox remote API. """
     error_prefix = 'Error: [api-connection]:'
     warn_prefix  = 'Warning: [api-connection]:'
@@ -337,7 +338,7 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
     proxmox_api_host = __api_connect_get_host(proxmox_api_host)
 
     try:
-        api_object = proxmoxer.ProxmoxAPI(proxmox_api_host, user=proxmox_api_user, password=proxmox_api_pass, verify_ssl=proxmox_api_ssl_v)
+        api_object = proxmoxer.ProxmoxAPI(proxmox_api_host, user=proxmox_api_user, password=proxmox_api_pass, verify_ssl=proxmox_api_ssl_v, timeout=proxmox_api_timeout)
     except proxmoxer.backends.https.AuthenticationError as proxmox_api_error:
         logging.critical(f'{error_prefix} Provided credentials do not work: {proxmox_api_error}')
         sys.exit(2)
@@ -1517,7 +1518,7 @@ def main():
 
     while True:
         # API Authentication.
-        api_object = api_connect(proxlb_config['proxmox_api_host'], proxlb_config['proxmox_api_user'], proxlb_config['proxmox_api_pass'], proxlb_config['proxmox_api_ssl_v'])
+        api_object = api_connect(proxlb_config['proxmox_api_host'], proxlb_config['proxmox_api_user'], proxlb_config['proxmox_api_pass'], proxlb_config['proxmox_api_ssl_v'], proxlb_config['proxmox_api_timeout'])
 
         # Get master node of cluster and ensure that ProxLB is only performed on the
         # cluster master node to avoid ongoing rebalancing.

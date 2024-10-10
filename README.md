@@ -114,6 +114,7 @@ The following options can be set in the `proxlb.conf` file:
 | | api_user | root@pam | Username for the API. |
 | | api_pass | FooBar | Password for the API. |
 | | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
+| | timeout | 10 | Timeout for the Proxmox API in sec. (default: 10) |
 | `vm_balancing` | enable | 1 | Enables VM/CT balancing. |
 | | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
 | | mode | used | Rebalance by `used` resources (efficiency) or `assigned` (avoid overprovisioning) resources. (default: used)|
@@ -142,6 +143,7 @@ api_host: hypervisor01.gyptazy.com
 api_user: root@pam
 api_pass: FooBar
 verify_ssl: 1
+timeout: 10
 [vm_balancing]
 enable: 1
 method: memory
