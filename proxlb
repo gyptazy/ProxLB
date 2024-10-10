@@ -209,7 +209,15 @@ def initialize_args():
     argparser.add_argument('-j', '--json',        help='Return a JSON of the VM movement.',                     action='store_true', required=False)
     argparser.add_argument('-b', '--best-node',   help='Returns the best next node.',                           action='store_true', required=False)
     argparser.add_argument('-m', '--maintenance', help='Sets node to maintenance mode & moves workloads away.', type=str,            required=False)
+    argparser.add_argument('-v', '--version',     help='Returns the current ProxLB version.',                   action='store_true', required=False)
     return argparser.parse_args()
+
+
+def proxlb_output_version():
+    """ Print ProxLB version information on CLI. """
+    print(f'{__appname__} version {__version__}\nRequired config version: >= {__config_version__}')
+    print('ProxLB support: https://github.com/gyptazy/ProxLB\nDeveloper: gyptazy.com')
+    sys.exit(0)
 
 
 def initialize_config_path(app_args):
@@ -1495,6 +1503,8 @@ def main():
     # Initialize PAS.
     initialize_logger('CRITICAL')
     app_args = initialize_args()
+    if app_args.version:
+        proxlb_output_version()
     config_path = initialize_config_path(app_args)
     pre_validations(config_path)
 
