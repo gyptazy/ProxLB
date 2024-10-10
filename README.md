@@ -198,6 +198,7 @@ The following options and parameters are currently supported:
 | -j | --json | Returns a JSON of the VM movement. | Unset |
 | -b | --best-node | Returns the best next node for a VM/CT placement (useful for further usage with Terraform/Ansible). | Unset |
 | -m | --maintenance | Sets node(s) to maintenance mode & moves workloads away. | Unset |
+| -v | --version | Returns the ProxLB version on stdout. | Unset |
 
 ### Balancing
 #### General
