@@ -1,0 +1,2 @@
+fixed:
+  - Fix CPU balancing where calculations are done in float instead of int. (by @glitchvern) [#75]
