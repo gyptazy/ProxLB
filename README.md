@@ -28,7 +28,6 @@
       - [Ignore VMs (Tag Style)](#ignore-vms-tag-style)
     - [Systemd](#systemd)
     - [Manual](#manual)
-    - [Proxmox GUI Integration](#proxmox-gui-integration)
     - [Quick Start](#quick-start)
     - [Container Quick Start (Docker/Podman)](#container-quick-start-dockerpodman)
     - [Logging](#logging)
@@ -91,7 +90,6 @@ Automated rebalancing reduces the need for manual actions, allowing operators to
 * Usage
   * One-Shot (one-shot)
   * Periodically (daemon)
-  * Proxmox Web GUI Integration (optional)
 
 ## How does it work?
 ProxLB is a load-balancing system designed to optimize the distribution of virtual machines (VMs) and containers (CTs) across a cluster. It works by first gathering resource usage metrics from all nodes in the cluster through the Proxmox API. This includes detailed resource metrics for each VM and CT on every node. ProxLB then evaluates the difference between the maximum and minimum resource usage of the nodes, referred to as "Balanciness." If this difference exceeds a predefined threshold (which is configurable), the system initiates the rebalancing process.
@@ -260,11 +258,6 @@ A manual installation is possible and also supports BSD based systems. Proxmox R
 * proxlb.conf (Config file)
 
 The executable must be able to read the config file, if no dedicated config file is given by the `-c` argument, PLB tries to read it from `/etc/proxlb/proxlb.conf`.
-
-### Proxmox GUI Integration
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-GUI-integration.jpg"/> PLB can also be directly be used from the Proxmox Web UI by installing the optional package `pve-proxmoxlb-service-ui` package which has a dependency on the `proxlb` package. For the Web UI integration, it requires to be installed (in addition) on the nodes on the cluster. Afterwards, a new menu item is present in the HA chapter called `Rebalancing`. This chapter provides two possibilities:
-* Rebalancing VM workloads
-* Migrate VM workloads away from a defined node (e.g. maintenance preparation)
 
 ### Quick Start
 The easiest way to get started is by using the ready-to-use packages that I provide on my CDN and to run it on a Linux Debian based system. This can also be one of the Proxmox nodes itself.
