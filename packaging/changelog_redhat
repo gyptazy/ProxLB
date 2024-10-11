@@ -1,3 +1,12 @@
+* Fri Oct 11 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
+- Add feature to make API timeout configureable.
+- Add maintenance mode to evacuate a node and move workloads for other nodes in the cluster.
+- Add version output cli arg.
+- Run storage balancing only on supported shared storages.
+- Run storage balancing only when needed to save time.
+- Fix CPU balancing where calculations are done in float instead of int. (by @glitchvern)
+- Fix documentation for the underlying infrastructure.
+
 * Wed Sep 12 2024 Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>
 - Add a convert function to cast all bool alike options from configparser to bools.
 - Add a config parser options for future features.
