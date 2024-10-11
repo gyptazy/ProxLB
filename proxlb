@@ -42,7 +42,7 @@ import urllib3
 
 # Constants
 __appname__        = "ProxLB"
-__version__        = "1.0.4b"
+__version__        = "1.0.4"
 __config_version__ = 3
 __author__         = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__         = False
@@ -338,7 +338,7 @@ def api_connect(proxmox_api_host, proxmox_api_user, proxmox_api_pass, proxmox_ap
     proxmox_api_host = __api_connect_get_host(proxmox_api_host)
 
     try:
-        api_object = proxmoxer.ProxmoxAPI(proxmox_api_host, user=proxmox_api_user, password=proxmox_api_pass, verify_ssl=proxmox_api_ssl_v, timeout=proxmox_api_timeout)
+        api_object = proxmoxer.ProxmoxAPI(proxmox_api_host, user=proxmox_api_user, password=proxmox_api_pass, verify_ssl=proxmox_api_ssl_v, timeout=int(proxmox_api_timeout))
     except proxmoxer.backends.https.AuthenticationError as proxmox_api_error:
         logging.critical(f'{error_prefix} Provided credentials do not work: {proxmox_api_error}')
         sys.exit(2)
