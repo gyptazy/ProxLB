@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Create a bug report
-title: "`[BUG]`:"
+title: "`Bug`:"
 labels: bug, needs-analysis
 assignees: ''
 
@@ -9,6 +9,9 @@ assignees: ''
 
 ## General
 <-- Describe the bug from a high level perspective. -->
+
+## Weighting
+Score: <-- Define a scoring from 0-10 (10 highest, most urgent) -->
 
 ## Config
 <-- Attach the ProxLB configuration for further analysis. Please take car to NOT publish your API credentials! -->
