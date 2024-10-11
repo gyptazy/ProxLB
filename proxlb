@@ -487,11 +487,11 @@ def get_node_statistics(api_object, ignore_nodes, maintenance_nodes):
             node_statistics[node['node']]['maintenance']                      = False
             node_statistics[node['node']]['ignore']                           = False
             node_statistics[node['node']]['cpu_total']                        = node['maxcpu']
-            node_statistics[node['node']]['cpu_assigned']                     = node['cpu']
+            node_statistics[node['node']]['cpu_assigned']                     = 0
             node_statistics[node['node']]['cpu_assigned_percent']             = int((node_statistics[node['node']]['cpu_assigned']) / int(node_statistics[node['node']]['cpu_total']) * 100)
             node_statistics[node['node']]['cpu_assigned_percent_last_run']    = 0
-            node_statistics[node['node']]['cpu_used']                         = 0
-            node_statistics[node['node']]['cpu_free']                         = int(node['maxcpu']) - int(node['cpu'])
+            node_statistics[node['node']]['cpu_used']                         = node['cpu']
+            node_statistics[node['node']]['cpu_free']                         = (node['maxcpu']) - (node['cpu'] * node['maxcpu'])
             node_statistics[node['node']]['cpu_free_percent']                 = int((node_statistics[node['node']]['cpu_free']) / int(node['maxcpu']) * 100)
             node_statistics[node['node']]['cpu_free_percent_last_run']        = 0
             node_statistics[node['node']]['memory_total']                     = node['maxmem']
@@ -833,6 +833,11 @@ def balancing_vm_calculations(balancing_method, balancing_mode, balancing_mode_o
         # Get most used/assigned resources of the VM and the most free or less allocated node.
         resources_vm_most_used, processed_vms  = __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms)
         resources_node_most_free               = __get_most_free_resources_node(balancing_method, balancing_mode, balancing_mode_option, node_statistics)
+
+        # If most used vm is on most free node then skip it and get another one.
+        while resources_vm_most_used[1]['node_parent'] == resources_node_most_free[0] and len(processed_vms) < len(vm_statistics):
+            resources_vm_most_used, processed_vms  = __get_most_used_resources_vm(balancing_method, balancing_mode, vm_statistics, processed_vms)
+            logging.debug(f'{info_prefix} processed {len(processed_vms)} out of {len(vm_statistics)} vms.')
 
         # Update resource statistics for VMs and nodes.
         node_statistics, vm_statistics         = __update_vm_resource_statistics(resources_vm_most_used, resources_node_most_free,
