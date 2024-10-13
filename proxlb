@@ -190,7 +190,7 @@ def __validate_config_content(proxlb_config):
         'vm_balancing_mode_option': ['bytes', 'percent'],
         'vm_balancing_type': ['vm', 'ct', 'all'],
         'storage_balancing_method': ['disk_space'],
-        'log_verbosity': ['INFO', 'CRITICAL']
+        'log_verbosity': ['DEBUG', 'INFO', 'WARN', 'WARNING', 'CRITICAL']
     }
 
     for string_val in validate_string_options:
