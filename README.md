@@ -113,7 +113,7 @@ The following options can be set in the `proxlb.conf` file:
 | `proxmox` | api_host | hypervisor01.gyptazy.com | Host or IP address (or comma separated list) of the remote Proxmox API. |
 | | api_user | root@pam | Username for the API. |
 | | api_pass | FooBar | Password for the API. |
-| | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1) |
+| | verify_ssl | 1 | Validate SSL certificates (1) or ignore (0). (default: 1, type: bool) |
 | | timeout | 10 | Timeout for the Proxmox API in sec. (default: 10) |
 | `vm_balancing` | enable | 1 | Enables VM/CT balancing. |
 | | method | memory | Defines the balancing method (default: memory) where you can use `memory`, `disk` or `cpu`. |
@@ -121,19 +121,19 @@ The following options can be set in the `proxlb.conf` file:
 | | mode_option | byte | Rebalance by node's resources in `bytes` or `percent`. (default: bytes) |
 | | type | vm | Rebalance only `vm` (virtual machines), `ct` (containers) or `all` (virtual machines & containers). (default: vm)|
 | | balanciness | 10 | Value of the percentage of lowest and highest resource consumption on nodes may differ before rebalancing. (default: 10) |
-| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
+| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1, type: bool) |
 | | maintenance_nodes | dummynode03,dummynode04 | Defines a comma separated list of nodes to set them into maintenance mode and move VMs/CTs to other nodes. |
 | | ignore_nodes | dummynode01,dummynode02,test* | Defines a comma separated list of nodes to exclude. |
 | | ignore_vms | testvm01,testvm02 | Defines a comma separated list of VMs to exclude. (`*` as suffix wildcard or tags are also supported) |
 | `storage_balancing` | enable | 0 | Enables storage balancing. |
 | | balanciness | 10 | Value of the percentage of lowest and highest storage consumption may differ before rebalancing. (default: 10) |
-| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1) |
-| `update_service` | enable | 0 | Enables the automated update service (rolling updates). |
+| | parallel_migrations | 1 | Defines if migrations should be done parallely or sequentially. (default: 1, type: bool) |
+| `update_service` | enable | 0 | Enables the automated update service (rolling updates). (default: 0, type: bool) |
 | `api` | enable | 0 | Enables the ProxLB API. |
-| `service`| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1) |
+| `service`| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1, type: bool) |
 | | schedule | 24 | Hours to rebalance in hours. (default: 24) |
-| | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0) |
-| | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO`, `WARN` or `CRITICAL` |
+| | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0, type: bool) |
+| | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO` or `CRITICAL` |
 | | config_version | 3 | Defines the current config version schema for ProxLB |
 
 An example of the configuration file looks like:
