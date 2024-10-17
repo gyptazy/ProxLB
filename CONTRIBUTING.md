@@ -29,7 +29,7 @@ Before submitting a pull request, ensure that your changes sucessfully perform t
 
 1. **Install pytest if you haven't already:**
    ```sh
-   pip install fake8
+   pip install flake8
    ```
 
 2. **Run the lintin:**
