@@ -1,0 +1,2 @@
+fixed:
+  - Fix node (and its objects) evaluation when not reachable (e.g., maintenance). [#107]

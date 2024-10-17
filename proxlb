@@ -42,7 +42,7 @@ import urllib3
 
 # Constants
 __appname__        = "ProxLB"
-__version__        = "1.0.4"
+__version__        = "1.0.5b"
 __config_version__ = 3
 __author__         = "Florian Paul Azim Hoberg <gyptazy@gyptazy.ch> @gyptazy"
 __errors__         = False
@@ -543,133 +543,136 @@ def get_vm_statistics(api_object, ignore_vms, balancing_type):
 
     for node in api_object.nodes.get():
 
-        # Add all virtual machines if type is vm or all.
-        if balancing_type == 'vm' or balancing_type == 'all':
-            for vm in api_object.nodes(node['node']).qemu.get():
+        # Get VM/CT objects only when the node is online and reachable.
+        if node['status'] == 'online':
 
-                # Get the VM tags from API.
-                vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'vm')
-                if vm_tags is not None:
-                    group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
+            # Add all virtual machines if type is vm or all.
+            if balancing_type == 'vm' or balancing_type == 'all':
+                for vm in api_object.nodes(node['node']).qemu.get():
 
-                # Get wildcard match for VMs to ignore if a wildcard pattern was
-                # previously found. Wildcards may slow down the task when using
-                # many patterns in the ignore list. Therefore, run this only if
-                # a wildcard pattern was found. We also do not need to validate
-                # this if the VM is already being ignored by a defined tag.
-                if vm_ignore_wildcard and not vm_ignore:
-                    vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
+                    # Get the VM tags from API.
+                    vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'vm')
+                    if vm_tags is not None:
+                        group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
 
-                if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
-                    vm_statistics[vm['name']] = {}
-                    vm_statistics[vm['name']]['group_include']  = group_include
-                    vm_statistics[vm['name']]['group_exclude']  = group_exclude
-                    vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
-                    vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
-                    vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
-                    vm_statistics[vm['name']]['memory_used']    = vm['mem']
-                    vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
-                    vm_statistics[vm['name']]['disk_used']      = vm['disk']
-                    vm_statistics[vm['name']]['vmid']           = vm['vmid']
-                    vm_statistics[vm['name']]['node_parent']    = node['node']
-                    vm_statistics[vm['name']]['node_rebalance'] = node['node']
-                    vm_statistics[vm['name']]['storage']        = {}
-                    vm_statistics[vm['name']]['type']           = 'vm'
+                    # Get wildcard match for VMs to ignore if a wildcard pattern was
+                    # previously found. Wildcards may slow down the task when using
+                    # many patterns in the ignore list. Therefore, run this only if
+                    # a wildcard pattern was found. We also do not need to validate
+                    # this if the VM is already being ignored by a defined tag.
+                    if vm_ignore_wildcard and not vm_ignore:
+                        vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
 
-                    # Get disk details of the related object.
-                    _vm_details = api_object.nodes(node['node']).qemu(vm['vmid']).config.get()
-                    logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
+                    if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
+                        vm_statistics[vm['name']] = {}
+                        vm_statistics[vm['name']]['group_include']  = group_include
+                        vm_statistics[vm['name']]['group_exclude']  = group_exclude
+                        vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
+                        vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
+                        vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
+                        vm_statistics[vm['name']]['memory_used']    = vm['mem']
+                        vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
+                        vm_statistics[vm['name']]['disk_used']      = vm['disk']
+                        vm_statistics[vm['name']]['vmid']           = vm['vmid']
+                        vm_statistics[vm['name']]['node_parent']    = node['node']
+                        vm_statistics[vm['name']]['node_rebalance'] = node['node']
+                        vm_statistics[vm['name']]['storage']        = {}
+                        vm_statistics[vm['name']]['type']           = 'vm'
 
-                    for vm_detail_key, vm_detail_value in _vm_details.items():
-                        # vm_detail_key_validator = re.sub('\d+$', '', vm_detail_key)
-                        vm_detail_key_validator = re.sub(r'\d+$', '', vm_detail_key)
+                        # Get disk details of the related object.
+                        _vm_details = api_object.nodes(node['node']).qemu(vm['vmid']).config.get()
+                        logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
 
-                        if vm_detail_key_validator in _vm_details_storage_allowed:
-                            vm_statistics[vm['name']]['storage'][vm_detail_key] = {}
-                            match = re.match(r'([^:]+):[^/]+/(.+),iothread=\d+,size=(\d+G)', _vm_details[vm_detail_key])
+                        for vm_detail_key, vm_detail_value in _vm_details.items():
+                            # vm_detail_key_validator = re.sub('\d+$', '', vm_detail_key)
+                            vm_detail_key_validator = re.sub(r'\d+$', '', vm_detail_key)
 
-                            # Create an efficient match group and split the strings to assign them to the storage information.
-                            if match:
-                                _volume    = match.group(1)
-                                _disk_name = match.group(2)
-                                _disk_size = match.group(3)
+                            if vm_detail_key_validator in _vm_details_storage_allowed:
+                                vm_statistics[vm['name']]['storage'][vm_detail_key] = {}
+                                match = re.match(r'([^:]+):[^/]+/(.+),iothread=\d+,size=(\d+G)', _vm_details[vm_detail_key])
 
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['name']               = _disk_name
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['device_name']        = vm_detail_key
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['volume']             = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_parent']     = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_rebalance']  = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['size']               = _disk_size[:-1]
-                                logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
-                            else:
-                                logging.info(f'{info_prefix} No (or unsupported) disk(s) for {vm["name"]} found.')
+                                # Create an efficient match group and split the strings to assign them to the storage information.
+                                if match:
+                                    _volume    = match.group(1)
+                                    _disk_name = match.group(2)
+                                    _disk_size = match.group(3)
 
-                    logging.info(f'{info_prefix} Added vm {vm["name"]}.')
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['name']               = _disk_name
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['device_name']        = vm_detail_key
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['volume']             = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_parent']     = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_rebalance']  = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['size']               = _disk_size[:-1]
+                                    logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
+                                else:
+                                    logging.info(f'{info_prefix} No (or unsupported) disk(s) for {vm["name"]} found.')
 
-        # Add all containers if type is ct or all.
-        if balancing_type == 'ct' or balancing_type == 'all':
-            for vm in api_object.nodes(node['node']).lxc.get():
+                        logging.info(f'{info_prefix} Added vm {vm["name"]}.')
 
-                logging.warning(f'{warn_prefix} Rebalancing on LXC containers (CT) always requires them to shut down.')
-                logging.warning(f'{warn_prefix} {vm["name"]} is from type CT and cannot be live migrated!')
-                # Get the VM tags from API.
-                vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'ct')
-                if vm_tags is not None:
-                    group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
+            # Add all containers if type is ct or all.
+            if balancing_type == 'ct' or balancing_type == 'all':
+                for vm in api_object.nodes(node['node']).lxc.get():
 
-                # Get wildcard match for VMs to ignore if a wildcard pattern was
-                # previously found. Wildcards may slow down the task when using
-                # many patterns in the ignore list. Therefore, run this only if
-                # a wildcard pattern was found. We also do not need to validate
-                # this if the VM is already being ignored by a defined tag.
-                if vm_ignore_wildcard and not vm_ignore:
-                    vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
+                    logging.warning(f'{warn_prefix} Rebalancing on LXC containers (CT) always requires them to shut down.')
+                    logging.warning(f'{warn_prefix} {vm["name"]} is from type CT and cannot be live migrated!')
+                    # Get the VM tags from API.
+                    vm_tags       = __get_vm_tags(api_object, node, vm['vmid'], 'ct')
+                    if vm_tags is not None:
+                        group_include, group_exclude, vm_ignore = __get_proxlb_groups(vm_tags)
 
-                if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
-                    vm_statistics[vm['name']] = {}
-                    vm_statistics[vm['name']]['group_include']  = group_include
-                    vm_statistics[vm['name']]['group_exclude']  = group_exclude
-                    vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
-                    vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
-                    vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
-                    vm_statistics[vm['name']]['memory_used']    = vm['mem']
-                    vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
-                    vm_statistics[vm['name']]['disk_used']      = vm['disk']
-                    vm_statistics[vm['name']]['vmid']           = vm['vmid']
-                    vm_statistics[vm['name']]['node_parent']    = node['node']
-                    vm_statistics[vm['name']]['node_rebalance'] = node['node']
-                    vm_statistics[vm['name']]['storage']        = {}
-                    vm_statistics[vm['name']]['type']           = 'ct'
+                    # Get wildcard match for VMs to ignore if a wildcard pattern was
+                    # previously found. Wildcards may slow down the task when using
+                    # many patterns in the ignore list. Therefore, run this only if
+                    # a wildcard pattern was found. We also do not need to validate
+                    # this if the VM is already being ignored by a defined tag.
+                    if vm_ignore_wildcard and not vm_ignore:
+                        vm_ignore = __check_vm_name_wildcard_pattern(vm['name'], ignore_vms_list)
 
-                    # Get disk details of the related object.
-                    _vm_details = api_object.nodes(node['node']).lxc(vm['vmid']).config.get()
-                    logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
+                    if vm['status'] == 'running' and vm['name'] not in ignore_vms_list and not vm_ignore:
+                        vm_statistics[vm['name']] = {}
+                        vm_statistics[vm['name']]['group_include']  = group_include
+                        vm_statistics[vm['name']]['group_exclude']  = group_exclude
+                        vm_statistics[vm['name']]['cpu_total']      = vm['cpus']
+                        vm_statistics[vm['name']]['cpu_used']       = vm['cpu']
+                        vm_statistics[vm['name']]['memory_total']   = vm['maxmem']
+                        vm_statistics[vm['name']]['memory_used']    = vm['mem']
+                        vm_statistics[vm['name']]['disk_total']     = vm['maxdisk']
+                        vm_statistics[vm['name']]['disk_used']      = vm['disk']
+                        vm_statistics[vm['name']]['vmid']           = vm['vmid']
+                        vm_statistics[vm['name']]['node_parent']    = node['node']
+                        vm_statistics[vm['name']]['node_rebalance'] = node['node']
+                        vm_statistics[vm['name']]['storage']        = {}
+                        vm_statistics[vm['name']]['type']           = 'ct'
 
-                    for vm_detail_key, vm_detail_value in _vm_details.items():
-                        # vm_detail_key_validator = re.sub('\d+$', '', vm_detail_key)
-                        vm_detail_key_validator = re.sub(r'\d+$', '', vm_detail_key)
+                        # Get disk details of the related object.
+                        _vm_details = api_object.nodes(node['node']).lxc(vm['vmid']).config.get()
+                        logging.info(f'{info_prefix} Getting disk information for vm {vm["name"]}.')
 
-                        if vm_detail_key_validator in _vm_details_storage_allowed:
-                            vm_statistics[vm['name']]['storage'][vm_detail_key] = {}
-                            match = re.match(r'(?P<volume>[^:]+):(?P<disk_name>[^,]+),size=(?P<disk_size>\S+)', _vm_details[vm_detail_key])
+                        for vm_detail_key, vm_detail_value in _vm_details.items():
+                            # vm_detail_key_validator = re.sub('\d+$', '', vm_detail_key)
+                            vm_detail_key_validator = re.sub(r'\d+$', '', vm_detail_key)
 
-                            # Create an efficient match group and split the strings to assign them to the storage information.
-                            if match:
-                                _volume    = match.group(1)
-                                _disk_name = match.group(2)
-                                _disk_size = match.group(3)
+                            if vm_detail_key_validator in _vm_details_storage_allowed:
+                                vm_statistics[vm['name']]['storage'][vm_detail_key] = {}
+                                match = re.match(r'(?P<volume>[^:]+):(?P<disk_name>[^,]+),size=(?P<disk_size>\S+)', _vm_details[vm_detail_key])
 
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['name']               = _disk_name
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['device_name']        = vm_detail_key
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['volume']             = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_parent']     = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_rebalance']  = _volume
-                                vm_statistics[vm['name']]['storage'][vm_detail_key]['size']               = _disk_size[:-1]
-                                logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
-                            else:
-                                logging.info(f'{info_prefix} No disks for {vm["name"]} found.')
+                                # Create an efficient match group and split the strings to assign them to the storage information.
+                                if match:
+                                    _volume    = match.group(1)
+                                    _disk_name = match.group(2)
+                                    _disk_size = match.group(3)
 
-                    logging.info(f'{info_prefix} Added vm {vm["name"]}.')
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['name']               = _disk_name
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['device_name']        = vm_detail_key
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['volume']             = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_parent']     = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['storage_rebalance']  = _volume
+                                    vm_statistics[vm['name']]['storage'][vm_detail_key]['size']               = _disk_size[:-1]
+                                    logging.info(f'{info_prefix} Added disk for {vm["name"]}: Name {_disk_name} on volume {_volume} with size {_disk_size}.')
+                                else:
+                                    logging.info(f'{info_prefix} No disks for {vm["name"]} found.')
+
+                        logging.info(f'{info_prefix} Added vm {vm["name"]}.')
 
     logging.info(f'{info_prefix} Created VM statistics.')
     return vm_statistics
@@ -882,7 +885,7 @@ def balancing_vm_maintenance(proxlb_config, app_args, node_statistics, vm_statis
         return node_statistics, vm_statistics
 
     for node_name in maintenance_nodes_list:
-        node_vms = sorted(vm_statistics.items(), key=lambda item: item[0] if item[1]['node_parent'] == node_name else [])
+        node_vms = list(filter(lambda item: item[0] if item[1]['node_parent'] == node_name else [], vm_statistics.items()))
         # Update resource statistics for VMs and nodes.
         for vm in node_vms:
             resources_node_most_free        = __get_most_free_resources_node(balancing_method, balancing_mode, balancing_mode_option, node_statistics)
@@ -954,8 +957,9 @@ def __validate_balanciness(balanciness, balancing_method, balancing_mode, node_s
             return False
 
         # Add node information to resource list.
-        node_resource_percent_list.append(int(node_info[f'{balancing_method}_{node_resource_selector}_percent']))
-        logging.debug(f'{info_prefix} Node: {node_name} with values: {node_info}')
+        if not node_statistics[node_name]['maintenance']:
+            node_resource_percent_list.append(int(node_info[f'{balancing_method}_{node_resource_selector}_percent']))
+            logging.debug(f'{info_prefix} Node: {node_name} with values: {node_info}')
 
     # Create a sorted list of the delta + balanciness between the node resources.
     node_resource_percent_list_sorted    = sorted(node_resource_percent_list)

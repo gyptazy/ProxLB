@@ -1,0 +1,2 @@
+fixed:
+  - Fix evaluation of maintenance mode where comparing list & string resulted in a crash (by @glitchvern). [#106]
