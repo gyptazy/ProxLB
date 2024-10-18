@@ -1189,7 +1189,8 @@ def __run_vm_rebalancing(api_object, _vm_vm_statistics, app_args, parallel_migra
                 # Migrate type VM (live migration).
                 if value['type'] == 'vm':
                     logging.info(f'{info_prefix} Rebalancing VM {vm} from node {value["node_parent"]} to node {value["node_rebalance"]}.')
-                    job_id = api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(target=value['node_rebalance'],online=1)
+                    options = {'target': value['node_rebalance'], 'online': 1, 'with-local-disks': 1}
+                    job_id = api_object.nodes(value['node_parent']).qemu(value['vmid']).migrate().post(**options)
 
                 # Migrate type CT (requires restart of container).
                 if value['type'] == 'ct':
