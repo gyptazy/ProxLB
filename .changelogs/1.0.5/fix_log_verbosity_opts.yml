@@ -1,2 +1,0 @@
-changed:
-  - Fixed to allow `DEBUG` and `WARNING` logging verbosity 
