@@ -133,7 +133,7 @@ The following options can be set in the `proxlb.conf` file:
 | `service`| daemon | 1 | Run as a daemon (1) or one-shot (0). (default: 1, type: bool) |
 | | schedule | 24 | Hours to rebalance in hours. (default: 24) |
 | | master_only | 0 | Defines is this should only be performed (1) on the cluster master node or not (0). (default: 0, type: bool) |
-| | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `INFO` or `CRITICAL` |
+| | log_verbosity | INFO | Defines the log level (default: CRITICAL) where you can use `DEBUG`, `INFO`, `WARNING` or `CRITICAL` |
 | | config_version | 3 | Defines the current config version schema for ProxLB |
 
 An example of the configuration file looks like:
