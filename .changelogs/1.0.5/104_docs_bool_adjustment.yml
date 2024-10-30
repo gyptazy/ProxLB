@@ -1,2 +1,2 @@
 changed:
-  - Change docs to make bool usage in configs more clear. [#104]
+  - Change docs to make bool usage in configs more clear (by @gyptazy). [#104]

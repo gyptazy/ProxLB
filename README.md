@@ -270,8 +270,8 @@ The executable must be able to read the config file, if no dedicated config file
 The easiest way to get started is by using the ready-to-use packages that I provide on my CDN and to run it on a Linux Debian based system. This can also be one of the Proxmox nodes itself.
 
 ```
-wget https://cdn.gyptazy.com/files/os/debian/proxlb/proxlb_1.0.4_amd64.deb
-dpkg -i proxlb_1.0.4_amd64.deb
+wget https://cdn.gyptazy.com/files/os/debian/proxlb/proxlb_1.0.5_amd64.deb
+dpkg -i proxlb_1.0.5_amd64.deb
 # Adjust your config
 vi /etc/proxlb/proxlb.conf
 systemctl restart proxlb
@@ -368,6 +368,7 @@ Container Images for Podman, Docker etc., can be found at:
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.0.5 | cr.gyptazy.com/proxlb/proxlb:v1.0.5 |
 | v1.0.4 | cr.gyptazy.com/proxlb/proxlb:v1.0.4 |
 | v1.0.3 | cr.gyptazy.com/proxlb/proxlb:v1.0.3 |
 | v1.0.2 | cr.gyptazy.com/proxlb/proxlb:v1.0.2 |

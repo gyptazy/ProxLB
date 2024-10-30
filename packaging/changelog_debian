@@ -1,3 +1,13 @@
+proxlb (1.0.5) unstable; urgency=low
+
+  * Fix migration from local disks.
+  * Fix allowed values (add DEBUG, WARNING) for log verbosity.
+  * Fix node (and its objects) evaluation when not reachable (e.g., maintenance).
+  * Fix evaluation of maintenance mode where comparing list & string resulted in a crash.
+  * Change docs to make bool usage in configs more clear.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Wed, 30 Oct 2024 17:02:31 +0100
+
 proxlb (1.0.4) unstable; urgency=low
 
   * Add feature to make API timeout configureable.
@@ -8,7 +18,7 @@ proxlb (1.0.4) unstable; urgency=low
   * Fix CPU balancing where calculations are done in float instead of int. (by @glitchvern)
   * Fix documentation for the underlying infrastructure.
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Fri, 11 Oct 2024 06:14:13 +0200
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Fri, 11 Oct 2024 06:14:13 +0200
 
 proxlb (1.0.3) unstable; urgency=low
 
@@ -28,7 +38,7 @@ proxlb (1.0.3) unstable; urgency=low
   * Fix handling of unset `ignore_nodes` and `ignore_vms` resulted in an attribute error.
   * Fix anti-affinity rules not evaluating a new and different node.
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Wed, 11 Sep 2024 17:31:03 +0200
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Wed, 11 Sep 2024 17:31:03 +0200
 
 proxlb (1.0.2) unstable; urgency=low
 
@@ -38,16 +48,16 @@ proxlb (1.0.2) unstable; urgency=low
   * Fix CMake packaging for Debian package to avoid overwriting the config file.
   * Fix some wonkey code styles.
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Tue, 13 Aug 2024 17:28:14 +0200
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 13 Aug 2024 17:28:14 +0200
 
 proxlb (1.0.0) unstable; urgency=low
 
   * Initial release of ProxLB.
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Thu, 01 Aug 2024 17:04:12 +0200
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 01 Aug 2024 17:04:12 +0200
 
 proxlb (0.9.0) unstable; urgency=low
 
   * Initial development release of ProxLB as a tech preview.
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.ch>  Sun, 07 Jul 2024 05:38:41 +0200
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Sun, 07 Jul 2024 05:38:41 +0200
