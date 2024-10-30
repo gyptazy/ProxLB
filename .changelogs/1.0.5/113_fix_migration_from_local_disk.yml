@@ -1,2 +1,2 @@
 fixed:
-  - Fix migration from local disks. [#113]
+  - Fix migration from local disks (by @greenlogles). [#113]

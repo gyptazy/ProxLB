@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.5] - 2024-10-30
+
+### Changed
+
+- Change docs to make bool usage in configs more clear. [#104]
+
+### Fixed
+
+- Fix migration from local disks (by @greenlogles). [#113]
+- Fix allowed values (add DEBUG, WARNING) for log verbosity. [#98]
+- Fix node (and its objects) evaluation when not reachable (e.g., maintenance). [#107]
+- Fix evaluation of maintenance mode where comparing list & string resulted in a crash (by @glitchvern). [#106]
+
+
 ## [1.0.4] - 2024-10-11
 
 ### Added
