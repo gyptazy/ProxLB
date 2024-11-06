@@ -1,0 +1,2 @@
+fixed:
+  - Fix that a scheduler time definition of 1 (int) gets wrongly interpreted as a bool (by @gyptazy). [#115]
