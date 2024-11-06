@@ -295,18 +295,21 @@ def initialize_config_options(config_path):
 
 def __update_config_parser_bools(proxlb_config):
     """ Update bools in config from configparser to real bools """
-    info_prefix   = 'Info: [config-bool-converter]:'
+    info_prefix     = 'Info: [config-bool-converter]:'
+    ignore_sections = ['schedule']
 
     # Normalize and update config parser values to bools.
     for section, option_value in proxlb_config.items():
 
         if option_value in [1, '1', 'yes', 'Yes', 'true', 'True', 'enable']:
-            logging.info(f'{info_prefix} Converting {section} to bool: True.')
-            proxlb_config[section] = True
+            if section not in ignore_sections:
+                logging.info(f'{info_prefix} Converting {section} to bool: True.')
+                proxlb_config[section] = True
 
         if option_value in [0, '0', 'no', 'No', 'false', 'False', 'disable']:
-            logging.info(f'{info_prefix} Converting {section} to bool: False.')
-            proxlb_config[section] = False
+            if section not in ignore_sections:
+                logging.info(f'{info_prefix} Converting {section} to bool: False.')
+                proxlb_config[section] = False
 
     return proxlb_config
 
