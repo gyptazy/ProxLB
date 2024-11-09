@@ -1,0 +1,2 @@
+fixed:
+  - Fix maintenance mode when using cli arg and config mode by using the merged list (by @CartCaved). [#119]
