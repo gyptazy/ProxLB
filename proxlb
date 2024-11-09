@@ -880,7 +880,7 @@ def balancing_vm_maintenance(proxlb_config, app_args, node_statistics, vm_statis
         maintenance_nodes_list = maintenance_nodes_list + app_args.maintenance.split(',')
 
     # Ensure that only existing nodes in the cluster will be used.
-    if len(proxlb_config['vm_maintenance_nodes']) > 1:
+    if len(maintenance_nodes_list) > 1:
         maintenance_nodes_list = set(maintenance_nodes_list) & set(nodes_present)
         logging.info(f'{info_prefix} Maintenance mode for the following hosts defined: {maintenance_nodes_list}')
     else:
