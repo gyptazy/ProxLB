@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(proxmox-rebalancing-service VERSION 1.0.5)
+project(proxmox-rebalancing-service VERSION 1.0.6)
 
 install(PROGRAMS ../proxlb DESTINATION /bin)
 install(FILES ../proxlb.conf DESTINATION /etc/proxlb)

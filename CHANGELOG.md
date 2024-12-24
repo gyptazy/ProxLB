@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2024-12-24
+
+### Fixed
+
+- Fix maintenance mode when using cli arg and config mode by using the merged list (by @CartCaved). [#119]
+- Fix that a scheduler time definition of 1 (int) gets wrongly interpreted as a bool (by @gyptazy). [#115]
 
 ## [1.0.5] - 2024-10-30
 
