@@ -1,0 +1,27 @@
+proxmox_api:
+  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
+  user: root@pam
+  pass: crazyPassw0rd!
+  ssl_verification: False
+  timeout: 10
+
+proxmox_cluster:
+  maintenance_nodes: ['virt66.example.com']
+  ignore_nodes: []
+  overprovisioning: True
+
+balancing:
+  enable: True
+  force: False
+  parallel: False
+  live: True
+  with_local_disks: True
+  balance_types: ['vm', 'ct']
+  max_job_validation: 1800
+  balanciness: 5
+  method: memory
+  mode: assigned
+
+service:
+  daemon: False
+  log_level: DEBUG
