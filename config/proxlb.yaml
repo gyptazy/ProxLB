@@ -1,0 +1,21 @@
+proxmox_api:
+  hosts: ['virt01.hypervisors.gyptazy.com', '10.10.10.10', 'fe01::bad:code::cafe']
+  user: root@pam
+  pass: crazyPassw0rd!
+  ssl_verification: False
+  timeout: 10
+
+proxmox_cluster:
+  maintenance_nodes: ['virt01.hypervisors.gyptazy.com']
+  ignore_nodes: []
+  overprovisioning: True
+
+balancing:
+  enable: True
+  balanciness: 5
+  method: memory
+  mode: assigned
+
+service:
+  daemon: False
+  log_level: DEBUG
