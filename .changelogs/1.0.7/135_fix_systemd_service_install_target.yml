@@ -1,0 +1,2 @@
+fixed:
+  - Fix systemd service file missing install target and network requirements (by @thomasfinstad). [#135]

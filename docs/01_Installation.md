@@ -8,7 +8,8 @@ wget https://cdn.gyptazy.ch/files/amd64/debian/proxlb/proxlb_0.9.9_amd64.deb
 dpkg -i proxlb_0.9.9_amd64.deb
 # Adjust your config
 vi /etc/proxlb/proxlb.conf
-systemctl restart proxlb
+# Enable and start the service
+systemctl enable --now proxlb
 systemctl status proxlb
 ```
 
