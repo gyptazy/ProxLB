@@ -4,6 +4,7 @@ and containers (CTs) across all available nodes in a Proxmox cluster. It provide
 to calculate the optimal distribution of VMs and CTs based on the provided data.
 """
 
+import sys
 from typing import Dict, Any
 from utils.logger import SystemdLogger
 
@@ -92,13 +93,15 @@ class Calculations:
         logger.debug("Finished: get_balanciness.")
 
     @staticmethod
-    def get_most_free_node(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_most_free_node(proxlb_data: Dict[str, Any], return_node: bool = False) -> Dict[str, Any]:
         """
         Get the name of the Proxmox node in the cluster with the most free resources based on
         the user defined method (e.g.: memory) and mode (e.g.: used).
 
         Args:
             proxlb_data (Dict[str, Any]): The data holding all content of all objects.
+            return_node (bool): The indicator to simply return the best node for further
+                                assignments.
 
         Returns:
             Dict[str, Any]: Updated meta data section of the node with the most free resources that should
@@ -112,6 +115,12 @@ class Calculations:
         lowest_usage_node = min(filtered_nodes, key=lambda x: x["memory_used_percent"])
         proxlb_data["meta"]["balancing"]["balance_reason"] = 'resources'
         proxlb_data["meta"]["balancing"]["balance_next_node"] = lowest_usage_node["name"]
+
+        # If executed to simply get the best node for further usage, we return
+        # the best node on stdout and gracefully exit here
+        if return_node:
+            print(lowest_usage_node["name"])
+            sys.exit(0)
 
         logger.debug("Finished: get_most_free_node.")
 
@@ -207,7 +216,7 @@ class Calculations:
 
             # Validate if the provided guest ist included in the anti-affinity group
             if guest_name in proxlb_data["groups"]["anti_affinity"][group_name]['guests'] and not proxlb_data["guests"][guest_name]["processed"]:
-                logger.critical(f"Anti-Affinity: Guest: {guest_name} is included in anti-affinity group: {group_name}.")
+                logger.debug(f"Anti-Affinity: Guest: {guest_name} is included in anti-affinity group: {group_name}.")
 
                 # Iterate over all available nodes
                 for node_name in proxlb_data["nodes"].keys():
@@ -221,7 +230,7 @@ class Calculations:
                             # If the node has not been used yet, we assign this node to the guest
                             proxlb_data["meta"]["balancing"]["balance_next_node"] = node_name
                             proxlb_data["groups"]["anti_affinity"][group_name]["used_nodes"].append(node_name)
-                            logger.critical(f"Node: {node_name} marked as used for anti-affinity group: {group_name} with guest {guest_name}")
+                            logger.debug(f"Node: {node_name} marked as used for anti-affinity group: {group_name} with guest {guest_name}")
                             break
 
                     else:

@@ -4,6 +4,8 @@ classes.
 """
 
 import uuid
+import sys
+import utils.version
 from utils.logger import SystemdLogger
 from typing import Dict, Any
 
@@ -37,7 +39,7 @@ class Helper:
         return str(generated_uuid)
 
     @staticmethod
-    def log_node_metrics(proxlb_data: Dict [str, Any], init: bool=True) -> None:
+    def log_node_metrics(proxlb_data: Dict[str, Any], init: bool = True) -> None:
         """
         Logs the memory, CPU, and disk usage metrics of nodes in the provided proxlb_data dictionary.
 
@@ -63,3 +65,18 @@ class Helper:
         logger.debug(f"Nodes usage cpu:    {nodes_usage_cpu}")
         logger.debug(f"Nodes usage disk:   {nodes_usage_disk}")
         logger.debug("Finished: log_node_metrics.")
+
+    @staticmethod
+    def get_version(print_version: bool = False) -> None:
+        """
+        Returns the current version of ProxLB and optionally prints it to stdout.
+
+        Parameters:
+            print_version (bool): If True, prints the version information to stdout and exits the program.
+
+        Returns:
+            None
+        """
+        if print_version:
+            print(f"{utils.version.__app_name__} version: {utils.version.__version__}\n(C) 2025 by {utils.version.__author__}\n{utils.version.__url__}")
+            sys.exit(0)

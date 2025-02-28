@@ -25,6 +25,7 @@ def main():
     # Parses arguments passed from the CLI
     cli_parser = CliParser()
     cli_args = cli_parser.parse_args()
+    Helper.get_version(cli_args.version)
 
     # Parse ProxLB config file
     config_parser = ConfigParser(cli_args.config)
@@ -52,14 +53,15 @@ def main():
     # Update the initial node resource assignments
     # by the previously created groups.
     Calculations.set_node_assignments(proxlb_data)
-    Calculations.get_most_free_node(proxlb_data)
+    Calculations.get_most_free_node(proxlb_data, cli_args.best_node)
     Calculations.relocate_guests_on_maintenance_nodes(proxlb_data)
     Calculations.get_balanciness(proxlb_data)
     Calculations.relocate_guests(proxlb_data)
     Helper.log_node_metrics(proxlb_data, init=False)
 
     # Perform balancing actions via Proxmox API
-    Balancing(proxmox_api, proxlb_data)
+    if not cli_args.dry_run:
+        Balancing(proxmox_api, proxlb_data)
 
     logger.debug(f"Finished: __main__")
 
