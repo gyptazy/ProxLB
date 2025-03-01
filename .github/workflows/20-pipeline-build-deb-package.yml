@@ -18,4 +18,5 @@ jobs:
           sudo apt-get -y install python3-setuptools python3-stdeb debhelper dh-python python3-stdeb
       - name: Create Debian package
         run: |
+          python3 -c "import stdeb; print(stdeb.__version__)"
           python3 setup.py --command-packages=stdeb.command bdist_deb
