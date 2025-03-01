@@ -7,7 +7,7 @@ setup(
     long_description="My Python Package",
     author="Florian Paul Azim Hoberg (gyptazy)",
     author_email="gyptazy@gyptazy.com",
-    packages=["python3-proxlb"],
+    packages=["proxlb", "proxlb.utils", "proxlb.models"],
     install_requires=[
         "requests",
         "urllib3",
