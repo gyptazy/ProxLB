@@ -15,7 +15,7 @@ from utils.logger import SystemdLogger
 
 
 if not PYYAML_PRESENT:
-    print("The required library 'pyyaml' is not installed.")
+    print("Error: The required library 'pyyaml' is not installed.")
     sys.exit(1)
 
 

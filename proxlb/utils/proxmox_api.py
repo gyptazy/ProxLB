@@ -25,15 +25,15 @@ from utils.logger import SystemdLogger
 
 
 if not PROXMOXER_PRESENT:
-    print("The required library 'proxmoxer' is not installed.")
+    print("Error: The required library 'proxmoxer' is not installed.")
     sys.exit(1)
 
 if not URLLIB3_PRESENT:
-    print("The required library 'urllib3' is not installed.")
+    print("Error: The required library 'urllib3' is not installed.")
     sys.exit(1)
 
 if not REQUESTS_PRESENT:
-    print("The required library 'requests' is not installed.")
+    print("Error: The required library 'requests' is not installed.")
     sys.exit(1)
 
 
