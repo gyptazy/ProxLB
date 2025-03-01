@@ -1,9 +1,0 @@
-python3-proxlb (1.1-0) unstable; urgency=low
-
-  * Refactored code base of ProxLB:
-    - Written as a native Python3 project
-  * New package name: python3-proxlb
-    - Native Debian packaging.
-
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Fri, 01 Mar 2025 12:00:00 +0000
-

@@ -1,8 +1,0 @@
-#!/usr/bin/make -f
-# See debhelper(7)
-
-%:
-	dh $@ --with python3
-
-override_dh_auto_build:
-	python3 setup.py build
