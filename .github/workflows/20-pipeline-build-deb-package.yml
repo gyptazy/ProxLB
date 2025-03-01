@@ -20,4 +20,6 @@ jobs:
           sudo apt-get -y install python3-setuptools debhelper dh-python python3-pip python3-stdeb
       - name: Create Debian package
         run: |
+          pwd
+          cd ProxLB
           python3 setup.py --command-packages=stdeb.command bdist_deb
