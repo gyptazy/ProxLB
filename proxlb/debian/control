@@ -1,0 +1,12 @@
+Source: proxlb
+Section: python
+Priority: optional
+Maintainer: Florian Paul Azim Hoberg <gyptazy@gyptazy.com>
+Build-Depends: debhelper (>= 12), python3-all, python3-setuptools
+Standards-Version: 4.5.0
+Homepage: https://www.proxlb.de
+Vcs-Git: git://github.com/gyptazy/ProxLB.git
+
+Package: python3-proxlb
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-yaml, python3, python3-urllib3, python3-requests, python3-systemd, python3-proxmoxer

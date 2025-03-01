@@ -1,2 +1,7 @@
 __pycache__
+*.pyc
+.DS_Store
+build/
+dist/
+*.egg-info/
 proxlb_dev.yaml

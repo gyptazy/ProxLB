@@ -1,23 +1,17 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
-    name='proxlb',
-    version='1.1.0',
-    description='A DRS alike loadbalancer for Proxmox clusters.',
-    author='Florian Paul Azim Hoberg',
-    author_email='gyptazy@gyptazy.com',
-    url='https://github.com/gyptazy/ProxLB',
-    packages=find_packages(),
+    name="python3-proxlb",
+    version="1.1.0",
+    description="My Python Package",
+    long_description="My Python Package",
+    author="Florian Paul Azim Hoberg (gyptazy)",
+    author_email="gyptazy@gyptazy.com",
+    packages=["python3-proxlb"],
     install_requires=[
-        'python3-proxmoxer',
-        'python3-urllib3',
-        'python3-requests',
-        'python3-yaml',
+        "requests",
+        "urllib3",
+        "proxmoxer",
+        "yaml",
     ],
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: GPL v3',
-        'Operating System :: OS Independent',
-    ],
-    python_requires='>=3.6',
 )
