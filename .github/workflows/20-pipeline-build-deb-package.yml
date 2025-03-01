@@ -13,11 +13,18 @@ jobs:
         run: |
           docker pull debian:latest
 
-      - name: Build Debian package in Docker container
+      - name: Build and install Debian package in Docker container
         run: |
           docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
+            # Modify sources.list to get contrib
+            echo 'deb http://deb.debian.org/debian bookworm main contrib' >> /etc/apt/sources.list && \
+            echo 'deb http://deb.debian.org/debian bookworm-updates main contrib' >> /etc/apt/sources.list && \
+            echo 'deb http://security.debian.org bookworm-security main contrib' >> /etc/apt/sources.list && \
+            # Install dependencies
             apt-get update && \
             apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer, python3-requests, python3-urllib3 && \
+            # Build package
             python3 setup.py --command-packages=stdeb.command bdist_deb && \
+            # Perform a test installation of package
             dpkg -i deb_dist/python3-proxlb*.deb
           "
