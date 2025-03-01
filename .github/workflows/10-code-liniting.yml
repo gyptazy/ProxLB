@@ -15,7 +15,7 @@ jobs:
       - name: Install additional dependencies for code linting
         run: |
           apt-get update
-          apt-get -y install python3-pycodestyle pycodestyle
+          sudo apt-get -y install python3-pycodestyle pycodestyle
       - name: Run code linting on ProxLB Python code
         run: |
           pycodestyle proxlb/*
