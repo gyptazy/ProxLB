@@ -15,6 +15,6 @@ setup(
         "requests",
         "urllib3",
         "proxmoxer",
-        "yaml",
+        "pyyaml",
     ],
 )
