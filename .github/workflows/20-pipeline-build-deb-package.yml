@@ -17,6 +17,7 @@ jobs:
         run: |
           docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
             # Modify sources.list to get contrib
+            echo '' > /etc/apt/sources.list && \
             echo 'deb http://deb.debian.org/debian bookworm main contrib' >> /etc/apt/sources.list && \
             echo 'deb http://deb.debian.org/debian bookworm-updates main contrib' >> /etc/apt/sources.list && \
             echo 'deb http://security.debian.org bookworm-security main contrib' >> /etc/apt/sources.list && \
