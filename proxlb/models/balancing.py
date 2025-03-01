@@ -45,7 +45,7 @@ class Balancing:
 
                 # Hopefully never reaching, but should be catched
                 else:
-                    logger.critical(f"Balancing: Got unexpected guest type: {guest_meta["type"]}. Cannot proceed guest: {guest_meta["name"]}.")
+                    logger.critical(f"Balancing: Got unexpected guest type: {guest_meta['type']}. Cannot proceed guest: {guest_meta['name']}.")
 
     def exec_rebalancing_vm(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
         """
