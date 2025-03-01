@@ -17,4 +17,5 @@ setup(
         "proxmoxer",
         "pyyaml",
     ],
+        data_files=[('/etc/systemd/system', ['service/proxlb.service']), ('/etc/proxlb/', ['config/proxlb_example.yaml'])],
 )

@@ -20,9 +20,22 @@ try:
     URLLIB3_PRESENT = True
 except ImportError:
     URLLIB3_PRESENT = False
-
 from typing import Dict, Any
 from utils.logger import SystemdLogger
+
+
+if not PROXMOXER_PRESENT:
+    print("The required library 'proxmoxer' is not installed.")
+    sys.exit(1)
+
+if not URLLIB3_PRESENT:
+    print("The required library 'urllib3' is not installed.")
+    sys.exit(1)
+
+if not REQUESTS_PRESENT:
+    print("The required library 'requests' is not installed.")
+    sys.exit(1)
+
 
 logger = SystemdLogger()
 
@@ -45,7 +58,6 @@ class ProxmoxApi:
             None
         """
         logger.debug("Starting: ProxmoxApi initialization.")
-        self.test_module_dependencies = self.test_dependencies()
         self.proxmox_api = self.api_connect(proxlb_config)
         logger.debug("Finished: ProxmoxApi initialization.")
 
@@ -54,35 +66,6 @@ class ProxmoxApi:
         Delegate attribute access to proxmox_api.
         """
         return getattr(self.proxmox_api, name)
-
-    def test_dependencies(self) -> None:
-        """
-        Test for the presence of required libraries.
-
-        This method checks if the necessary libraries 'proxmoxer', 'urllib3', and 'requests'
-        are installed. If any of these libraries are missing, it logs a critical error message
-        and terminates the program.
-
-        Returns:
-            None
-
-        Raises:
-            SystemExit: If the provided imports are not available.
-        """
-        logger.debug("Starting: test_dependencies.")
-        if not PROXMOXER_PRESENT:
-            logger.critical("The required library 'proxmoxer' is not installed.")
-            sys.exit(1)
-
-        if not URLLIB3_PRESENT:
-            logger.critical("The required library 'urllib3' is not installed.")
-            sys.exit(1)
-
-        if not REQUESTS_PRESENT:
-            logger.critical("The required library 'requests' is not installed.")
-            sys.exit(1)
-
-        logger.debug("Finished: test_dependencies.")
 
     def api_connect_get_hosts(self, proxmox_api_endpoints: list) -> str:
         """

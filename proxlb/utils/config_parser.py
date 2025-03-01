@@ -13,6 +13,12 @@ except ImportError:
 from typing import Dict, Any
 from utils.logger import SystemdLogger
 
+
+if not PYYAML_PRESENT:
+    print("The required library 'pyyaml' is not installed.")
+    sys.exit(1)
+
+
 logger = SystemdLogger()
 
 
@@ -26,20 +32,8 @@ class ConfigParser:
         Initializes the configuration file parser and validates the config file.
         """
         logger.debug("Starting: ConfigParser.")
-        self.test_module_dependencies = self.test_dependencies()
         self.config_path = self.test_config_path(config_path)
         logger.debug("Finished: ConfigParser.")
-
-    def test_dependencies(self) -> None:
-        """
-        Checks if the required dependencies are installed.
-        """
-        logger.debug("Starting: test_dependencies.")
-        if not PYYAML_PRESENT:
-            logger.critical("The required library 'pyyaml' is not installed.")
-            sys.exit(1)
-
-        logger.debug("Finished: test_dependencies.")
 
     def test_config_path(self, config_path: str) -> None:
         """

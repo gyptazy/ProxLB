@@ -1,0 +1,11 @@
+[Unit]
+Description=ProxLB - A loadbalancer for Proxmox clusters
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=python3 /usr/lib/python3/dist-packages/proxlb/main.py -c /etc/proxlb/proxlb.conf
+User=plb
+
+[Install]
+WantedBy=multi-user.target
