@@ -15,8 +15,8 @@ jobs:
       - name: Install additional dependencies for creating Debian packages
         run: |
           sudo apt-get update
-          sudo apt-get -y install python3-setuptools python3-stdeb debhelper dh-python python3-stdeb
+          sudo apt-get -y install python3-setuptools debhelper dh-python python3-pip
+          sudo pip3 install --break-system-packages stdeb
       - name: Create Debian package
         run: |
-          python3 -c "import stdeb; print(stdeb.__version__)"
           python3 setup.py --command-packages=stdeb.command bdist_deb
