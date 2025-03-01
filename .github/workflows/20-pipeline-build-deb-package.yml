@@ -1,0 +1,21 @@
+name: "Build package: .deb" 
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dependencies
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install additional dependencies for creating Debian packages
+        run: |
+          apt-get update
+          apt-get -y install python3-setuptools python3-stdeb debhelper dh-python
+      - name: Create Debian package
+        run: |
+          python3 setup.py --command-packages=stdeb.command bdist_deb
