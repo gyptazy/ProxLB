@@ -5,8 +5,11 @@ setup(
     version="1.1.0",
     description="A DRS alike loadbalancer for Proxmox clusters.",
     long_description="An advanced DRS alike loadbalancer for Proxmox clusters that also supports maintenance modes and affinity/anti-affinity rules.",
-    author="Florian Paul Azim Hoberg (gyptazy)",
+    author="Florian Paul Azim Hoberg",
     author_email="gyptazy@gyptazy.com",
+    maintainer="Florian Paul Azim Hoberg",
+    maintainer_email="gyptazy@gyptazy.com",
+    url="https://github.com/gyptazy/ProxLB",
     packages=["proxlb", "proxlb.utils", "proxlb.models"],
     install_requires=[
         "requests",
