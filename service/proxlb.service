@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=python3 /usr/lib/python3/dist-packages/proxlb/main.py -c /etc/proxlb/proxlb.conf
+ExecStart=python3 /usr/lib/python3/dist-packages/proxlb/main.py -c /etc/proxlb/proxlb.yaml
 User=plb
 
 [Install]
