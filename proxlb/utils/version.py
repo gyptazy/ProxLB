@@ -1,5 +1,5 @@
 __app_name__ = "ProxLB"
 __app_desc__ = "A DRS alike loadbalancer for Proxmox clusters."
 __author__ = "Florian Paul Azim Hoberg <gyptazy>"
-__version__ = "1.1.0"
+__version__ = "1.1.0-alpha"
 __url__ = "https://github.com/gyptazy/ProxLB"
