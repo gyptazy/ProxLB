@@ -21,7 +21,7 @@ jobs:
           pycodestyle proxlb/* && \
           echo "OK: Code linting successfully performed on ProxLB code."
 
-  build-package-debian:
+  build-package-redhat:
     needs: lint-code-proxlb
     runs-on: ubuntu-latest
     steps:
@@ -34,40 +34,39 @@ jobs:
         run: |
           docker pull debian:latest
 
-      - name: Build DEB package in Docker container
+      - name: Build RPM package in Docker container
         run: |
           docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
             # Install dependencies
             apt-get update && \
-            apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
+            apt-get install -y python3 python3-setuptools rpm debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
             # Build package
-            python3 setup.py --command-packages=stdeb.command bdist_deb && \
-            echo 'OK: Debian package successfully created.'
+            python3 setup.py --command-packages=stdeb.command bdist_rom && \
+            echo 'OK: RPM package successfully created.'
           "
 
-      - name: Upload Debian package python3-proxlb as artifact
+      - name: Upload RPM package python3-proxlb as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: debian-package
-          path: deb_dist/*.deb
+          name: rpm-package
+          path: dist/*.rpm
 
-  integration-test-debian:
-    needs: build-package-debian
+  integration-test-redhat:
+    needs: build-package-redhat
     runs-on: ubuntu-latest
     steps:
-      - name: Download Debian package artifact
+      - name: Download RPM package artifact
         uses: actions/download-artifact@v4
         with:
-          name: debian-package
-          path: deb_dist/
+          name: rpm-package
+          path: dist/
 
-      - name: Set up Docker with Debian image
-        run: docker pull debian:latest
+      - name: Set up Docker with RockyLinux image
+        run: docker pull rockylinux:latest
 
-      - name: Install and test Debian package in Docker container
+      - name: Install and test RPM package in Rocky Linux Docker container
         run: |
-          docker run --rm -v $(pwd)/deb_dist:/deb_dist -w /deb_dist debian:latest bash -c "
-            apt-get update && \
-            apt-get install -y ./python3-proxlb*.deb && \
-            python3 -c 'import proxlb; print(\"OK: Debian package successfully installed.\")'
+          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:latest bash -c "
+            dnf install -y ./python3-proxlb*.rpm && \
+            python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
