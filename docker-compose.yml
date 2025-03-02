@@ -1,7 +1,0 @@
-services:
-  proxlb:
-    build: .
-    volumes:
-      - ./proxlb.conf:/etc/proxlb/proxlb.conf
-    restart: unless-stopped
-    container_name: proxlb

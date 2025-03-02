@@ -1,0 +1,73 @@
+name: "Build package: .deb"
+on: [push]
+jobs:
+  lint-code-proxlb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dependencies for code linting
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install additional dependencies for code linting
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install python3-pycodestyle pycodestyle
+      - name: Run code linting on ProxLB Python code
+        run: |
+          pycodestyle proxlb/* && \
+          echo "OK: Code linting successfully performed on ProxLB code."
+
+  build-package-debian:
+    needs: lint-code-proxlb
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          ref: 'development'
+
+      - name: Set up Docker with Debian image
+        run: |
+          docker pull debian:latest
+
+      - name: Build DEB package in Docker container
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
+            # Install dependencies
+            apt-get update && \
+            apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
+            # Build package
+            python3 setup.py --command-packages=stdeb.command bdist_deb && \
+            echo 'OK: Debian package successfully created.'
+          "
+
+      - name: Upload Debian package python3-proxlb as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: deb_dist/*.deb
+
+  integration-test-debian:
+    needs: build-package-debian
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Debian package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+          path: deb_dist/
+
+      - name: Set up Docker with Debian image
+        run: docker pull debian:latest
+
+      - name: Install and test Debian package in Docker container
+        run: |
+          docker run --rm -v $(pwd)/deb_dist:/deb_dist -w /deb_dist debian:latest bash -c "
+            apt-get update && \
+            apt-get install -y ./python3-proxlb*.deb && \
+            python3 -c 'import proxlb; print(\"OK: Debian package successfully installed.\")'
+          "
