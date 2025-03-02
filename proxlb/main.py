@@ -1,5 +1,10 @@
 """
-Module providing a function printing python version.
+ProxLB is a load balancing tool for Proxmox Virtual Environment (PVE) clusters.
+It connects to the Proxmox API, retrieves information about nodes, guests, and groups,
+and performs calculations to determine the optimal distribution of resources across the
+cluster. The tool supports daemon mode for continuous operation and can log metrics and
+perform balancing actions based on the configuration provided. It also includes a CLI
+parser for handling command-line arguments and a custom logger for systemd integration.
 """
 
 import logging
