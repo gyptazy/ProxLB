@@ -1,7 +1,7 @@
 name: "Build package: .deb"
 on: [push]
 jobs:
-  build:
+  build-package-debian:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -21,8 +21,7 @@ jobs:
             apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
             # Build package
             python3 setup.py --command-packages=stdeb.command bdist_deb && \
-            # Perform a test installation of package
-            dpkg -i deb_dist/python3-proxlb*.deb
+            echo "OK: Debian package successfully created."
           "
 
       - name: Upload Debian package python3-proxlb as artifact
@@ -31,7 +30,7 @@ jobs:
           name: debian-package
           path: deb_dist/*.deb
 
-  integration-test:
+  integration-test-debian:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -49,5 +48,5 @@ jobs:
           docker run --rm -v $(pwd)/deb_dist:/deb_dist -w /deb_dist debian:latest bash -c "
             apt-get update && \
             apt-get install -y ./python3-proxlb*.deb && \
-            python3 -c 'import proxlb; print(\"Package installation successful!\")'
+            python3 -c 'import proxlb; print(\"OK: Debian package successfully installed.\")'
           "
