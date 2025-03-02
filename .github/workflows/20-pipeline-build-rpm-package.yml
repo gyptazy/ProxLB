@@ -36,7 +36,7 @@ jobs:
 
       - name: Build DEB package in Docker container with Python 3.9 virtualenv
         run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace Debian:bookworm bash -c "
+          docker run --rm -v $(pwd):/workspace -w /workspace debian:bookworm bash -c "
             # Install dependencies for adding external repositories and importing keys
             apt-get update && \
             apt-get install -y wget gnupg2 lsb-release && \
