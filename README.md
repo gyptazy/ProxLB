@@ -5,8 +5,36 @@
 <p float="center"><img src="https://img.shields.io/github/license/gyptazy/ProxLB"/><img src="https://img.shields.io/github/contributors/gyptazy/ProxLB"/><img src="https://img.shields.io/github/last-commit/gyptazy/ProxLB/main"/><img src="https://img.shields.io/github/issues-raw/gyptazy/ProxLB"/><img src="https://img.shields.io/github/issues-pr/gyptazy/ProxLB"/></p>
 
 
-## Table of Contents
+# :warning: Important: ProxLB 1.1.x is coming
+This repository is currently under heavy work and changes. During that time it might come to issues, non working pipelines or wrong documentation. Please select a stable release tag for a suitable version during this time!
 
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [How does it work?](#how-does-it-work)
+4. [Installation](#installation)
+   1. [Requirements / Dependencies](#requirements--dependencies)
+   2. [Debian Package](#debian-package)
+   3. [RedHat Package](#redhat-package)
+   4. [Container / Docker](#container--docker)
+   5. [Source](#source)
+5. [Upgrading](#upgrading)
+   1. [Upgrading from < 1.1.0](#upgrading-from--110)
+   2. [Upgrading from >= 1.1.0](#upgrading-from--110)
+6. [Usage / Configuration](#usage--configuration)
+   1. [GUI Integration](#gui-integration)
+   2. [Proxmox HA Integration](#proxmox-ha-integration)
+   3. [Options](#options)
+7. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
+   1. [Affinity Rules](#affinity-rules)
+   2. [Anti-Affinity Rules](#anti-affinity-rules)
+8. [Maintenance](#maintenance)
+9. [Misc](#misc)
+   1. [Bugs](#bugs)
+   2. [Contributing](#contributing)
+   3. [Documentation](#documentation)
+   4. [Support](#support)
+10. [Author(s)](#authors)
 
 
 ## Introduction
