@@ -87,5 +87,6 @@ jobs:
       - name: Install and test RPM package in Rocky Linux Docker container
         run: |
           docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
-            ls -al
+            dnf install -y python3-proxlb*.rpm && \
+            python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
