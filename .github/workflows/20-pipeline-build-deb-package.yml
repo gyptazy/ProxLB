@@ -26,7 +26,7 @@ jobs:
           "
 
       - name: Upload Debian package python3-proxlb as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: debian-package
           path: deb_dist/*.deb
