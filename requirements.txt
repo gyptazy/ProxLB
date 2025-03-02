@@ -1,5 +1,4 @@
-argparse
-configparser
 proxmoxer
 requests
 urllib3
+PyYAML

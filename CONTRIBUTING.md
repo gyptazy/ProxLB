@@ -116,6 +116,6 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 ## Getting Help
 
-If you need help or have any questions, feel free to reach out by creating an issue or by joining our [discussion forum](https://github.com/gyptazy/proxlb/discussions). You can also refer to our [documentation](https://github.com/gyptazy/ProxLB/tree/main/docs) for more information about the project or join our [chat room](https://matrix.to/#/#proxlb:gyptazy.ch) in Matrix.
+If you need help or have any questions, feel free to reach out by creating an issue or by joining our [discussion forum](https://github.com/gyptazy/proxlb/discussions). You can also refer to our [documentation](https://github.com/gyptazy/ProxLB/tree/main/docs) for more information about the project or join our [chat room](https://matrix.to/#/#proxlb:gyptazy.com) in Matrix.
 
 Thank you for contributing to ProxLB! Together, we can enhance the efficiency and performance of Proxmox clusters.

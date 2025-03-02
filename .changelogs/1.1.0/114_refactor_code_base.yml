@@ -1,0 +1,12 @@
+fixed:
+  - Refactored code base for ProxLB [#114]
+  - Renamed package from `proxlb` to `python3-proxlb` to align with Debian packaging guidelines [#114]
+  - Switched to `pycodestyle` for linting [#114]
+  - Package building will be done within GitHub actions pipeline [#114]
+  - ProxLB now only returns a warning when no guests for further balancing are not present (instead of quitting) [132#]
+  - All nodes (according to the free resources) will be used now [#130]
+  - Fixed logging outputs where highest/lowest were mixed-up [#129]
+  - Stop balancing when movement would get worste (new force param to enfoce for affinity rules) [#128]
+  - Added requested documentation regarding Proxmox HA groups [#127]
+  - Rewrite of the whole affinity/anti-affinity rules evaluation and placement [#123]
+  - Fixed the `ignore` parameter for nodes where the node and guests on the node will be untouched [#102]

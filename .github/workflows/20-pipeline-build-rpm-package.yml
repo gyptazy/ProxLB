@@ -1,0 +1,96 @@
+name: "Build package: .rpm"
+on: [push]
+jobs:
+  lint-code-proxlb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dependencies for code linting
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install additional dependencies for code linting
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install python3-pycodestyle pycodestyle
+      - name: Run code linting on ProxLB Python code
+        run: |
+          pycodestyle proxlb/* && \
+          echo "OK: Code linting successfully performed on ProxLB code."
+
+  build-package-rpm:
+    needs: lint-code-proxlb
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          ref: 'development'
+
+      - name: Set up Docker with Debian image
+        run: |
+          docker pull debian:latest
+
+      - name: Build DEB package in Docker container
+        run: |
+          docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
+            # Install dependencies
+            apt-get update && \
+            apt-get install -y python3 python3-setuptools rpm debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
+            # Build package
+            python3 setup.py --command-packages=stdeb.command bdist_rpm && \
+            echo 'OK: RPM package successfully created.'
+          "
+
+      - name: Upload RPM package python3-proxlb as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: dist/*.rpm
+
+  # integration-test-rpm-rockylinux-9:
+  #   needs: build-package-rpm
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download RPM package artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: rpm-package
+  #         path: dist/
+
+  #     - name: Set up Docker with RockyLinux 9 image
+  #       run: docker pull rockylinux:9
+
+  #     - name: Install and test RPM package in Rocky Linux Docker container
+  #       run: |
+  #         docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:9 bash -c "
+  #           # DNF does not handle wildcards well
+  #           rpm_file=\$(ls proxlb*.noarch.rpm) && \
+  #           dnf install -y \$rpm_file && \
+  #           python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
+  #         "
+
+  # integration-test-rpm-rockylinux-8:
+  #   needs: build-package-rpm
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download RPM package artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: rpm-package
+  #         path: dist/
+
+  #     - name: Set up Docker with RockyLinux 8 image
+  #       run: docker pull rockylinux:8
+
+  #     - name: Install and test RPM package in Rocky Linux Docker container
+  #       run: |
+  #         docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
+  #           # DNF does not handle wildcards well
+  #           rpm_file=\$(ls proxlb*.noarch.rpm) && \
+  #           dnf install -y \$rpm_file && \
+  #           python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
+  #         "

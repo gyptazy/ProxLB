@@ -1,2 +1,7 @@
-packaging/changelog-fragments-creator/
-dev/
+__pycache__
+*.pyc
+.DS_Store
+build/
+dist/
+*.egg-info/
+proxlb_dev.yaml
