@@ -34,10 +34,15 @@ jobs:
         run: |
           docker pull debian:latest
 
-      - name: Build DEB package in Docker container with virtualenv
+      - name: Build DEB package in Docker container with Python 3.9 virtualenv
         run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace Debian:latest bash -c "
-            # Install dependencies for Python 3.9 and virtualenv
+          docker run --rm -v $(pwd):/workspace -w /workspace Debian:bookworm bash -c "
+            # Install dependencies and add deadsnakes repository for Python 3.9
+            apt-get update && \
+            apt-get install -y wget gnupg2 lsb-release && \
+            # Add deadsnakes repository
+            echo 'deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main' | tee /etc/apt/sources.list.d/deadsnakes-ubuntu-ppa.list && \
+            wget -qO - https://packages.sury.org/php/apt.gpg | tee /etc/apt/trusted.gpg.d/php.asc && \
             apt-get update && \
             apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip && \
             # Create a virtual environment using Python 3.9
