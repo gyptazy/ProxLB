@@ -30,13 +30,13 @@ jobs:
         with:
           ref: 'development'
 
-      - name: Set up Docker with Rocky Linux 9 image
+      - name: Set up Docker with Debian image
         run: |
           docker pull debian:latest
 
       - name: Build DEB package in Docker container with Python 3.9 virtualenv
         run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace Debian:bookworm bash -c "
+          docker run --rm -v $(pwd):/workspace -w /workspace debian:bookworm bash -c "
             # Install dependencies and add deadsnakes repository for Python 3.9
             apt-get update && \
             apt-get install -y wget gnupg2 lsb-release && \
