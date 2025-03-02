@@ -21,7 +21,7 @@ jobs:
           pycodestyle proxlb/* && \
           echo "OK: Code linting successfully performed on ProxLB code."
 
-  build-package-redhat:
+  build-package-rpm:
     needs: lint-code-proxlb
     runs-on: ubuntu-latest
     steps:
@@ -51,8 +51,8 @@ jobs:
           name: rpm-package
           path: dist/*.rpm
 
-  integration-test-redhat:
-    needs: build-package-redhat
+  integration-test-rpm-rockylinux9:
+    needs: build-package-rpm
     runs-on: ubuntu-latest
     steps:
       - name: Download RPM package artifact
@@ -62,7 +62,27 @@ jobs:
           path: dist/
 
       - name: Set up Docker with RockyLinux image
-        run: docker pull rockylinux:latest
+        run: docker pull rockylinux:9
+
+      - name: Install and test RPM package in Rocky Linux Docker container
+        run: |
+          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:latest bash -c "
+            dnf install -y ./python3-proxlb*.rpm && \
+            python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
+          "
+
+  integration-test-rpm-rockylinux8:
+    needs: build-package-rpm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download RPM package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-package
+          path: dist/
+
+      - name: Set up Docker with RockyLinux image
+        run: docker pull rockylinux:8
 
       - name: Install and test RPM package in Rocky Linux Docker container
         run: |
