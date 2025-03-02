@@ -267,12 +267,24 @@ class ProxmoxApi:
 
         # Login into Proxmox API and create API object
         try:
-            proxmox_api = proxmoxer.ProxmoxAPI(
-                proxmox_api_endpoint,
-                user=proxlb_config.get("proxmox_api").get("user", True),
-                password=proxlb_config.get("proxmox_api").get("pass", True),
-                verify_ssl=proxlb_config.get("proxmox_api").get("ssl_verification", True),
-                timeout=proxlb_config.get("proxmox_api").get("timeout", True))
+
+            if proxlb_config.get("proxmox_api").get("token_secret", False):
+                proxmox_api = proxmoxer.ProxmoxAPI(
+                    proxmox_api_endpoint,
+                    user=proxlb_config.get("proxmox_api").get("user", True),
+                    token_name=proxlb_config.get("proxmox_api").get("token_id", True),
+                    token_value=proxlb_config.get("proxmox_api").get("token_secret", True),
+                    verify_ssl=proxlb_config.get("proxmox_api").get("ssl_verification", True),
+                    timeout=proxlb_config.get("proxmox_api").get("timeout", True))
+                logger.debug("Using API token authentication.")
+            else:
+                proxmox_api = proxmoxer.ProxmoxAPI(
+                    proxmox_api_endpoint,
+                    user=proxlb_config.get("proxmox_api").get("user", True),
+                    password=proxlb_config.get("proxmox_api").get("pass", True),
+                    verify_ssl=proxlb_config.get("proxmox_api").get("ssl_verification", True),
+                    timeout=proxlb_config.get("proxmox_api").get("timeout", True))
+                logger.debug("Using username/password authentication.")
         except proxmoxer.backends.https.AuthenticationError as proxmox_api_error:
             logger.critical(f"Authentication failed. Please check the defined credentials: {proxmox_api_error}")
             sys.exit(2)
