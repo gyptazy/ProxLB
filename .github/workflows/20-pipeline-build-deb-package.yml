@@ -24,3 +24,9 @@ jobs:
             # Perform a test installation of package
             dpkg -i deb_dist/python3-proxlb*.deb
           "
+
+      - name: Upload Debian package python3-proxlb as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-package
+          path: deb_dist/*.deb
