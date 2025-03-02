@@ -1,7 +1,26 @@
 name: "Build package: .deb"
 on: [push]
 jobs:
+  lint-code-proxlb:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dependencies for code linting
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install additional dependencies for code linting
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install python3-pycodestyle pycodestyle
+      - name: Run code linting on ProxLB Python code
+        run: |
+          pycodestyle proxlb/*
   build-package-debian:
+    needs: int-code-proxlb
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -31,7 +50,7 @@ jobs:
           path: deb_dist/*.deb
 
   integration-test-debian:
-    needs: build
+    needs: build-package-debian
     runs-on: ubuntu-latest
     steps:
       - name: Download Debian package artifact
