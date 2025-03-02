@@ -61,12 +61,12 @@ jobs:
           name: rpm-package
           path: dist/
 
-      - name: Set up Docker with RockyLinux image
+      - name: Set up Docker with RockyLinux 9 image
         run: docker pull rockylinux:9
 
       - name: Install and test RPM package in Rocky Linux Docker container
         run: |
-          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:latest bash -c "
+          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:9 bash -c "
             dnf install -y ./python3-proxlb*.rpm && \
             python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
@@ -81,12 +81,12 @@ jobs:
           name: rpm-package
           path: dist/
 
-      - name: Set up Docker with RockyLinux image
+      - name: Set up Docker with RockyLinux 8 image
         run: docker pull rockylinux:8
 
       - name: Install and test RPM package in Rocky Linux Docker container
         run: |
-          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:latest bash -c "
+          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
             dnf install -y ./python3-proxlb*.rpm && \
             python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
