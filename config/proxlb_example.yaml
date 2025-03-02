@@ -24,4 +24,5 @@ balancing:
 
 service:
   daemon: False
+  schedule: 12
   log_level: DEBUG

@@ -145,23 +145,24 @@ The following options can be set in the configuration file `proxlb.yaml`:
 | | ssl_verification | True | `Bool` | Validate SSL certificates (1) or ignore (0). (default: 1, type: bool) |
 | | timeout | 10 | `Int` | Timeout for the Proxmox API in sec. (default: 10) |
 | `proxmox_cluster` |  | | |  |
-| | maintenance_nodes | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. |
-| | ignore_nodes | [] | `List` | A list of Proxmox nodes that are defined to be ignored. |
-| | overprovisioning | False | `Bool` | A list of Proxmox nodes that are defined to be ignored. |
+| | maintenance_nodes | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. (default: []) |
+| | ignore_nodes | [] | `List` | A list of Proxmox nodes that are defined to be ignored.  (default: []) |
+| | overprovisioning | False | `Bool` | Avoids balancing when nodes would become overprovisioned. |
 | `balancing` |  | | |  |
-| | enable | True | `Bool` | |
-| | force | True | `Bool` | |
-| | parallel | True | `Bool` | |
-| | live | True | `Bool` | |
-| | with_local_disks | True | `Bool` | |
-| | balance_types | ['vm', 'ct'] | `List` | |
-| | max_job_validation | 1800 | `Int` | Timeout for the Proxmox API in sec. (default: 10) |
-| | balanciness | 1800 | `Int` | Timeout for the Proxmox API in sec. (default: 10) |
-| | method | memory | `Str` | |
-| | mode | rused | `Str` | |
+| | enable | True | `Bool` | Enables the guest balancing.  (default: True)|
+| | force | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse.  (default: False) |
+| | parallel | False | `Bool` | If guests should be moved in parallel or sequentially. (default: False)|
+| | live | True | `Bool` | If guests should be moved live or shutdown.  (default: True)|
+| | with_local_disks | True | `Bool` | If balancing of guests should include local disks  (default: True)|
+| | balance_types | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored.  (default: ['vm', 'ct']) |
+| | max_job_validation | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
+| | balanciness | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. (default: 10) |
+| | method | memory | `Str` | The balancing method that should be used.  (default: memory | choices: memory, cpu, disk)|
+| | mode | used | `Str` | The balancing mode that should be used.  (default: used | choices: used, assigned)|
 | `service` |  | | |  |
-| | daemon | True | `Bool` | |
-| | log_level | INFO | `Str` | |
+| | daemon | False | `Bool` | If daemon mode should be activated  (default: False)|
+| | schedule | 12 | `Int` | How often rebalancing should occur in hours in daemon mode (default: 12)|
+| | log_level | INFO | `Str` | Defines the default log level that should be logged.  (default: INFO) |
 
 An example of the configuration file looks like:
 ```
@@ -191,6 +192,7 @@ balancing:
 
 service:
   daemon: False
+  schedule: 12
   log_level: DEBUG
 ```
 

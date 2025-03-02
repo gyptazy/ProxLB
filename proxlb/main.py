@@ -40,30 +40,34 @@ def main():
     # Overwrite password after creating the API object
     proxlb_config["proxmox_api"]["pass"] = "********"
 
-    # Get all required objects from the Proxmox cluster
-    meta = {"meta": proxlb_config}
-    nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
-    guests = Guests.get_guests(proxmox_api, nodes)
-    groups = Groups.get_groups(guests, nodes)
+    while True:
+        # Get all required objects from the Proxmox cluster
+        meta = {"meta": proxlb_config}
+        nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
+        guests = Guests.get_guests(proxmox_api, nodes)
+        groups = Groups.get_groups(guests, nodes)
 
-    # Merge obtained objects from the Proxmox cluster for further usage
-    proxlb_data = {**meta, **nodes, **guests, **groups}
-    Helper.log_node_metrics(proxlb_data)
+        # Merge obtained objects from the Proxmox cluster for further usage
+        proxlb_data = {**meta, **nodes, **guests, **groups}
+        Helper.log_node_metrics(proxlb_data)
 
-    # Update the initial node resource assignments
-    # by the previously created groups.
-    Calculations.set_node_assignments(proxlb_data)
-    Calculations.get_most_free_node(proxlb_data, cli_args.best_node)
-    Calculations.relocate_guests_on_maintenance_nodes(proxlb_data)
-    Calculations.get_balanciness(proxlb_data)
-    Calculations.relocate_guests(proxlb_data)
-    Helper.log_node_metrics(proxlb_data, init=False)
+        # Update the initial node resource assignments
+        # by the previously created groups.
+        Calculations.set_node_assignments(proxlb_data)
+        Calculations.get_most_free_node(proxlb_data, cli_args.best_node)
+        Calculations.relocate_guests_on_maintenance_nodes(proxlb_data)
+        Calculations.get_balanciness(proxlb_data)
+        Calculations.relocate_guests(proxlb_data)
+        Helper.log_node_metrics(proxlb_data, init=False)
 
-    # Perform balancing actions via Proxmox API
-    if not cli_args.dry_run:
-        Balancing(proxmox_api, proxlb_data)
+        # Perform balancing actions via Proxmox API
+        if not cli_args.dry_run:
+            Balancing(proxmox_api, proxlb_data)
 
-    logger.debug(f"Finished: __main__")
+        # Validate daemon mode
+        Helper.get_daemon_mode(proxlb_config)
+
+        logger.debug(f"Finished: __main__")
 
 
 if __name__ == "__main__":

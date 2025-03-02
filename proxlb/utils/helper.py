@@ -5,6 +5,7 @@ classes.
 
 import uuid
 import sys
+import time
 import utils.version
 from utils.logger import SystemdLogger
 from typing import Dict, Any
@@ -80,3 +81,25 @@ class Helper:
         if print_version:
             print(f"{utils.version.__app_name__} version: {utils.version.__version__}\n(C) 2025 by {utils.version.__author__}\n{utils.version.__url__}")
             sys.exit(0)
+
+    @staticmethod
+    def get_daemon_mode(proxlb_config: Dict[str, Any]) -> None:
+        """
+        Checks if the daemon mode is active and handles the scheduling accordingly.
+
+        Parameters:
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
+
+        Returns:
+            None
+        """
+        logger.debug("Starting: get_daemon_mode.")
+        if proxlb_config.get("service", {}).get("daemon", False):
+            sleep_seconds = proxlb_config.get("service", {}).get("schedule", 12) * 3600
+            logger.info(f"Daemon mode active: Next run in: {proxlb_config.get('service', {}).get('schedule', 12)} hours.")
+            time.sleep(sleep_seconds)
+        else:
+            logger.debug("Daemon mode is not active.")
+            sys.exit(0)
+
+        logger.debug("Finished: get_daemon_mode.")
