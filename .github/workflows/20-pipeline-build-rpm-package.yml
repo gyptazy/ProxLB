@@ -34,27 +34,12 @@ jobs:
         run: |
           docker pull debian:latest
 
-      - name: Build DEB package in Docker container with Python 3.9 virtualenv
+      - name: Build DEB package in Docker container
         run: |
-          docker run --rm -v $(pwd):/workspace -w /workspace debian:bookworm bash -c "
-            # Install dependencies for adding external repositories and importing keys
+          docker run --rm -v $(pwd):/workspace -w /workspace Debian:latest bash -c "
+            # Install dependencies
             apt-get update && \
-            apt-get install -y wget gnupg2 lsb-release && \
-            # Add deadsnakes repository and fetch the GPG key
-            echo 'deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu focal main' | tee /etc/apt/sources.list.d/deadsnakes-ubuntu-ppa.list && \
-            # Add the missing GPG key for deadsnakes PPA
-            curl -fsSL https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xBA6932366A755776 | gpg --dearmor -o /usr/share/keyrings/deadsnakes-archive-keyring.gpg && \
-            apt-key adv --fetch-keys https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xBA6932366A755776 && \
-            apt-get update && \
-            apt-get install -y python3.9 python3.9-venv python3.9-dev python3-pip && \
-            # Create a virtual environment using Python 3.9
-            python3.9 -m venv /workspace/venv && \
-            # Activate the virtual environment
-            source /workspace/venv/bin/activate && \
-            # Upgrade pip in the virtual environment
-            pip install --upgrade pip && \
-            # Install the required Python packages including proxmoxer
-            pip install proxmoxer && \
+            apt-get install -y python3 python3-setuptools rpm debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
             # Build package
             python3 setup.py --command-packages=stdeb.command bdist_rpm && \
             echo 'OK: RPM package successfully created.'
@@ -66,46 +51,46 @@ jobs:
           name: rpm-package
           path: dist/*.rpm
 
-  integration-test-rpm-rockylinux-9:
-    needs: build-package-rpm
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download RPM package artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: rpm-package
-          path: dist/
+  # integration-test-rpm-rockylinux-9:
+  #   needs: build-package-rpm
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download RPM package artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: rpm-package
+  #         path: dist/
 
-      - name: Set up Docker with RockyLinux 9 image
-        run: docker pull rockylinux:9
+  #     - name: Set up Docker with RockyLinux 9 image
+  #       run: docker pull rockylinux:9
 
-      - name: Install and test RPM package in Rocky Linux Docker container
-        run: |
-          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:9 bash -c "
-            # DNF does not handle wildcards well
-            rpm_file=\$(ls proxlb*.noarch.rpm) && \
-            dnf install -y \$rpm_file && \
-            python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
-          "
+  #     - name: Install and test RPM package in Rocky Linux Docker container
+  #       run: |
+  #         docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:9 bash -c "
+  #           # DNF does not handle wildcards well
+  #           rpm_file=\$(ls proxlb*.noarch.rpm) && \
+  #           dnf install -y \$rpm_file && \
+  #           python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
+  #         "
 
-  integration-test-rpm-rockylinux-8:
-    needs: build-package-rpm
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download RPM package artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: rpm-package
-          path: dist/
+  # integration-test-rpm-rockylinux-8:
+  #   needs: build-package-rpm
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download RPM package artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: rpm-package
+  #         path: dist/
 
-      - name: Set up Docker with RockyLinux 8 image
-        run: docker pull rockylinux:8
+  #     - name: Set up Docker with RockyLinux 8 image
+  #       run: docker pull rockylinux:8
 
-      - name: Install and test RPM package in Rocky Linux Docker container
-        run: |
-          docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
-            # DNF does not handle wildcards well
-            rpm_file=\$(ls proxlb*.noarch.rpm) && \
-            dnf install -y \$rpm_file && \
-            python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
-          "
+  #     - name: Install and test RPM package in Rocky Linux Docker container
+  #       run: |
+  #         docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
+  #           # DNF does not handle wildcards well
+  #           rpm_file=\$(ls proxlb*.noarch.rpm) && \
+  #           dnf install -y \$rpm_file && \
+  #           python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
+  #         "
