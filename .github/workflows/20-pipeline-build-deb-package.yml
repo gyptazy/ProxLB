@@ -30,3 +30,24 @@ jobs:
         with:
           name: debian-package
           path: deb_dist/*.deb
+
+  integration-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Debian package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+          path: deb_dist/
+
+      - name: Set up Docker with Debian image
+        run: docker pull debian:latest
+
+      - name: Install and test Debian package in Docker container
+        run: |
+          docker run --rm -v $(pwd)/deb_dist:/deb_dist -w /deb_dist debian:latest bash -c "
+            apt-get update && \
+            apt-get install -y ./python3-proxlb*.deb && \
+            python3 -c 'import proxlb; print(\"Package installation successful!\")'
+          "
