@@ -141,7 +141,9 @@ The following options can be set in the configuration file `proxlb.yaml`:
 | `proxmox_api` |  |  | |  |
 | | hosts | ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe'] | `List` | List of Proxmox nodes. Can be IPv4, IPv6 or mixed. |
 | | user | root@pam | `Str` | Username for the API. |
-| | pass | FooBar | `Str` | Password for the API. |
+| | pass | FooBar | `Str` | Password for the API. (Recommended: Use API token authorization!) |
+| | token_id | proxlb | `Str` | Token ID of the user for the API. |
+| | token_secret | 430e308f-1337-1337-beef-1337beefcafe | `Str` | Secret of the token ID for the API. |
 | | ssl_verification | True | `Bool` | Validate SSL certificates (1) or ignore (0). (default: 1, type: bool) |
 | | timeout | 10 | `Int` | Timeout for the Proxmox API in sec. (default: 10) |
 | `proxmox_cluster` |  | | |  |
@@ -169,7 +171,9 @@ An example of the configuration file looks like:
 proxmox_api:
   hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
   user: root@pam
-  pass: crazyPassw0rd!
+  #pass: crazyPassw0rd!
+  token_id: proxlb
+  token_secret: 430e308f-1337-1337-beef-1337beefcafe
   ssl_verification: False
   timeout: 10
 

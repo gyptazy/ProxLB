@@ -2,6 +2,9 @@ proxmox_api:
   hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
   user: root@pam
   pass: crazyPassw0rd!
+  # API Token method
+  # token_id: proxlb
+  # token_secret: 430e308f-1337-1337-beef-1337beefcafe
   ssl_verification: False
   timeout: 10
 
