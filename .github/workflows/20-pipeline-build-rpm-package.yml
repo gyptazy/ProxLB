@@ -68,7 +68,7 @@ jobs:
         run: |
           docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:9 bash -c "
             # DNF does not handle wildcards well
-            rpm_file=\$(ls proxlb*.rpm) && \
+            rpm_file=\$(ls proxlb*.noarch.rpm) && \
             dnf install -y \$rpm_file && \
             python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
@@ -90,7 +90,7 @@ jobs:
         run: |
           docker run --rm -v $(pwd)/dist:/dist -w /dist rockylinux:8 bash -c "
             # DNF does not handle wildcards well
-            rpm_file=\$(ls proxlb*.rpm) && \
+            rpm_file=\$(ls proxlb*.noarch.rpm) && \
             dnf install -y \$rpm_file && \
             python3 -c 'import proxlb; print(\"OK: RPM package successfully installed.\")'
           "
