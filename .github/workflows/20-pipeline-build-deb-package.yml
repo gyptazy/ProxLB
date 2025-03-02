@@ -20,7 +20,7 @@ jobs:
         run: |
           pycodestyle proxlb/*
   build-package-debian:
-    needs: int-code-proxlb
+    needs: lint-code-proxlb
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
