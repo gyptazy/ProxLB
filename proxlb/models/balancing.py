@@ -1,9 +1,14 @@
 """
-The balancing class is responsible for processing workloads on Proxmox clusters.
-The previously generated data (hold in proxlb_data) will processed and guests and
-other supported types will be moved across Proxmox clusters based on the defined
-values by an operator.
+The Balancing class is responsible for processing workloads on Proxmox clusters.
+It processes the previously generated data (held in proxlb_data) and moves guests
+and other supported types across Proxmox clusters based on the defined values by an operator.
 """
+
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 import proxmoxer
 import time
@@ -19,6 +24,23 @@ class Balancing:
     The previously generated data (hold in proxlb_data) will processed and guests and
     other supported types will be moved across Proxmox clusters based on the defined
     values by an operator.
+
+    Methods:
+    __init__(self, proxmox_api: any, proxlb_data: Dict[str, Any]):
+        Initializes the Balancing class with the provided ProxLB data and initiates the rebalancing
+        process for guests.
+
+    exec_rebalancing_vm(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
+        Executes the rebalancing of a virtual machine (VM) to a new node within the cluster. Logs the migration
+        process and handles exceptions.
+
+    exec_rebalancing_ct(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
+        Executes the rebalancing of a container (CT) to a new node within the cluster. Logs the migration
+        process and handles exceptions.
+
+    get_rebalancing_job_status(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str, guest_current_node: str, job_id: int, retry_counter: int = 1) -> bool:
+        Monitors the status of a rebalancing job on a Proxmox node until it completes or a timeout
+        is reached. Returns True if the job completed successfully, False otherwise.
     """
 
     def __init__(self, proxmox_api: any, proxlb_data: Dict[str, Any]):

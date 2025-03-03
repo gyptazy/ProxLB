@@ -1,7 +1,25 @@
 """
 The Nodes class retrieves all running nodes in a Proxmox cluster
 and collects their resource metrics.
+
+Methods:
+    __init__:
+        Initializes the Nodes class.
+
+    get_nodes(proxmox_api: any, proxlb_config: Dict[str, Any]) -> Dict[str, Any]:
+        Gets metrics of all nodes in a Proxmox cluster.
+
+    set_node_maintenance(proxlb_config: Dict[str, Any], node_name: str) -> Dict[str, Any]:
+        Sets Proxmox nodes to a maintenance mode if required.
+
+    set_node_ignore(proxlb_config: Dict[str, Any], node_name: str) -> Dict[str, Any]:
+        Sets Proxmox nodes to be ignored if requested.
 """
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 from typing import Dict, Any
 from utils.logger import SystemdLogger

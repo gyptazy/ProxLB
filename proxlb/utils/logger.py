@@ -1,8 +1,12 @@
 """
-The SystemdLogger class provides the root logger support. It dynamically
-evaluates the further usage and imports of journald and adjusts
-the logger to the systems functionality where it gets executed
+The SystemdLogger class provides a singleton logger that integrates with systemd's journal if available.
+It dynamically evaluates the environment and adjusts the logger accordingly.
 """
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 import logging
 try:
@@ -14,9 +18,36 @@ except ImportError:
 
 class SystemdLogger:
     """
-    The SystemdLogger class provides the root logger support. It dynamically
-    evaluates the further usage and imports of journald and adjusts
-    the logger to the systems functionality where it gets executed.
+    The SystemdLogger class provides a singleton logger that integrates with systemd's journal if available.
+    It dynamically evaluates the environment and adjusts the logger accordingly.
+
+    Attributes:
+        instance (SystemdLogger): Singleton instance of the SystemdLogger class.
+
+    Methods:
+        __new__(cls, name: str = "ProxLB", level: str = logging.INFO) -> 'SystemdLogger':
+            Creates a new instance of the SystemdLogger class or returns the existing instance.
+
+        initialize_logger(self, name: str, level: str) -> None:
+            Initializes the logger with the given name and log level. Adds a JournalHandler if systemd is present.
+
+        set_log_level(self, level: str) -> None:
+            Sets the log level for the logger and all its handlers.
+
+        debug(self, msg: str) -> str:
+            Logs a message with level DEBUG.
+
+        info(self, msg: str) -> str:
+            Logs a message with level INFO.
+
+        warning(self, msg: str) -> str:
+            Logs a message with level WARNING.
+
+        error(self, msg: str) -> str:
+            Logs a message with level ERROR.
+
+        critical(self, msg: str) -> str:
+            Logs a message with level CRITICAL.
     """
     # Create a singleton instance variable
     instance = None

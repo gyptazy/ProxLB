@@ -3,6 +3,11 @@ The ConfigParser class handles the parsing of configuration file
 from a given YAML file from any location.
 """
 
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
+
 import os
 import sys
 try:
@@ -24,8 +29,16 @@ logger = SystemdLogger()
 
 class ConfigParser:
     """
-    The ConfigParser class handles the parsing of configuration file
-    from a given YAML file from any location.
+    The ConfigParser class handles the parsing of a configuration file.
+
+    Methods:
+    __init__(config_path: str)
+
+    test_config_path(config_path: str) -> None
+        Checks if the configuration file is present at the given config path.
+
+    get_config() -> Dict[str, Any]
+        Parses and returns the configuration data from the YAML file.
     """
     def __init__(self, config_path: str):
         """

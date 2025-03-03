@@ -7,6 +7,11 @@ perform balancing actions based on the configuration provided. It also includes 
 parser for handling command-line arguments and a custom logger for systemd integration.
 """
 
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
+
 import logging
 from utils.logger import SystemdLogger
 from utils.cli_parser import CliParser

@@ -1,8 +1,14 @@
 """
-The calculation class is responsible for handling the balancing of virtual machines (VMs)
+The Calculations class is responsible for handling the balancing of virtual machines (VMs)
 and containers (CTs) across all available nodes in a Proxmox cluster. It provides methods
 to calculate the optimal distribution of VMs and CTs based on the provided data.
 """
+
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 import sys
 from typing import Dict, Any
@@ -16,6 +22,37 @@ class Calculations:
     The calculation class is responsible for handling the balancing of virtual machines (VMs)
     and containers (CTs) across all available nodes in a Proxmox cluster. It provides methods
     to calculate the optimal distribution of VMs and CTs based on the provided data.
+
+    Methods:
+    __init__(proxlb_data: Dict[str, Any]):
+        Initializes the Calculation class with the provided ProxLB data.
+
+    set_node_assignments(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
+        Sets the assigned resources of the nodes based on the current assigned
+        guest resources by their created groups as an initial base.
+
+    get_balanciness(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
+        Gets the balanciness for further actions where the highest and lowest
+        usage or assignments of Proxmox nodes are compared.
+
+    get_most_free_node(proxlb_data: Dict[str, Any], return_node: bool = False) -> Dict[str, Any]:
+        Gets the name of the Proxmox node in the cluster with the most free resources based on
+        the user-defined method (e.g., memory) and mode (e.g., used).
+
+    relocate_guests_on_maintenance_nodes(proxlb_data: Dict[str, Any]):
+        Relocates guests that are currently on nodes marked for maintenance to
+        nodes with the most available resources.
+
+    relocate_guests(proxlb_data: Dict[str, Any]):
+        Relocates guests within the provided data structure to ensure affinity groups are
+        placed on nodes with the most free resources.
+
+    val_anti_affinity(proxlb_data: Dict[str, Any], guest_name: str):
+        Validates and assigns nodes to guests based on anti-affinity rules.
+
+    update_node_resources(proxlb_data):
+        Updates the resource allocation and usage statistics for nodes when a guest
+        is moved from one node to another.
     """
 
     def __init__(self, proxlb_data: Dict[str, Any]):
