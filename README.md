@@ -252,10 +252,10 @@ The `maintenance_nodes` option allows operators to designate one or more Proxmox
 Bugs can be reported via the GitHub issue tracker [here](https://github.com/gyptazy/ProxLB/issues). You may also report bugs via email or deliver PRs to fix them on your own. Therefore, you might also see the contributing chapter.
 
 ### Contributing
-Feel free to add further documentation, to adjust already existing one or to contribute with code. Please take care about the style guide and naming conventions. You can find more in our [CONTRIBUTING.md](https://github.com/gyptazy/ProxLB/blob/development/CONTRIBUTING.md) file.
+Feel free to add further documentation, to adjust already existing one or to contribute with code. Please take care about the style guide and naming conventions. You can find more in our [CONTRIBUTING.md](https://github.com/gyptazy/ProxLB/blob/main/CONTRIBUTING.md) file.
 
 ### Documentation
-You can also find additional and more detailed documentation within the [docs/](https://github.com/gyptazy/ProxLB/tree/development/docs) directory.
+You can also find additional and more detailed documentation within the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory.
 
 ### Support
 If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.com) in Matrix or [Discord](https://discord.gg/JemGu7WbfQ). Join our community for real-time help, advice, and discussions. The Matrix and Discord room are bridged to ensure that the communication is not splitted - so simply feel free to join which fits most to you!

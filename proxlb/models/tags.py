@@ -1,8 +1,14 @@
 """
-The Tags class retrieves all tags from guests of the type VM or CT running
-in a Proxmox cluster and validates for affinity, anti-affinity and ignore
-tags set for the guest in the Proxmox API.
+The Tags class retrieves and processes tags from guests of type VM or CT running
+in a Proxmox cluster. It provides methods to fetch tags from the Proxmox API and
+evaluate them for affinity, anti-affinity, and ignore tags, which are used during
+balancing calculations.
 """
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 import time
 from typing import List
@@ -13,13 +19,30 @@ logger = SystemdLogger()
 
 class Tags:
     """
-    The Tags class retrieves all tags from guests of the type VM or CT running
-    in a Proxmox cluster and validates for affinity, anti-affinity and ignore
-    tags set for the guest in the Proxmox API.
+    The Tags class retrieves and processes tags from guests of type VM or CT running
+    in a Proxmox cluster. It provides methods to fetch tags from the Proxmox API and
+    evaluate them for affinity, anti-affinity, and ignore tags, which are used during
+    balancing calculations.
+
+    Methods:
+        __init__:
+            Initializes the Tags class.
+
+        get_tags_from_guests(proxmox_api: any, node: str, guest_id: int, guest_type: str) -> List[str]:
+            Retrieves all tags for a given guest from the Proxmox API.
+
+        get_affinity_groups(tags: List[str]) -> List[str]:
+            Evaluates and returns all affinity tags from the provided list of tags.
+
+        get_anti_affinity_groups(tags: List[str]) -> List[str]:
+            Evaluates and returns all anti-affinity tags from the provided list of tags.
+
+        get_ignore(tags: List[str]) -> bool:
+            Evaluates and returns a boolean indicating whether the guest should be ignored based on the provided list of tags.
     """
     def __init__(self):
         """
-        Initializes the Tags class.
+        Initializes the tags class.
         """
 
     @staticmethod

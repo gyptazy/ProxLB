@@ -1,6 +1,17 @@
 """
-Module providing a function printing python version.
+    The proxmox_api class manages connections to the Proxmox API by parsing the required objects
+    for the authentication which can be based on username/password or API tokens.
+
+    This class provides methods to initialize the Proxmox API connection, test connectivity to
+    Proxmox hosts, and handle authentication using either username/password or API tokens.
+    It also includes functionality to distribute load across multiple Proxmox API endpoints
+    and manage SSL certificate validation.
 """
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 try:
     import proxmoxer
@@ -42,20 +53,44 @@ logger = SystemdLogger()
 
 class ProxmoxApi:
     """
-    Handles command-line argument parsing for ProxLB.
+    The proxmox_api class manages connections to the Proxmox API by parsing the required objects
+    for the authentication which can be based on username/password or API tokens.
+
+    This class provides methods to initialize the Proxmox API connection, test connectivity to
+    Proxmox hosts, and handle authentication using either username/password or API tokens.
+    It also includes functionality to distribute load across multiple Proxmox API endpoints
+    and manage SSL certificate validation.
+
+    Attributes:
+        logger (SystemdLogger): Logger instance for logging messages.
+        proxmox_api (proxmoxer.ProxmoxAPI): Authenticated ProxmoxAPI object.
+
+    Methods:
+        __init__(proxlb_config: Dict[str, Any]) -> None:
+            Initializes the ProxmoxApi instance with the provided configuration.
+        __getattr__(name):
+            Delegates attribute access to the proxmox_api object.
+        api_connect_get_hosts(proxmox_api_endpoints: list) -> str:
+            Determines a working Proxmox API host from a list of endpoints.
+        test_api_proxmox_host(host: str) -> str:
+            Tests connectivity to a Proxmox host by resolving its IP address.
+        test_api_proxmox_host_ipv4(host: str, port: int = 8006, timeout: int = 1) -> bool:
+            Tests reachability of a Proxmox host on its IPv4 address.
+        test_api_proxmox_host_ipv6(host: str, port: int = 8006, timeout: int = 1) -> bool:
+            Tests reachability of a Proxmox host on its IPv6 address.
+        api_connect(proxlb_config: Dict[str, Any]) -> proxmoxer.ProxmoxAPI:
+            Establishes a connection to the Proxmox API using the provided configuration.
     """
     def __init__(self, proxlb_config: Dict[str, Any]) -> None:
         """
-        Initialize the ProxmoxApi instance.
+        Initializes the ProxmoxApi instance with the provided configuration.
 
-        This method sets up the ProxmoxApi instance by testing the required module dependencies
-        and establishing a connection to the Proxmox API using the provided configuration.
+        This constructor method sets up the Proxmox API connection by calling the
+        api_connect method with the given configuration dictionary. It logs the
+        initialization process for debugging purposes.
 
         Args:
-            proxlb_config (Dict[str, Any]): Configuration dictionary containing Proxmox API connection details.
-
-        Returns:
-            None
+            proxlb_config (Dict[str, Any]): A dictionary containing the Proxmox API configuration.
         """
         logger.debug("Starting: ProxmoxApi initialization.")
         self.proxmox_api = self.api_connect(proxlb_config)
@@ -63,7 +98,7 @@ class ProxmoxApi:
 
     def __getattr__(self, name):
         """
-        Delegate attribute access to proxmox_api.
+        Delegate attribute access to proxmox_api to the underlying proxmoxer module.
         """
         return getattr(self.proxmox_api, name)
 

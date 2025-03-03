@@ -3,6 +3,11 @@ The Guests class retrieves all running guests on the Proxmox cluster across all 
 It handles both VM and CT guest types, collecting their resource metrics.
 """
 
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
+
 from typing import Dict, Any
 from utils.logger import SystemdLogger
 from models.tags import Tags
@@ -14,6 +19,14 @@ class Guests:
     """
     The Guests class retrieves all running guests on the Proxmox cluster across all available nodes.
     It handles both VM and CT guest types, collecting their resource metrics.
+
+    Methods:
+        __init__:
+            Initializes the Guests class.
+
+        get_guests(proxmox_api: any, nodes: Dict[str, Any]) -> Dict[str, Any]:
+            Retrieves metrics for all running guests (both VMs and CTs) across all nodes in the Proxmox cluster.
+            It collects resource metrics such as CPU, memory, and disk usage, as well as tags and affinity/anti-affinity groups.
     """
     def __init__(self):
         """

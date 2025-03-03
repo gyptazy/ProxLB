@@ -1,8 +1,14 @@
 """
-The groups class is responsible for handling the correlations between the guests
-and their groups like affinity and anti-affinity groups. To ensure a proper balancing
-guests will ge grouped and then evaluated for further balancing.
+The Groups class is responsible for handling the correlations between the guests
+and their groups, such as affinity and anti-affinity groups. It ensures proper balancing
+by grouping guests and evaluating them for further balancing. The class provides methods
+to initialize with ProxLB data and to generate groups based on guest and node data.
 """
+
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
 
 from typing import Dict, Any
 from utils.logger import SystemdLogger
@@ -16,6 +22,14 @@ class Groups:
     The groups class is responsible for handling the correlations between the guests
     and their groups like affinity and anti-affinity groups. To ensure a proper balancing
     guests will ge grouped and then evaluated for further balancing.
+
+    Methods:
+        __init__(proxlb_data: Dict[str, Any]):
+            Initializes the Groups class.
+
+        get_groups(guests: Dict[str, Any], nodes: Dict[str, Any]) -> Dict[str, Any]:
+            Generates and returns a dictionary of affinity and anti-affinity groups
+            based on the provided data.
     """
 
     def __init__(self, proxlb_data: Dict[str, Any]):

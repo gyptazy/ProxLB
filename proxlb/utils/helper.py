@@ -3,6 +3,11 @@ The Helper class provides some basic helper functions to not mess up the code in
 classes.
 """
 
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
+
 import uuid
 import sys
 import time
@@ -17,6 +22,22 @@ class Helper:
     """
     The Helper class provides some basic helper functions to not mess up the code in other
     classes.
+
+    Methods:
+        __init__():
+            Initializes the general Helper class.
+
+        get_uuid_string() -> str:
+            Generates a random uuid and returns it as a string.
+
+        log_node_metrics(proxlb_data: Dict[str, Any], init: bool = True) -> None:
+            Logs the memory, CPU, and disk usage metrics of nodes in the provided proxlb_data dictionary.
+
+        get_version(print_version: bool = False) -> None:
+            Returns the current version of ProxLB and optionally prints it to stdout.
+
+        get_daemon_mode(proxlb_config: Dict[str, Any]) -> None:
+            Checks if the daemon mode is active and handles the scheduling accordingly.
     """
     def __init__(self):
         """

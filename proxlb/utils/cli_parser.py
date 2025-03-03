@@ -2,6 +2,11 @@
 The CliParser class handles the parsing of command-line interface (CLI) arguments.
 """
 
+__author__ = "Florian Paul Azim Hoberg <gyptazy>"
+__copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
+__license__ = "GPL-3.0"
+
+
 import argparse
 import utils.version
 from utils.logger import SystemdLogger
