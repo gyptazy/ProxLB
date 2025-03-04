@@ -1,0 +1,5 @@
+main.py models usr/lib/python3/dist-packages/proxlb
+models usr/lib/python3/dist-packages/proxlb
+utils usr/lib/python3/dist-packages/proxlb
+../service/proxlb.service lib/systemd/system
+../config/proxlb_example.yaml etc/proxlb

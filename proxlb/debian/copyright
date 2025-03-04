@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: python3-proxlb
+Source: https://github.com/gyptazy/ProxLB
+
+Files: *
+Copyright: 2025 Florian Paul Azim Hoberg <gyptazy@gyptazy.com>
+License: GPL-3.0-or-later
+
+License: GPL-3.0-or-later
+ On Debian systems, the full text of the GPL-3.0-or-later license can be found
+ in the file /usr/share/common-licenses/GPL-3.

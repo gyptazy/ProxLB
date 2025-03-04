@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+# Automatically inserted debhelper commands
+#DEBHELPER#
+
+# Check if user proxlb exists, if not, create it
+if ! id -u proxlb >/dev/null 2>&1; then
+    useradd -m proxlb
+    echo "User proxlb created."
+else
+    echo "User proxlb already exists."
+fi
+
+# Reload systemd
+if [ "$1" = "configure" ]; then
+    systemd daemon-reload || exit 1
+fi

@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+# Automatically inserted debhelper commands
+#DEBHELPER#
+
+if [ "$1" = "remove" ]; then
+    systemd proxlb stop || true
+    systemd disable proxlb.service || true
+    systemd daemon-reload
+fi

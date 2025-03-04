@@ -1,0 +1,14 @@
+Source: python3-proxlb
+Section: python
+Priority: optional
+Maintainer: Florian Paul Azim Hoberg <gyptazy@gyptazy.com>
+Build-Depends: debhelper-compat (= 13), python3, dh-python, python3-setuptools
+Standards-Version: 4.6.0
+Homepage: https://github.com/gyptazy/ProxLB
+
+Package: python3-proxlb
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-proxmoxer, python3-systemd, python3-yaml, python3-urllib3, python3-requests
+Description: Load balancer for Proxmox clusters
+ An advanced DRS alike loadbalancer for Proxmox clusters that also supports
+ maintenance modes and affinity/anti-affinity rules.
