@@ -152,7 +152,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 | | overprovisioning | False | `Bool` | Avoids balancing when nodes would become overprovisioned. |
 | `balancing` |  | | |  |
 | | enable | True | `Bool` | Enables the guest balancing.  (default: True)|
-| | force | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse.  (default: False) |
+| | enforce_affinity | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse.  (default: False) |
 | | parallel | False | `Bool` | If guests should be moved in parallel or sequentially. (default: False)|
 | | live | True | `Bool` | If guests should be moved live or shutdown.  (default: True)|
 | | with_local_disks | True | `Bool` | If balancing of guests should include local disks  (default: True)|
@@ -184,7 +184,7 @@ proxmox_cluster:
 
 balancing:
   enable: True
-  force: False
+  enforce_affinity: False
   parallel: False
   live: True
   with_local_disks: True

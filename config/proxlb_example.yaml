@@ -15,7 +15,7 @@ proxmox_cluster:
 
 balancing:
   enable: True
-  force: False
+  enforce_affinity: False
   parallel: False
   live: True
   with_local_disks: True
