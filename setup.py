@@ -10,7 +10,7 @@ setup(
     maintainer="Florian Paul Azim Hoberg",
     maintainer_email="gyptazy@gyptazy.com",
     url="https://github.com/gyptazy/ProxLB",
-    packages=["proxlb", "proxlb.utils", "proxlb.models"],
+    packages=["proxlb", "proxlb.utils", "proxlb.models", misc/debian],
     install_requires=[
         "requests",
         "urllib3",

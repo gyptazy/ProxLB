@@ -1,0 +1,2 @@
+useradd -m plb -s /sbin/nologin
+systemctl daemon-reload
