@@ -182,7 +182,15 @@ class ProxmoxApi:
             bool: False if the Proxmox server is not reachable.
         """
         logger.debug("Starting: test_api_proxmox_host.")
-        ip = socket.getaddrinfo(host, None, socket.AF_UNSPEC)
+
+        # Try resolving DNS to IP and log non-resolvable ones
+        try:
+            ip = socket.getaddrinfo(host, None, socket.AF_UNSPEC)
+        except socket.gaierror:
+            logger.warning(f"Could not resolve {host}.")
+            return False
+
+        # Validate if given object is IPv4 or IPv6
         for address_type in ip:
             if address_type[0] == socket.AF_INET:
                 logger.debug(f"{host} is type ipv4.")
