@@ -1,0 +1,3 @@
+override_dh_python3:
+    # Do not auto-generate postinst
+
