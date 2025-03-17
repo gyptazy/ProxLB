@@ -207,13 +207,13 @@ class Calculations:
         None
         """
         logger.debug("Starting: relocate_guests.")
-        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"]["force"]:
+        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"]["enforce_affinity"]:
 
             if proxlb_data["meta"]["balancing"].get("balance", False):
                 logger.debug("Balancing of guests will be performt. Reason: balanciness")
 
-            if proxlb_data["meta"]["balancing"].get("force", False):
-                logger.debug("Balancing of guests will be performt. Reason: force balancing")
+            if proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
+                logger.debug("Balancing of guests will be performt. Reason: enforce affinity balancing")
 
             for group_name in proxlb_data["groups"]["affinity"]:
 
