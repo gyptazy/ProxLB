@@ -102,6 +102,44 @@ class ProxmoxApi:
         """
         return getattr(self.proxmox_api, name)
 
+    def validate_config(self, proxlb_config: Dict[str, Any]) -> None:
+        """
+        Validates the provided ProxLB configuration dictionary to ensure that it contains
+        the necessary credentials for authentication and that the credentials are not
+        mutually exclusive.
+
+        Args:
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
+                It must include a "proxmox_api" key with a nested dictionary that contains
+                either "user" and "password" keys for username/password authentication or
+                "token_id" and "token_secret" keys for API token authentication.
+
+        Raises:
+            SystemExit: If both username/password and API token authentication methods are
+                        provided, the function will log a critical error message and terminate
+                        the program.
+
+        Logs:
+            Logs the start and end of the validation process. Logs a critical error if both
+            authentication methods are provided.
+        """
+        logger.debug("Starting: validate_config.")
+        if not proxlb_config.get("proxmox_api", False):
+            logger.critical(f"Config error. Please check your proxmox_api chapter in your config file.")
+            print(f"Config error. Please check your proxmox_api chapter in your config file.")
+            sys.exit(1)
+
+        proxlb_credentials = proxlb_config["proxmox_api"]
+        present_auth_user = "user" in proxlb_credentials
+        present_auth_token = "token_id" in proxlb_credentials
+
+        if present_auth_user and present_auth_token:
+            logger.critical(f"Username/password and API token authentication are mutal exclusive. Please use only one!")
+            print(f"Username/password and API token authentication are mutal exclusive. Please use only one!")
+            sys.exit(1)
+
+        logger.debug("Finished: validate_config.")
+
     def api_connect_get_hosts(self, proxmox_api_endpoints: list) -> str:
         """
         Perform a connectivity test to determine a working host for the Proxmox API.
@@ -299,6 +337,9 @@ class ProxmoxApi:
             requests.exceptions.ConnectionError: If the connection to the Proxmox API is refused.
         """
         logger.debug("Starting: api_connect.")
+        # Validate config
+        self.validate_config(proxlb_config)
+
         # Get a valid Proxmox API endpoint
         proxmox_api_endpoint = self.api_connect_get_hosts(proxlb_config.get("proxmox_api", {}).get("hosts", []))
 
