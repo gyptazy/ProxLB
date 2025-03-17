@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+#DEBHELPER#
+if [ "$1" = "configure" ]; then
+    systemctl enable proxlb.service
+    systemctl restart proxlb.service || true
+
+    # Create the 'plb' user if it does not exist
+    if ! id "plb" &>/dev/null; then
+        useradd --system --home /var/lib/proxlb --create-home --shell /usr/sbin/nologin --group nogroup plb
+        echo "User 'plb' created."
+    else
+        echo "User 'plb' already exists, skipping creation."
+    fi
+fi

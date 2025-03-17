@@ -1,0 +1,5 @@
+proxlb (1.1.0) stable; urgency=medium
+
+  * Refactored code base of ProxLB. (Closes: #114)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 17 Mar 2025 18:55:02 +0000
