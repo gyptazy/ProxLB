@@ -5,7 +5,7 @@ proxmox_api:
   # API Token method
   # token_id: proxlb
   # token_secret: 430e308f-1337-1337-beef-1337beefcafe
-  ssl_verification: False
+  ssl_verification: True
   timeout: 10
 
 proxmox_cluster:
@@ -28,4 +28,4 @@ balancing:
 service:
   daemon: False
   schedule: 12
-  log_level: DEBUG
+  log_level: INFO
