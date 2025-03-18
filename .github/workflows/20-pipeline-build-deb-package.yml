@@ -28,7 +28,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          ref: 'development'
+          ref: ${{ github.ref }}
 
       - name: Set up Docker with Debian image
         run: |
@@ -39,9 +39,13 @@ jobs:
           docker run --rm -v $(pwd):/workspace -w /workspace debian:latest bash -c "
             # Install dependencies
             apt-get update && \
-            apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 && \
-            # Build package
-            python3 setup.py --command-packages=stdeb.command bdist_deb && \
+            apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 devscripts python3-all && \
+            # Build package using stdeb / setuptools
+            # python3 setup.py --command-packages=stdeb.command bdist_deb && \
+            # Build native package
+            dpkg-buildpackage -us -uc && \
+            mkdir package && \
+            mv ../*.deb package/ && \
             echo 'OK: Debian package successfully created.'
           "
 
@@ -49,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debian-package
-          path: deb_dist/*.deb
+          path: package/*.deb
 
   integration-test-debian:
     needs: build-package-debian
@@ -59,15 +63,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: debian-package
-          path: deb_dist/
+          path: package/
 
       - name: Set up Docker with Debian image
         run: docker pull debian:latest
 
       - name: Install and test Debian package in Docker container
         run: |
-          docker run --rm -v $(pwd)/deb_dist:/deb_dist -w /deb_dist debian:latest bash -c "
+          docker run --rm -v $(pwd)/package:/package -w /package debian:latest bash -c "
             apt-get update && \
-            apt-get install -y ./python3-proxlb*.deb && \
+            apt-get install -y systemd && \
+            apt-get install -y ./proxlb*.deb && \
             python3 -c 'import proxlb; print(\"OK: Debian package successfully installed.\")'
           "
