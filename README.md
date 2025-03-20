@@ -4,10 +4,6 @@
 
 <p float="center"><img src="https://img.shields.io/github/license/gyptazy/ProxLB"/><img src="https://img.shields.io/github/contributors/gyptazy/ProxLB"/><img src="https://img.shields.io/github/last-commit/gyptazy/ProxLB/main"/><img src="https://img.shields.io/github/issues-raw/gyptazy/ProxLB"/><img src="https://img.shields.io/github/issues-pr/gyptazy/ProxLB"/></p>
 
-
-# :warning: Important: ProxLB 1.1.x is coming
-This repository is currently under heavy work and changes. During that time it might come to issues, non working pipelines or wrong documentation. Please select a stable release tag for a suitable version during this time!
-
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Features](#features)
@@ -15,26 +11,22 @@ This repository is currently under heavy work and changes. During that time it m
 4. [Installation](#installation)
    1. [Requirements / Dependencies](#requirements--dependencies)
    2. [Debian Package](#debian-package)
-   3. [RedHat Package](#redhat-package)
    4. [Container / Docker](#container--docker)
    5. [Source](#source)
-5. [Upgrading](#upgrading)
-   1. [Upgrading from < 1.1.0](#upgrading-from--110)
-   2. [Upgrading from >= 1.1.0](#upgrading-from--110)
-6. [Usage / Configuration](#usage--configuration)
+5. [Usage / Configuration](#usage--configuration)
    1. [GUI Integration](#gui-integration)
    2. [Proxmox HA Integration](#proxmox-ha-integration)
    3. [Options](#options)
-7. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
+6. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
    1. [Affinity Rules](#affinity-rules)
    2. [Anti-Affinity Rules](#anti-affinity-rules)
-8. [Maintenance](#maintenance)
-9. [Misc](#misc)
+7. [Maintenance](#maintenance)
+8. [Misc](#misc)
    1. [Bugs](#bugs)
    2. [Contributing](#contributing)
    3. [Documentation](#documentation)
    4. [Support](#support)
-10. [Author(s)](#authors)
+9. [Author(s)](#authors)
 
 
 ## Introduction
@@ -94,23 +86,126 @@ The dependencies can simply be installed with `pip` by running the following com
 pip install -r requirements.txt
 ```
 
-Distribution packages, such like the provided `.deb` package will automatically resolve and install all required dependencies by using already packaged version from the distribution's repository.
+*Note: Distribution packages, such like the provided `.deb` package will automatically resolve and install all required dependencies by using already packaged version from the distribution's repository. By using the Docker (container) image or Debian packages, you do not need to take any care of the requirements listed here.*
 
 ### Debian Package
+ProxLB is a powerful and flexible load balancer designed to work across various architectures, including `amd64`, `arm64`, `rv64` and many other ones that support Python. It runs independently of the underlying hardware, making it a versatile choice for different environments. This chapter covers the step-by-step process to install ProxLB on Debian-based systems, including Debian clones like Ubuntu.
 
-### RedHat Package
+#### Quick-Start
+You can simply use this snippet to install the repository and to install ProxLB on your system.
 
-### Container / Docker
+```bash
+echo "deb https://repo.gyptazy.com/stable /" > /etc/apt/sources.list.d/proxlb.list
+wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.com/repository.gpg
+apt-get update && apt-get -y install proxlb
+cp /etc/proxlb/proxlb_example.yaml /etc/proxlb/proxlb.yaml
+# Adjust the config to your needs
+vi /etc/proxlb/proxlb.yaml
+systemctl start proxlb
+```
+
+Afterwards, ProxLB is running in the background and balances your cluster by your defined balancing method (default: memory).
+
+#### Details
+ProxLB provides two different repositories:
+* https://repo.gyptazy.com/stable (only stable release)
+* https://repo.gyptazy.com/testing (bleeding edge - not recommended)
+
+The repository is signed and the GPG key can be found at:
+* https://repo.gyptazy.com/repository.gpg
+
+You can also simply import it by running:
+
+```
+# KeyID:  17169F23F9F71A14AD49EDADDB51D3EB01824F4C
+# UID:    gyptazy Solutions Repository <contact@gyptazy.com>
+# SHA256: 52c267e6f4ec799d40cdbdb29fa518533ac7942dab557fa4c217a76f90d6b0f3  repository.gpg
+
+wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.com/repository.gpg
+```
+
+*Note: The defined repositories `repo.gyptazy.com` and `repo.proxlb.de` are the same!*
+
+#### Debian Packages (.deb files)
+If you do not want to use the repository you can also find the debian packages as a .deb file on gyptazy's CDN at:
+* https://cdn.gyptazy.com/files/os/debian/proxlb/
+
+Afterwards, you can simply install the package by running:
+```bash
+dpkg -i proxlb_*.deb
+cp /etc/proxlb/proxlb_example.yaml /etc/proxlb/proxlb.yaml
+# Adjust the config to your needs
+vi /etc/proxlb/proxlb.yaml
+systemctl start proxlb
+```
+
+### Container Images / Docker
+Using the ProxLB container images is straight forward and only requires you to mount the config file.
+
+```bash
+# Pull the image
+docker pull cr.gyptazy.com/proxlb/proxlb:latest
+# Download the config
+wget -O proxlb.yaml https://raw.githubusercontent.com/gyptazy/ProxLB/refs/heads/main/config/proxlb_example.yaml
+# Adjust the config to your needs
+vi proxlb.yaml
+# Start the ProxLB container image with the ProxLB config
+docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
+```
+
+*Note: ProxLB container images are officially only available at cr.proxlb.de and cr.gyptazy.com.* 
+
+#### Overview of Images
+| Version | Image |
+|------|:------:|
+| latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.0 | cr.gyptazy.com/proxlb/proxlb:v1.1.0 |
+| v1.0.6 | cr.gyptazy.com/proxlb/proxlb:v1.0.6 |
+| v1.0.5 | cr.gyptazy.com/proxlb/proxlb:v1.0.5 |
+| v1.0.4 | cr.gyptazy.com/proxlb/proxlb:v1.0.4 |
+| v1.0.3 | cr.gyptazy.com/proxlb/proxlb:v1.0.3 |
+| v1.0.2 | cr.gyptazy.com/proxlb/proxlb:v1.0.2 |
+| v1.0.0 | cr.gyptazy.com/proxlb/proxlb:v1.0.0 |
+| v0.9.9 | cr.gyptazy.com/proxlb/proxlb:v0.9.9 |
 
 ### Source
+ProxLB can also easily be used from the provided sources - for traditional systems but also as a Docker/Podman container image.
 
-## Upgrading
+#### Traditional System
+Setting up and running ProxLB from the sources is simple and requires just a few commands. Ensure Python 3 and the Python dependencies are installed on your system, then run ProxLB using the following command:
+```bash
+git clone https://github.com/gyptazy/ProxLB.git
+cd ProxLB
+```
 
-### Upgrading from < 1.1.0
-Upgrading ProxLB is not supported due to a fundamental redesign introduced in version 1.1.x. With this update, ProxLB transitioned from a monolithic application to a pure Python-style project, embracing a more modular and flexible architecture. This shift aimed to improve maintainability and extensibility while keeping up with modern development practices. Additionally, ProxLB moved away from traditional ini-style configuration files and adopted YAML for configuration management. This change simplifies configuration handling, reduces the need for extensive validation, and ensures better type casting, ultimately providing a more streamlined and user-friendly experience.
+Afterwards simply adjust the config file to your needs:
+```bash
+vi config/proxlb.yaml
+```
 
-### Upgrading from >= 1.1.0
-Uprading within the current stable versions, starting from 1.1.0, will be possible in all supported ways.
+Start ProxLB by Python3 on the system:
+```bash
+python3 proxlb/main.py -c config/proxlb.yaml
+```
+
+#### Container Image
+Creating a container image of ProxLB is straightforward using the provided Dockerfile. The Dockerfile simplifies the process by automating the setup and configuration required to get ProxLB running in an Alpine container. Simply follow the steps in the Dockerfile to build the image, ensuring all dependencies and configurations are correctly applied. For those looking for an even quicker setup, a ready-to-use ProxLB container image is also available, eliminating the need for manual building and allowing for immediate deployment.
+
+```bash
+git clone https://github.com/gyptazy/ProxLB.git
+cd ProxLB
+docker build -t proxlb .
+```
+
+Afterwards simply adjust the config file to your needs:
+```bash
+vi config/proxlb.yaml
+```
+
+Finally, start the created container.
+```bash
+docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
+```
 
 ## Usage / Configuration
 Running ProxLB is straightforward and versatile, as it only requires `Python3` and the `proxmoxer` library. This means ProxLB can be executed directly on a Proxmox node or on dedicated systems such as Debian, RedHat, or even FreeBSD, provided that the Proxmox API is accessible from the client running ProxLB. ProxLB can also run inside a Container - Docker or LXC - and is simply up to you.
@@ -174,7 +269,7 @@ proxmox_api:
   #pass: crazyPassw0rd!
   token_id: proxlb
   token_secret: 430e308f-1337-1337-beef-1337beefcafe
-  ssl_verification: False
+  ssl_verification: True
   timeout: 10
 
 proxmox_cluster:
@@ -195,9 +290,9 @@ balancing:
   mode: assigned
 
 service:
-  daemon: False
+  daemon: True
   schedule: 12
-  log_level: DEBUG
+  log_level: INFO
 ```
 
 ### Parameters
@@ -246,6 +341,14 @@ As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` t
 <img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
 
 The `maintenance_nodes` option allows operators to designate one or more Proxmox nodes for maintenance mode. When a node is set to maintenance, no new guest workloads will be assigned to it, and all existing workloads will be migrated to other available nodes within the cluster. This process ensures that (anti)-affinity rules and resource availability are respected, preventing disruptions while maintaining optimal performance across the infrastructure.
+
+### Adding / Removing Nodes from Maintenance
+Within the section `proxmox_cluster` you can define the key `maintenance_nodes` as a list object. Simply add/remove one or more nodes with their equal name in the cluster and restart the daemon.
+```
+proxmox_cluster:
+  maintenance_nodes: ['virt66.example.com']
+```
+Afterwards, all guest objects will be moved to other nodes in the cluster by ensuring the best balancing.
 
 ## Misc
 ### Bugs
