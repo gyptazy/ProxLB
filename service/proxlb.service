@@ -1,7 +1,7 @@
 [Unit]
 Description=ProxLB - A loadbalancer for Proxmox clusters
-After=network-online.target
-Wants=network-online.target
+After=pveproxy.service
+Wants=pveproxy.service
 
 [Service]
 ExecStart=python3 /usr/lib/python3/dist-packages/proxlb/main.py -c /etc/proxlb/proxlb.yaml
