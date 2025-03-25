@@ -1,6 +1,5 @@
 fixed:
   - Refactored code base for ProxLB [#114]
-  - Renamed package from `proxlb` to `python3-proxlb` to align with Debian packaging guidelines [#114]
   - Switched to `pycodestyle` for linting [#114]
   - Package building will be done within GitHub actions pipeline [#114]
   - ProxLB now only returns a warning when no guests for further balancing are not present (instead of quitting) [132#]
