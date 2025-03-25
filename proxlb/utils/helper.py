@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
 __license__ = "GPL-3.0"
 
 
+import json
 import uuid
 import sys
 import time
@@ -124,3 +125,23 @@ class Helper:
             sys.exit(0)
 
         logger.debug("Finished: get_daemon_mode.")
+
+    @staticmethod
+    def print_json(proxlb_config: Dict[str, Any], print_json: bool = False) -> None:
+        """
+        Prints the calculated balancing matrix as a JSON output to stdout.
+
+        Parameters:
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
+
+        Returns:
+            None
+        """
+        logger.debug("Starting: print_json.")
+        if print_json:
+            # Create a filtered list by stripping the 'meta' key from the proxlb_config dictionary
+            # to make sure that no credentials are leaked.
+            filtered_data = {k: v for k, v in proxlb_config.items() if k != "meta"}
+            print(json.dumps(filtered_data, indent=4))
+
+        logger.debug("Finished: print_json.")

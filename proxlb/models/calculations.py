@@ -207,7 +207,7 @@ class Calculations:
         None
         """
         logger.debug("Starting: relocate_guests.")
-        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"]["enforce_affinity"]:
+        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
 
             if proxlb_data["meta"]["balancing"].get("balance", False):
                 logger.debug("Balancing of guests will be performt. Reason: balanciness")
