@@ -74,6 +74,9 @@ def main():
         if not cli_args.dry_run:
             Balancing(proxmox_api, proxlb_data)
 
+        # Validate if the JSON output should be
+        # printed to stdout
+        Helper.print_json(proxlb_data, cli_args.json)
         # Validate daemon mode
         Helper.get_daemon_mode(proxlb_config)
 
