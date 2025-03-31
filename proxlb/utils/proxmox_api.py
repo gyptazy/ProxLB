@@ -115,7 +115,7 @@ class ProxmoxApi:
                 "token_id" and "token_secret" keys for API token authentication.
 
         Raises:
-            SystemExit: If both username/password and API token authentication methods are
+            SystemExit: If both pass/token_secret and API token authentication methods are
                         provided, the function will log a critical error message and terminate
                         the program.
 
@@ -130,10 +130,10 @@ class ProxmoxApi:
             sys.exit(1)
 
         proxlb_credentials = proxlb_config["proxmox_api"]
-        present_auth_user = "user" in proxlb_credentials
-        present_auth_token = "token_id" in proxlb_credentials
+        present_auth_pass = "pass" in proxlb_credentials
+        present_auth_secret = "token_secret" in proxlb_credentials
 
-        if present_auth_user and present_auth_token:
+        if present_auth_pass and present_auth_secret:
             logger.critical(f"Username/password and API token authentication are mutal exclusive. Please use only one!")
             print(f"Username/password and API token authentication are mutal exclusive. Please use only one!")
             sys.exit(1)
