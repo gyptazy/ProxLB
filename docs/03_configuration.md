@@ -44,13 +44,13 @@ pveum acl modify / --roles proxlb --users proxlb@pve
 pveum user token add proxlb@pve proxlb
 ```
 
-Afterwards, you get the token secret returned. You can now add those entries to your ProxLB config. Make sure, that you also keep the `user` parameter, next to the new API parameters. The fiel `pass` then needs to be **absent**.
+Afterwards, you get the token secret returned. You can now add those entries to your ProxLB config. Make sure, that you also keep the `user` parameter, next to the new token parameters. The parameter `pass` then needs to be **absent**.
 
 | Proxmox API  | ProxLB Config  | Example  |
 |---|---|---|
-| Username  | [user](https://github.com/gyptazy/ProxLB/blob/main/config/proxlb_example.yaml#L4) | proxlb@pve  |
+| User  | [user](https://github.com/gyptazy/ProxLB/blob/main/config/proxlb_example.yaml#L3) | proxlb@pve  |
 | Token ID  | [token_id](https://github.com/gyptazy/ProxLB/blob/main/config/proxlb_example.yaml#L6) | proxlb  |
-| Secret  | [token_secret](https://github.com/gyptazy/ProxLB/blob/main/config/proxlb_example.yaml#L7)  |  430e308f-1337-1337-beef-1337beefcafe |
+| Token Secret  | [token_secret](https://github.com/gyptazy/ProxLB/blob/main/config/proxlb_example.yaml#L7)  |  430e308f-1337-1337-beef-1337beefcafe |
 
 *Note: The API token configuration can also be done on the WebUI without invoking the CLI.*
 
