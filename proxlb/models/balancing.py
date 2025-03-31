@@ -52,22 +52,30 @@ class Balancing:
         """
         for guest_name, guest_meta in proxlb_data["guests"].items():
 
+            # Check if the the guest's target is not the same as the current node
             if guest_meta["node_current"] != guest_meta["node_target"]:
-                guest_id = guest_meta["id"]
-                guest_node_current = guest_meta["node_current"]
-                guest_node_target = guest_meta["node_target"]
+                # Check if the guest is not ignored and perform the balancing
+                # operation based on the guest type
+                if not guest_meta["ignore"]:
+                    guest_id = guest_meta["id"]
+                    guest_node_current = guest_meta["node_current"]
+                    guest_node_target = guest_meta["node_target"]
 
-                # VM Balancing
-                if guest_meta["type"] == "vm":
-                    self.exec_rebalancing_vm(proxmox_api, proxlb_data, guest_name)
+                    # VM Balancing
+                    if guest_meta["type"] == "vm":
+                        self.exec_rebalancing_vm(proxmox_api, proxlb_data, guest_name)
 
-                # CT Balancing
-                elif guest_meta["type"] == "ct":
-                    self.exec_rebalancing_ct(proxmox_api, proxlb_data, guest_name)
+                    # CT Balancing
+                    elif guest_meta["type"] == "ct":
+                        self.exec_rebalancing_ct(proxmox_api, proxlb_data, guest_name)
 
-                # Hopefully never reaching, but should be catched
+                    # Just in case we get a new type of guest in the future
+                    else:
+                        logger.critical(f"Balancing: Got unexpected guest type: {guest_meta['type']}. Cannot proceed guest: {guest_meta['name']}.")
                 else:
-                    logger.critical(f"Balancing: Got unexpected guest type: {guest_meta['type']}. Cannot proceed guest: {guest_meta['name']}.")
+                    logger.debug(f"Balancing: Guest {guest_name} is ignored and will not be rebalanced.")
+            else:
+                logger.debug(f"Balancing: Guest {guest_name} is already on the target node {guest_meta['node_target']} and will not be rebalanced.")
 
     def exec_rebalancing_vm(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
         """

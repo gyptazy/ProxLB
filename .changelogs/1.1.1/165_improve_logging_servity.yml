@@ -1,0 +1,2 @@
+fixed:
+  - Improve logging verbosity of messages that had a wrong servity [#165]

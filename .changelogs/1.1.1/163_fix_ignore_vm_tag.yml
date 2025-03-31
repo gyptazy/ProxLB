@@ -1,0 +1,2 @@
+fixed:
+  - Fix tag evluation for VMs for being ignored for further balancing [#163]

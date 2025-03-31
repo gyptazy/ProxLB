@@ -119,10 +119,8 @@ class Calculations:
             if method_value_highest - method_value_lowest > balanciness:
                 proxlb_data["meta"]["balancing"]["balance"] = True
                 logger.debug(f"Guest balancing is required. Highest value: {method_value_highest}, lowest value: {method_value_lowest} balanced by {method} and {mode}.")
-                logger.critical(f"Guest balancing is required. Highest value: {method_value_highest}, lowest value: {method_value_lowest} balanced by {method} and {mode}.")
             else:
                 logger.debug(f"Guest balancing is ok. Highest value: {method_value_highest}, lowest value: {method_value_lowest} balanced by {method} and {mode}.")
-                logger.critical(f"Guest balancing is ok. Highest value: {method_value_highest}, lowest value: {method_value_lowest} balanced by {method} and {mode}.")
 
         else:
             logger.warning("No guests for balancing found.")
