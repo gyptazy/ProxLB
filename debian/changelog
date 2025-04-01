@@ -1,3 +1,10 @@
+proxlb (1.1.1) stable; urgency=medium
+
+  * Fix tag evluation for VMs for being ignored for further balancing. (Closes: #163)
+  * Improve logging verbosity of messages that had a wrong servity. (Closes: #165)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 1 Apr 2025 18:55:02 +0000
+
 proxlb (1.1.0) stable; urgency=medium
 
   * Refactored code base of ProxLB. (Closes: #114)
