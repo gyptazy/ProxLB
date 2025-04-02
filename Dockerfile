@@ -25,4 +25,4 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --break-system-packages -r /app/requirements.txt
 
 # Set the entry point to use the virtual environment's python
-ENTRYPOINT ["/bin/python3", "/app/proxlb/main.py"]
+ENTRYPOINT ["/usr/bin/python3", "/app/proxlb/main.py"]
