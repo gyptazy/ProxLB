@@ -1,0 +1,2 @@
+fixed:
+  - Fix Python path for Docker entrypoint (by @crandler) [#170]
