@@ -257,7 +257,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | method |  | memory | `Str` | The balancing method that should be used.  (default: memory | choices: memory, cpu, disk)|
 |  | mode |  | used | `Str` | The balancing mode that should be used.  (default: used | choices: used, assigned)|
 | `service` |  |  |  |  |  |
-|  | daemon |  | False | `Bool` | If daemon mode should be activated  (default: False)|
+|  | daemon |  | True | `Bool` | If daemon mode should be activated  (default: True)|
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
 |  |  | interval | 12 | `Int` | How often rebalancing should occur in daemon mode (default: 12)|
 |  |  | format | hours | `Str` | Sets the time format. (Allowed: `minutes`, `hours` | default: `hours`)|

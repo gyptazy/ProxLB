@@ -116,7 +116,7 @@ class Helper:
             None
         """
         logger.debug("Starting: get_daemon_mode.")
-        if proxlb_config.get("service", {}).get("daemon", False):
+        if proxlb_config.get("service", {}).get("daemon", True):
 
             # Validate schedule format which changed in v1.1.1
             if type(proxlb_config["service"].get("schedule", None)) != dict:
