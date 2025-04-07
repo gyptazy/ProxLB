@@ -27,5 +27,7 @@ balancing:
 
 service:
   daemon: False
-  schedule: 12
+  schedule:
+    interval: 12
+    format: hours
   log_level: INFO
