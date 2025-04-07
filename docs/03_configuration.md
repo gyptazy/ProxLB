@@ -44,7 +44,10 @@ pveum acl modify / --roles proxlb --users proxlb@pve
 pveum user token add proxlb@pve proxlb
 ```
 
-Afterwards, you get the token secret returned. You can now add those entries to your ProxLB config. Make sure, that you also keep the `user` parameter, next to the new token parameters. The parameter `pass` then needs to be **absent**.
+Afterwards, you get the token secret returned. You can now add those entries to your ProxLB config. Make sure, that you also keep the `user` parameter, next to the new token parameters.
+
+> [!IMPORTANT]  
+> The parameter `pass` then needs to be **absent**! You should also take care about the privilege and authentication mechanism behind Proxmox. You might want or even might not want to use privilege separation and this is up to your personal needs and use case.
 
 | Proxmox API  | ProxLB Config  | Example  |
 |---|---|---|
