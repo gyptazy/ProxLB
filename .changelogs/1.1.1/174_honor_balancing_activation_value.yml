@@ -1,0 +1,2 @@
+fixed:
+  - Honor the value when balancing should not be performed and stop balancing. [#174]
