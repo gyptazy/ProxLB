@@ -26,7 +26,7 @@ balancing:
   mode: assigned
 
 service:
-  daemon: False
+  daemon: True
   schedule:
     interval: 12
     format: hours
