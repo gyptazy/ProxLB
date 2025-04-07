@@ -71,7 +71,7 @@ def main():
         Helper.log_node_metrics(proxlb_data, init=False)
 
         # Perform balancing actions via Proxmox API
-        if not cli_args.dry_run:
+        if not cli_args.dry_run or not proxlb_data["meta"]["balancing"].get("enable", False):
             Balancing(proxmox_api, proxlb_data)
 
         # Validate if the JSON output should be
