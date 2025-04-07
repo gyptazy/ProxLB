@@ -117,11 +117,25 @@ class Helper:
         """
         logger.debug("Starting: get_daemon_mode.")
         if proxlb_config.get("service", {}).get("daemon", False):
-            sleep_seconds = proxlb_config.get("service", {}).get("schedule", 12) * 3600
-            logger.info(f"Daemon mode active: Next run in: {proxlb_config.get('service', {}).get('schedule', 12)} hours.")
+
+            # Validate schedule format which changed in v1.1.1
+            if type(proxlb_config["service"].get("schedule", None)) != dict:
+                logger.error("Invalid format for schedule. Please use 'hours' or 'minutes'.")
+                sys.exit(1)
+
+            # Convert hours to seconds
+            if proxlb_config["service"]["schedule"].get("format", "hours"):
+                sleep_seconds = proxlb_config.get("service", {}).get("schedule", {}).get("interval", 12) * 3600
+            # Convert minutes to seconds
+            else:
+                sleep_seconds = proxlb_config.get("service", {}).get("schedule", {}).get("interval", 720) * 60
+
+            logger.info(f"Daemon mode active: Next run in: {proxlb_config.get('service', {}).get('schedule', {}).get('interval', 12)} {proxlb_config['service']['schedule'].get('format', 'hours')}.")
             time.sleep(sleep_seconds)
+
         else:
-            logger.debug("Daemon mode is not active.")
+            logger.debug("Successfully executed ProxLB. Daemon mode not active - stopping.")
+            print("Daemon mode not active - stopping.")
             sys.exit(0)
 
         logger.debug("Finished: get_daemon_mode.")

@@ -156,13 +156,15 @@ The proxlb systemd unit orchestrates the ProxLB application. ProxLB can be used 
 ```
 service:
   daemon: False
-  schedule: 12
+    schedule:
+      interval: 12
+      format: hours
 ```
 
 In this configuration:
-
 * `daemon`: False indicates that the ProxLB application is not running as a daemon and will execute as a one-shot solution.
-* `schedule`: 12 defines the schedule in hours, specifying how often rebalancing should be done if running as a daemon.
+* `schedule`: 12 defines the interval for the schedule, specifying how often rebalancing should be done if running as a daemon.
+* `format`: Defines the given format of schedule where you can choose between `hours` or `minutes`.
 
 ### SSL Self-Signed Certificates
 If you are using SSL self-signed certificates or non-valid certificated in general and do not want to deal with additional trust levels, you may also disable the SSL validation. This may mostly be helpful for dev- & test labs.
