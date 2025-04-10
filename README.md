@@ -290,7 +290,7 @@ balancing:
   max_job_validation: 1800
   balanciness: 5
   method: memory
-  mode: assigned
+  mode: used
 
 service:
   daemon: True
