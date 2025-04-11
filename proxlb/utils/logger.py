@@ -9,6 +9,7 @@ __license__ = "GPL-3.0"
 
 
 import logging
+import sys
 try:
     from systemd.journal import JournalHandler
     SYSTEMD_PRESENT = True
@@ -93,6 +94,15 @@ class SystemdLogger:
             journal_handler.setFormatter(formatter)
             # Add handler to logger
             self.logger.addHandler(journal_handler)
+        else:
+            # Add a handler for no systemd integration
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setLevel(level)
+            # Set a formatter to include the logger's name and log message
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            # Add handler to logger
+            self.logger.addHandler(handler)
 
     def set_log_level(self, level: str) -> None:
         """

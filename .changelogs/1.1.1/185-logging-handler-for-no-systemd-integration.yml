@@ -1,0 +1,2 @@
+fix:
+  - add handler to log messages with severity less than info to the screen when there is no systemd integration, for instance, inside a docker container. [#185]
