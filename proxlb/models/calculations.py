@@ -66,7 +66,7 @@ class Calculations:
     @staticmethod
     def set_node_assignments(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Set the assigned ressources of the nodes based on the current assigned
+        Set the assigned resources of the nodes based on the current assigned
         guest resources by their created groups as an initial base.
 
         Args:
@@ -208,10 +208,10 @@ class Calculations:
         if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
 
             if proxlb_data["meta"]["balancing"].get("balance", False):
-                logger.debug("Balancing of guests will be performt. Reason: balanciness")
+                logger.debug("Balancing of guests will be performed. Reason: balanciness")
 
             if proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
-                logger.debug("Balancing of guests will be performt. Reason: enforce affinity balancing")
+                logger.debug("Balancing of guests will be performed. Reason: enforce affinity balancing")
 
             for group_name in proxlb_data["groups"]["affinity"]:
 
@@ -246,10 +246,10 @@ class Calculations:
         None
         """
         logger.debug("Starting: val_anti_affinity.")
-        # Start by interating over all defined anti-affinity groups
+        # Start by iterating over all defined anti-affinity groups
         for group_name in proxlb_data["groups"]["anti_affinity"].keys():
 
-            # Validate if the provided guest ist included in the anti-affinity group
+            # Validate if the provided guest is included in the anti-affinity group
             if guest_name in proxlb_data["groups"]["anti_affinity"][group_name]['guests'] and not proxlb_data["guests"][guest_name]["processed"]:
                 logger.debug(f"Anti-Affinity: Guest: {guest_name} is included in anti-affinity group: {group_name}.")
 

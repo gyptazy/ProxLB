@@ -111,7 +111,7 @@ balancing:
 *Note: This may have impacts to the cluster. Depending on the created group matrix, the result may also be an unbalanced cluster.*
 
 ### API Loadbalancing
-ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without furhter changes when one or more nodes are offline or in a maintence. When defining multiple hosts, the first reachable one will be picked.
+ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without further changes when one or more nodes are offline or in a maintenance. When defining multiple hosts, the first reachable one will be picked.
 
 ```
 proxmox_api:

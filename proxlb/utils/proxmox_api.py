@@ -262,7 +262,7 @@ class ProxmoxApi:
         logger.debug("Starting: test_api_proxmox_host_ipv4.")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
-        logger.warning(f"Warning: Host {host} ran into a timout when connectoing on IPv4 for tcp/{port}.")
+        logger.warning(f"Warning: Host {host} ran into a timeout when connecting on IPv4 for tcp/{port}.")
         result = sock.connect_ex((host, port))
 
         if result == 0:
