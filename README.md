@@ -153,7 +153,7 @@ vi proxlb.yaml
 docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 ```
 
-*Note: ProxLB container images are officially only available at cr.proxlb.de and cr.gyptazy.com.* 
+*Note: ProxLB container images are officially only available at cr.proxlb.de and cr.gyptazy.com.*
 
 #### Overview of Images
 | Version | Image |

@@ -52,7 +52,7 @@ class Balancing:
         """
         for guest_name, guest_meta in proxlb_data["guests"].items():
 
-            # Check if the the guest's target is not the same as the current node
+            # Check if the guest's target is not the same as the current node
             if guest_meta["node_current"] != guest_meta["node_target"]:
                 # Check if the guest is not ignored and perform the balancing
                 # operation based on the guest type
@@ -192,7 +192,7 @@ class Balancing:
             if job["status"] == "stopped":
 
                 if job["exitstatus"] == "OK":
-                    logger.debug(f"Balancing: Job ID {job_id} (guest: {guest_name}) was sucessfully.")
+                    logger.debug(f"Balancing: Job ID {job_id} (guest: {guest_name}) was successfully.")
                     logger.debug("Finished: get_rebalancing_job_status.")
                     return True
                 else:

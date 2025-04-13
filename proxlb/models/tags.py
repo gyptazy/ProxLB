@@ -139,7 +139,7 @@ class Tags:
             tags (List): A list holding all defined tags for a given guest.
 
         Returns:
-            Bool: Returns a bool that indicates wether to ignore a guest or not.
+            Bool: Returns a bool that indicates whether to ignore a guest or not.
         """
         logger.debug("Starting: get_ignore.")
         ignore_tag = False
