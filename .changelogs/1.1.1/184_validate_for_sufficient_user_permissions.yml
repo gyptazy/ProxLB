@@ -1,0 +1,2 @@
+feature:
+  - Add validation for the minimum required permissions of a user in Proxmox [#184]

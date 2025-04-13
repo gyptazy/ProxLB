@@ -94,6 +94,7 @@ class ProxmoxApi:
         """
         logger.debug("Starting: ProxmoxApi initialization.")
         self.proxmox_api = self.api_connect(proxlb_config)
+        self.test_api_user_permissions(self.proxmox_api)
         logger.debug("Finished: ProxmoxApi initialization.")
 
     def __getattr__(self, name):
@@ -308,6 +309,36 @@ class ProxmoxApi:
 
         logger.debug("Finished: test_api_proxmox_host_ipv4.")
         return False
+
+    def test_api_user_permissions(self, proxmox_api: any):
+        """
+        Test the permissions of the current user/token used for the Proxmox API.
+
+        This method gets all assigned permissions for all API paths for the current
+        used user/token and validates them against the minimum required permissions.
+
+        Args:
+            proxmox_api (any): The Proxmox API client instance.
+        """
+        logger.debug("Starting: test_api_user_permissions.")
+        permissions_required = ["Datastore.Audit", "Sys.Audit", "VM.Audit", "VM.Migrate"]
+        permissions_available = []
+
+        # Get the permissions for the current user/token from API
+        permissions = proxmox_api.access.permissions.get()
+
+        # Get all available permissions of the current user/token
+        for path, permission in permissions.items():
+            for permission in permissions[path]:
+                permissions_available.append(permission)
+
+        # Validate if all required permissions are included within the available permissions
+        for required_permission in permissions_required:
+            if required_permission not in permissions_available:
+                logger.critical(f"Permission '{required_permission}' is missing. Please adjust the permissions for your user/token. See also: https://github.com/gyptazy/ProxLB/blob/main/docs/03_configuration.md#required-permissions-for-a-user")
+                sys.exit(1)
+
+        logger.debug("Finished: test_api_user_permissions.")
 
     def api_connect(self, proxlb_config: Dict[str, Any]) -> proxmoxer.ProxmoxAPI:
         """
