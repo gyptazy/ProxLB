@@ -1,0 +1,2 @@
+fixed:
+  - allow the use of minutes instead of hours and only accept hours or minutes in the format [#187]

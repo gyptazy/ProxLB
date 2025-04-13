@@ -124,11 +124,14 @@ class Helper:
                 sys.exit(1)
 
             # Convert hours to seconds
-            if proxlb_config["service"]["schedule"].get("format", "hours"):
+            if proxlb_config["service"]["schedule"].get("format", "hours") == "hours":
                 sleep_seconds = proxlb_config.get("service", {}).get("schedule", {}).get("interval", 12) * 3600
             # Convert minutes to seconds
-            else:
+            elif proxlb_config["service"]["schedule"].get("format", "hours") == "minutes":
                 sleep_seconds = proxlb_config.get("service", {}).get("schedule", {}).get("interval", 720) * 60
+            else:
+                logger.error("Invalid format for schedule. Please use 'hours' or 'minutes'.")
+                sys.exit(1)
 
             logger.info(f"Daemon mode active: Next run in: {proxlb_config.get('service', {}).get('schedule', {}).get('interval', 12)} {proxlb_config['service']['schedule'].get('format', 'hours')}.")
             time.sleep(sleep_seconds)
