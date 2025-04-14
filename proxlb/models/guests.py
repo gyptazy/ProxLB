@@ -64,7 +64,7 @@ class Guests:
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
                     guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
-                    guests['guests'][guest['name']]['cpu_used'] = guest['cpu']
+                    guests['guests'][guest['name']]['cpu_used'] = guest['cpu'] * guest['cpus']
                     guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
                     guests['guests'][guest['name']]['memory_used'] = guest['mem']
                     guests['guests'][guest['name']]['disk_total'] = guest['maxdisk']

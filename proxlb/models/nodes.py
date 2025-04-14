@@ -63,7 +63,7 @@ class Nodes:
                 nodes["nodes"][node["node"]]["maintenance"] = False
                 nodes["nodes"][node["node"]]["cpu_total"] = node["maxcpu"]
                 nodes["nodes"][node["node"]]["cpu_assigned"] = 0
-                nodes["nodes"][node["node"]]["cpu_used"] = node["cpu"]
+                nodes["nodes"][node["node"]]["cpu_used"] = node["cpu"] * node["maxcpu"]
                 nodes["nodes"][node["node"]]["cpu_free"] = (node["maxcpu"]) - (node["cpu"] * node["maxcpu"])
                 nodes["nodes"][node["node"]]["cpu_assigned_percent"] = nodes["nodes"][node["node"]]["cpu_assigned"] / nodes["nodes"][node["node"]]["cpu_total"] * 100
                 nodes["nodes"][node["node"]]["cpu_free_percent"] = nodes["nodes"][node["node"]]["cpu_free"] / node["maxcpu"] * 100
