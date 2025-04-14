@@ -296,7 +296,7 @@ class ProxmoxApi:
         logger.debug("Starting: test_api_proxmox_host_ipv6.")
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         sock.settimeout(timeout)
-        logger.warning(f"Host {host} ran into a timout when connectoing on IPv6 for tcp/{port}.")
+        logger.warning(f"Host {host} ran into a timeout when connecting via IPv6 for tcp/{port}.")
         result = sock.connect_ex((host, port))
 
         if result == 0:
