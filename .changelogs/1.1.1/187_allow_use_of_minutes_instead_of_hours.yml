@@ -1,2 +1,2 @@
 fixed:
-  - allow the use of minutes instead of hours and only accept hours or minutes in the format [#187]
+  - allow the use of minutes instead of hours and only accept hours or minutes in the format (by @glitchvern) [#187]

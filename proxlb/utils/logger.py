@@ -83,26 +83,22 @@ class SystemdLogger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
 
-        # Create a JournalHandler for systemd integration if this
-        # is supported on the underlying OS.
+        # Create a logging handler depending on the
+        # capabilities of the underlying OS where systemd
+        # logging is preferred.
         if SYSTEMD_PRESENT:
             # Add a JournalHandler for systemd integration
-            journal_handler = JournalHandler()
-            journal_handler.setLevel(level)
-            # Set a formatter to include the logger's name and log message
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            journal_handler.setFormatter(formatter)
-            # Add handler to logger
-            self.logger.addHandler(journal_handler)
+            handler = JournalHandler()
         else:
-            # Add a handler for no systemd integration
+            # Add a stdout handler as a fallback
             handler = logging.StreamHandler(sys.stdout)
-            handler.setLevel(level)
-            # Set a formatter to include the logger's name and log message
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            # Add handler to logger
-            self.logger.addHandler(handler)
+
+        handler.setLevel(level)
+        # Set a formatter to include the logger's name and log message
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        # Add handler to logger
+        self.logger.addHandler(handler)
 
     def set_log_level(self, level: str) -> None:
         """
