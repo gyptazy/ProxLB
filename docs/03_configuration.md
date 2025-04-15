@@ -10,6 +10,7 @@
         1. [Affinity Rules](#affinity-rules)
         2. [Anti-Affinity Rules](#anti-affinity-rules)
         3. [Affinity / Anti-Affinity Enforcing](#affinity--anti-affinity-enforcing)
+        4. [Ignore VMs](#ignore-vms)
     2. [API Loadbalancing](#api-loadbalancing)
     3. [Ignore Host-Nodes or Guests](#ignore-host-nodes-or-guests)
     4. [IPv6 Support](#ipv6-support)
@@ -109,6 +110,20 @@ balancing:
 ```
 
 *Note: This may have impacts to the cluster. Depending on the created group matrix, the result may also be an unbalanced cluster.*
+
+### Ignore VMs / CTs
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
+
+To define a guest to be ignored from the balancing, users assign a tag with the prefix `plb_ignore_$TAG`:
+
+#### Example for Screenshot
+```
+plb_ignore_dev
+```
+
+As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to any other node.
+
+**Note:** Ignored guests are really ignored. Even by enforcing affinity rules this guest will be ignored.
 
 ### API Loadbalancing
 ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without further changes when one or more nodes are offline or in a maintenance. When defining multiple hosts, the first reachable one will be picked.

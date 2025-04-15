@@ -20,6 +20,7 @@
 6. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
    1. [Affinity Rules](#affinity-rules)
    2. [Anti-Affinity Rules](#anti-affinity-rules)
+   3. [Ignore VMs](#ignore-vms)
 7. [Maintenance](#maintenance)
 8. [Misc](#misc)
    1. [Bugs](#bugs)
@@ -341,6 +342,20 @@ plb_anti_affinity_ntp
 As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` tag on different hosts (see also the attached screenshot with the different nodes).
 
 **Note:** While this ensures that ProxLB tries distribute these VMs across different physical hosts within the Proxmox cluster this may not always work. If you have more guests attached to the group than nodes in the cluster, we still need to run them anywhere. If this case occurs, the next one with the most free resources will be selected.
+
+### Ignore VMs / CTs
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
+
+To define a guest to be ignored from the balancing, users assign a tag with the prefix `plb_ignore_$TAG`:
+
+#### Example for Screenshot
+```
+plb_ignore_dev
+```
+
+As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to any other node.
+
+**Note:** Ignored guests are really ignored. Even by enforcing affinity rules this guest will be ignored.
 
 ## Maintenance
 <img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
