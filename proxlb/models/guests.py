@@ -11,6 +11,7 @@ __license__ = "GPL-3.0"
 from typing import Dict, Any
 from utils.logger import SystemdLogger
 from models.tags import Tags
+import time
 
 logger = SystemdLogger()
 
@@ -59,27 +60,35 @@ class Guests:
             # VM objects: Iterate over all VMs on the current node by the qemu API object.
             # Unlike the nodes we need to keep them even when being ignored to create proper
             # resource metrics for rebalancing to ensure that we do not overprovisiong the node.
-            for guest in proxmox_api.nodes(node).qemu.get():
-                if guest['status'] == 'running':
-                    guests['guests'][guest['name']] = {}
-                    guests['guests'][guest['name']]['name'] = guest['name']
-                    guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
-                    guests['guests'][guest['name']]['cpu_used'] = guest['cpu'] * guest['cpus']
-                    guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
-                    guests['guests'][guest['name']]['memory_used'] = guest['mem']
-                    guests['guests'][guest['name']]['disk_total'] = guest['maxdisk']
-                    guests['guests'][guest['name']]['disk_used'] = guest['disk']
-                    guests['guests'][guest['name']]['id'] = guest['vmid']
-                    guests['guests'][guest['name']]['node_current'] = node
-                    guests['guests'][guest['name']]['node_target'] = node
-                    guests['guests'][guest['name']]['processed'] = False
-                    guests['guests'][guest['name']]['tags'] = Tags.get_tags_from_guests(proxmox_api, node, guest['vmid'], 'vm')
-                    guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
-                    guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
-                    guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
-                    guests['guests'][guest['name']]['type'] = 'vm'
-                else:
-                    logger.debug(f'Metric for VM {guest["name"]} ignored because VM is not running.')
+            zero_guest_cpu_used = True
+            while zero_guest_cpu_used:
+                zero_guest_cpu_used = False
+                for guest in proxmox_api.nodes(node).qemu.get():
+                    if guest['status'] == 'running':
+                        guests['guests'][guest['name']] = {}
+                        guests['guests'][guest['name']]['name'] = guest['name']
+                        guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
+                        guests['guests'][guest['name']]['cpu_used'] = guest['cpu'] * guest['cpus']
+                        if guest['cpu'] == 0 and not zero_guest_cpu_used:
+                            zero_guest_cpu_used = True
+                            logger.debug(f"guest {guest['name']} is reporting {
+guest['cpu']} cpu usage.")
+                            time.sleep(10)
+                        guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
+                        guests['guests'][guest['name']]['memory_used'] = guest['mem']
+                        guests['guests'][guest['name']]['disk_total'] = guest['maxdisk']
+                        guests['guests'][guest['name']]['disk_used'] = guest['disk']
+                        guests['guests'][guest['name']]['id'] = guest['vmid']
+                        guests['guests'][guest['name']]['node_current'] = node
+                        guests['guests'][guest['name']]['node_target'] = node
+                        guests['guests'][guest['name']]['processed'] = False
+                        guests['guests'][guest['name']]['tags'] = Tags.get_tags_from_guests(proxmox_api, node, guest['vmid'], 'vm')
+                        guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
+                        guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
+                        guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
+                        guests['guests'][guest['name']]['type'] = 'vm'
+                    else:
+                        logger.debug(f'Metric for VM {guest["name"]} ignored because VM is not running.')
 
             # CT objects: Iterate over all VMs on the current node by the lxc API object.
             # Unlike the nodes we need to keep them even when being ignored to create proper
