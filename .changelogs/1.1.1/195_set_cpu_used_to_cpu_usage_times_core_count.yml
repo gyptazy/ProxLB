@@ -1,0 +1,2 @@
+fixed:
+  - Set cpu_used to the cpu usage, which is a percent, times the total number of cores to get a number where guest cpu_used can be added to nodes cpu_used and be meaningful (by @glitchvern) [#195]
