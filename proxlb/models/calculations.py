@@ -147,7 +147,9 @@ class Calculations:
 
         # Do not include nodes that are marked in 'maintenance'
         filtered_nodes = [node for node in proxlb_data["nodes"].values() if not node["maintenance"]]
-        lowest_usage_node = min(filtered_nodes, key=lambda x: x["memory_used_percent"])
+        method = proxlb_data["meta"]["balancing"].get("method", "memory")
+        mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+        lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_{mode}_percent"])
         proxlb_data["meta"]["balancing"]["balance_reason"] = 'resources'
         proxlb_data["meta"]["balancing"]["balance_next_node"] = lowest_usage_node["name"]
 
