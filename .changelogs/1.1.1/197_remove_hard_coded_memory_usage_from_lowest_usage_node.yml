@@ -1,0 +1,2 @@
+fixed:
+  - Remove hard coded memory usage from lowest usage node and use method and mode specified in configuration instead (by @glitchvern) [#197]
