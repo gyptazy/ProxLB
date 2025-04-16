@@ -1,0 +1,2 @@
+fixed:
+  - Requery a guest if that running guest reports 0 cpu usage (by @glitchvern) [#200]
