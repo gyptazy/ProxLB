@@ -1,0 +1,2 @@
+added:
+  - Providing the API upstream error message when migration fails in debug mode (by @gyptazy) [#205]

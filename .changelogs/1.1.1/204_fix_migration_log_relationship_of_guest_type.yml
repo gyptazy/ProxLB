@@ -1,0 +1,2 @@
+fixed:
+  - Fix the guest type relationship in the logs when a migration job failed (by @gyptazy) [#204]

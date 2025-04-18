@@ -116,10 +116,10 @@ class Balancing:
         try:
             logger.debug(f"Balancing: Starting to migrate guest {guest_name} of type VM.")
             job_id = proxmox_api.nodes(guest_node_current).qemu(guest_id).migrate().post(**migration_options)
-            job = self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, guest_node_current, job_id)
+            self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, guest_node_current, job_id)
         except proxmoxer.core.ResourceException as proxmox_api_error:
-            logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors. Please check if resource is locked or similar.")
-
+            logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type VM due to some Proxmox errors. Please check if resource is locked or similar.")
+            logger.debug(f"Balancing: Failed to migrate guest {guest_name} of type VM due to some Proxmox errors: {proxmox_api_error}")
         logger.debug("Finished: exec_rebalancing_vm.")
 
     def exec_rebalancing_ct(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
@@ -145,10 +145,10 @@ class Balancing:
         try:
             logger.debug(f"Balancing: Starting to migrate guest {guest_name} of type CT.")
             job_id = proxmox_api.nodes(guest_node_current).lxc(guest_id).migrate().post(target=guest_node_target, restart=1)
-            job = self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, guest_node_current, job_id)
+            self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, guest_node_current, job_id)
         except proxmoxer.core.ResourceException as proxmox_api_error:
             logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors. Please check if resource is locked or similar.")
-
+            logger.debug(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors: {proxmox_api_error}")
         logger.debug("Finished: exec_rebalancing_ct.")
 
     def get_rebalancing_job_status(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str, guest_current_node: str, job_id: int, retry_counter: int = 1) -> bool:
