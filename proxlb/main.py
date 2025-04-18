@@ -54,7 +54,7 @@ def main():
         # Get all required objects from the Proxmox cluster
         meta = {"meta": proxlb_config}
         nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
-        guests = Guests.get_guests(proxmox_api, nodes)
+        guests = Guests.get_guests(proxmox_api, nodes, meta)
         groups = Groups.get_groups(guests, nodes)
 
         # Merge obtained objects from the Proxmox cluster for further usage
