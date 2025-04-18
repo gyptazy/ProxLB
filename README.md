@@ -306,7 +306,7 @@ The following options and parameters are currently supported:
 
 | Option | Long Option | Description | Default |
 |------|:------:|------:|------:|
-| -c | --config | Path to a config file. | /etc/proxlb/proxlb.conf (default) |
+| -c | --config | Path to a config file. | /etc/proxlb/proxlb.yaml (default) |
 | -d | --dry-run | Performs a dry-run without doing any actions. | False |
 | -j | --json | Returns a JSON of the VM movement. | False |
 | -b | --best-node | Returns the best next node for a VM/CT placement (useful for further usage with Terraform/Ansible). | False |
