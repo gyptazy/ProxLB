@@ -35,7 +35,7 @@ class Guests:
         """
 
     @staticmethod
-    def get_guests(proxmox_api: any, nodes: Dict[str, Any]) -> Dict[str, Any]:
+    def get_guests(proxmox_api: any, nodes: Dict[str, Any], meta: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get metrics of all guests in a Proxmox cluster.
 
@@ -62,13 +62,18 @@ class Guests:
             # resource metrics for rebalancing to ensure that we do not overprovisiong the node.
             for guest in proxmox_api.nodes(node).qemu.get():
                 if guest['status'] == 'running':
-                    retry_counter = 1
-                    while guest['cpu'] == 0 and retry_counter < 10:
-                        guest = proxmox_api.nodes(node).qemu(guest['vmid']).status.current.get()
-                        logger.debug(f"guest {guest['name']} is reporting {
-guest['cpu']} cpu usage on retry {retry_counter}.")
-                        time.sleep(1)
-                        retry_counter += 1
+
+                    # If the balancing method is set to cpu, we need to wait for the guest to report
+                    # cpu usage. This is important for the balancing process to ensure that we do not
+                    # wait for a guest for an infinite time.
+                    if meta["meta"]["balancing"]["method"] == "cpu":
+                        retry_counter = 0
+                        while guest['cpu'] == 0 and retry_counter < 10:
+                            guest = proxmox_api.nodes(node).qemu(guest['vmid']).status.current.get()
+                            logger.debug(f"Guest {guest['name']} (type VM) is reporting {guest['cpu']} cpu usage on retry {retry_counter}.")
+                            retry_counter += 1
+                            time.sleep(1)
+
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
                     guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
