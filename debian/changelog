@@ -1,3 +1,9 @@
+proxlb (1.1.2~b1) stable; urgency=medium
+
+  * Auto-created 1.1.2 beta 1 release.
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 17 Mar 2025 18:55:02 +0000
+
 proxlb (1.1.1) stable; urgency=medium
 
   * Fix tag evluation for VMs for being ignored for further balancing. (Closes: #163)
@@ -12,7 +18,7 @@ proxlb (1.1.1) stable; urgency=medium
   * Fix the guest type relationship in the logs when a migration job failed. (Closes: #204)
   * Requery a guest if that running guest reports 0 cpu usage. (Closes: #200)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 1 Apr 2025 18:55:02 +0000
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Sat, 20 Apr 2025 20:55:02 +0000
 
 proxlb (1.1.0) stable; urgency=medium
 
