@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="proxlb",
-    version="1.1.1",
+    version="1.1.2b",
     description="A DRS alike loadbalancer for Proxmox clusters.",
     long_description="An advanced DRS alike loadbalancer for Proxmox clusters that also supports maintenance modes and affinity/anti-affinity rules.",
     author="Florian Paul Azim Hoberg",
