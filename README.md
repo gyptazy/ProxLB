@@ -240,29 +240,29 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | pass |  | FooBar | `Str` | Password for the API. (Recommended: Use API token authorization!) |
 |  | token_id |  | proxlb | `Str` | Token ID of the user for the API. |
 |  | token_secret |  | 430e308f-1337-1337-beef-1337beefcafe | `Str` | Secret of the token ID for the API. |
-|  | ssl_verification |  | True | `Bool` | Validate SSL certificates (1) or ignore (0). (default: 1, type: bool) |
-|  | timeout |  | 10 | `Int` | Timeout for the Proxmox API in sec. (default: 10) |
+|  | ssl_verification |  | True | `Bool` | Validate SSL certificates (1) or ignore (0). [values: `1` (default), `0`] |
+|  | timeout |  | 10 | `Int` | Timeout for the Proxmox API in sec. |
 | `proxmox_cluster` |  |  |  |  |  |
-|  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. (default: []) |
-|  | ignore_nodes |  | [] | `List` | A list of Proxmox nodes that are defined to be ignored.  (default: []) |
+|  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. |
+|  | ignore_nodes |  | [] | `List` | A list of Proxmox nodes that are defined to be ignored. |
 |  | overprovisioning |  | False | `Bool` | Avoids balancing when nodes would become overprovisioned. |
 | `balancing` |  |  |  |  |  |
-|  | enable |  | True | `Bool` | Enables the guest balancing.  (default: True)|
-|  | enforce_affinity |  | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse.  (default: False) |
-|  | parallel |  | False | `Bool` | If guests should be moved in parallel or sequentially. (default: False)|
-|  | live |  | True | `Bool` | If guests should be moved live or shutdown.  (default: True)|
-|  | with_local_disks |  | True | `Bool` | If balancing of guests should include local disks  (default: True)|
-|  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored.  (default: ['vm', 'ct']) |
+|  | enable |  | True | `Bool` | Enables the guest balancing.|
+|  | enforce_affinity |  | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse. |
+|  | parallel |  | False | `Bool` | If guests should be moved in parallel or sequentially.|
+|  | live |  | True | `Bool` | If guests should be moved live or shutdown.|
+|  | with_local_disks |  | True | `Bool` | If balancing of guests should include local disks.|
+|  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored. [values: `vm`, `ct`]|
 |  | max_job_validation |  | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
-|  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. (default: 10) |
-|  | method |  | memory | `Str` | The balancing method that should be used.  (default: memory | choices: memory, cpu, disk)|
-|  | mode |  | used | `Str` | The balancing mode that should be used.  (default: used | choices: used, assigned)|
+|  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
+|  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
+|  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`] |
 | `service` |  |  |  |  |  |
-|  | daemon |  | True | `Bool` | If daemon mode should be activated  (default: True)|
+|  | daemon |  | True | `Bool` | If daemon mode should be activated. |
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
-|  |  | interval | 12 | `Int` | How often rebalancing should occur in daemon mode (default: 12)|
-|  |  | format | hours | `Str` | Sets the time format. (Allowed: `minutes`, `hours` | default: `hours`)|
-|  | log_level |  | INFO | `Str` | Defines the default log level that should be logged.  (default: INFO) |
+|  |  | interval | 12 | `Int` | How often rebalancing should occur in daemon mode.|
+|  |  | format | hours | `Str` | Sets the time format. [values: `hours` (default), `minutes`]|
+|  | log_level |  | INFO | `Str` | Defines the default log level that should be logged. [values: `INFO` (default), `WARNING`, `CRITICAL`, `DEBUG`] |
 
 
 An example of the configuration file looks like:
