@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-04-20
+
+### Added
+
+- Providing the API upstream error message when migration fails in debug mode (by @gyptazy) [#205]
+
+### Changed
+
+- Change the default behaviour of the daemon mode to active [#176]
+- Change the default banalcing mode to used instead of assigned [#180]
+
+### Fixed
+
+- Set cpu_used to the cpu usage, which is a percent, times the total number of cores to get a number where guest cpu_used can be added to nodes cpu_used and be meaningful (by @glitchvern) [#195]
+- Fix tag evluation for VMs for being ignored for further balancing [#163]
+- Honor the value when balancing should not be performed and stop balancing [#174]
+- allow the use of minutes instead of hours and only accept hours or minutes in the format (by @glitchvern) [#187]
+- Remove hard coded memory usage from lowest usage node and use method and mode specified in configuration instead (by @glitchvern) [#197]
+- Fix the guest type relationship in the logs when a migration job failed (by @gyptazy) [#204]
+- Requery a guest if that running guest reports 0 cpu usage (by @glitchvern) [#200]
+- Fix Python path for Docker entrypoint (by @crandler) [#170]
+- Improve logging verbosity of messages that had a wrong servity [#165]
+
 
 ## [1.1.0] - 2025-04-01
 

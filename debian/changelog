@@ -2,6 +2,15 @@ proxlb (1.1.1) stable; urgency=medium
 
   * Fix tag evluation for VMs for being ignored for further balancing. (Closes: #163)
   * Improve logging verbosity of messages that had a wrong servity. (Closes: #165)
+  * Providing the API upstream error message when migration fails in debug mode (Closes: #205)
+  * Change the default behaviour of the daemon mode to active. (Closes: #176)
+  * Change the default banalcing mode to used instead of assigned. (Closes: #180)
+  * Set cpu_used to the cpu usage, which is a percent, times the total number of cores to get a number where guest cpu_used can be added to nodes cpu_used and be meaningful. (Closes: #195)
+  * Honor the value when balancing should not be performed and stop balancing. (Closes: #174)
+  * Allow the use of minutes instead of hours and only accept hours or minutes in the format. (Closes: #187)
+  * Remove hard coded memory usage from lowest usage node and use method and mode specified in configuration instead. (Closes: #197)
+  * Fix the guest type relationship in the logs when a migration job failed. (Closes: #204)
+  * Requery a guest if that running guest reports 0 cpu usage. (Closes: #200)
 
  -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 1 Apr 2025 18:55:02 +0000
 
