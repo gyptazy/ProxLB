@@ -39,10 +39,9 @@ pveum acl modify / --roles proxlb --users proxlb@pve
 *Note: The user management can also be done on the WebUI without invoking the CLI.*
 
 ### Creating an API Token for a User
-
+Create an API token for user proxlb@pve with token ID proxlb and deactivated privilege separation:
 ```
-# Create an API token for user proxlb@pve with token ID proxlb
-pveum user token add proxlb@pve proxlb
+pveum user token add proxlb@pve proxlb --privsep 0
 ```
 
 Afterwards, you get the token secret returned. You can now add those entries to your ProxLB config. Make sure, that you also keep the `user` parameter, next to the new token parameters.
