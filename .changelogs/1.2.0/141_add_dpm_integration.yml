@@ -1,0 +1,3 @@
+added:
+  - Add DPM support to turn off nodes in a cluster when not required (by @gyptazy) [#141]
+  - Add Wake-on-Lan functions based on pywakeonlan project (by @remcohaszing) [#141]

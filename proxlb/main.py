@@ -17,6 +17,7 @@ from utils.logger import SystemdLogger
 from utils.cli_parser import CliParser
 from utils.config_parser import ConfigParser
 from utils.proxmox_api import ProxmoxApi
+from models.proxlb_api import ProxlbApi
 from models.nodes import Nodes
 from models.guests import Guests
 from models.groups import Groups
@@ -50,6 +51,33 @@ def main():
     # Overwrite password after creating the API object
     proxlb_config["proxmox_api"]["pass"] = "********"
 
+    # Execute ProxLB API Server
+    proxlb_api = ProxlbApi(proxlb_config)
+    proxlb_api.run(proxlb_config)
+
+    # TEST
+    import time
+    time.sleep(3)
+    foo = Helper.http_client_get('http://127.0.0.1:8000/nodes')
+    print(foo)
+
+    #send
+    time.sleep(3)
+    data = {
+                    "name": "virt01",
+                    "wol_mac": "virt01",
+                    "locked": False,
+                    "ignore": False
+                }
+    Helper.http_client_post('http://127.0.0.1:8000/nodes/virt99', data)
+
+    time.sleep(3)
+    foo = Helper.http_client_get('http://127.0.0.1:8000/nodes')
+    print(foo)
+    ######
+    ######
+
+    # Execute guest balancing
     while True:
         # Get all required objects from the Proxmox cluster
         meta = {"meta": proxlb_config}

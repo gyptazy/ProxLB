@@ -16,6 +16,8 @@ setup(
         "urllib3",
         "proxmoxer",
         "pyyaml",
+        "uvicorn",
+        "fastapi",
     ],
         data_files=[('/etc/systemd/system', ['service/proxlb.service']), ('/etc/proxlb/', ['config/proxlb_example.yaml'])],
 )

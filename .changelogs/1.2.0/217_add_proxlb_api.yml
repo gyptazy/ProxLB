@@ -1,0 +1,2 @@
+added:
+  - Add basic ProxLB API interface based on FastAPI and Uvicorn (by @gyptazy) [#217]
