@@ -7,6 +7,9 @@ proxmox_api:
   # token_secret: 430e308f-1337-1337-beef-1337beefcafe
   ssl_verification: True
   timeout: 10
+  # API Connection retries
+  # retries: 1
+  # wait_time: 1
 
 proxmox_cluster:
   maintenance_nodes: ['virt66.example.com']
