@@ -1,0 +1,2 @@
+added:
+  - Add 1-to-1 relationships between guest and hypervisor node to ping a guest on a node (by @gyptazy) [#218]

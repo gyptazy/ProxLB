@@ -21,6 +21,7 @@
    1. [Affinity Rules](#affinity-rules)
    2. [Anti-Affinity Rules](#anti-affinity-rules)
    3. [Ignore VMs](#ignore-vms)
+   4. [Pin VMs to Hypervisor Nodes](#pin-vms-to-hypervisor-nodes)
 7. [Maintenance](#maintenance)
 8. [Misc](#misc)
    1. [Bugs](#bugs)
@@ -344,7 +345,7 @@ As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` t
 
 **Note:** While this ensures that ProxLB tries distribute these VMs across different physical hosts within the Proxmox cluster this may not always work. If you have more guests attached to the group than nodes in the cluster, we still need to run them anywhere. If this case occurs, the next one with the most free resources will be selected.
 
-### Ignore VMs / CTs
+### Ignore VMs
 <img align="left" src="https://cdn.gyptazy.com/images/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
 
 To define a guest to be ignored from the balancing, users assign a tag with the prefix `plb_ignore_$TAG`:
@@ -357,6 +358,20 @@ plb_ignore_dev
 As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to any other node.
 
 **Note:** Ignored guests are really ignored. Even by enforcing affinity rules this guest will be ignored.
+
+### Pin VMs to Specific Hypervisor Nodes
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-tag-node-pinning.jpg"/> Guests, such as VMs or CTs, can also be pinned to specific nodes in the cluster. This might be usefull when running applications with some special licensing requirements that are only fulfilled on certain nodes. It might also be interesting, when some physical hardware is attached to a node, that is not available in general within the cluster.
+
+To pin a guest to a specific cluster node, users assign a tag with the prefix `plb_pin_$nodename` to the desired guest:
+
+#### Example for Screenshot
+```
+plb_pin_node03
+```
+
+As a result, ProxLB will pin the guest `dev-vm01` to the node `virt03`.
+
+**Note:** The given node names from the tag are validated. This means, ProxLB validated if the given node name is really part of the cluster. In case of a wrongly defined or unavailable node name it continous to use the regular processes to make sure the guest keeps running.
 
 ## Maintenance
 <img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>

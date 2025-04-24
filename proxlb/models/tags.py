@@ -151,3 +151,29 @@ class Tags:
 
         logger.debug("Finished: get_ignore.")
         return ignore_tag
+
+    @staticmethod
+    def get_node_relationship(tags: List[str]) -> str:
+        """
+        Get a node relationship tag for a guest from the Proxmox cluster by the API to pin
+        a guest to a node.
+
+        This method retrieves a relationship tag between a guest and a specific
+        hypervisor node to pin the guest to a specific node (e.g., for licensing reason).
+
+        Args:
+            tags (List): A list holding all defined tags for a given guest.
+
+        Returns:
+            Str: The related hypervisor node name.
+        """
+        logger.debug("Starting: get_node_relationship.")
+        node_relationship_tag = False
+
+        if len(tags) > 0:
+            for tag in tags:
+                if tag.startswith("plb_pin"):
+                    node_relationship_tag = tag.replace("plb_pin_", "")
+
+        logger.debug("Finished: get_node_relationship.")
+        return node_relationship_tag
