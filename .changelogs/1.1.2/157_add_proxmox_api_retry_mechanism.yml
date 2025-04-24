@@ -1,0 +1,2 @@
+added:
+  - Add a configurable retry mechanism when connecting to the Proxmox API (by @gyptazy) [#157]

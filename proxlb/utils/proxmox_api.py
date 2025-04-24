@@ -20,12 +20,13 @@ except ImportError:
     PROXMOXER_PRESENT = False
 import random
 import socket
-import sys
 try:
     import requests
     REQUESTS_PRESENT = True
 except ImportError:
     REQUESTS_PRESENT = False
+import sys
+import time
 try:
     import urllib3
     URLLIB3_PRESENT = True
@@ -141,7 +142,7 @@ class ProxmoxApi:
 
         logger.debug("Finished: validate_config.")
 
-    def api_connect_get_hosts(self, proxmox_api_endpoints: list) -> str:
+    def api_connect_get_hosts(self, proxlb_config, proxmox_api_endpoints: list) -> str:
         """
         Perform a connectivity test to determine a working host for the Proxmox API.
 
@@ -152,6 +153,7 @@ class ProxmoxApi:
         are found, one is chosen at random to distribute the load across the cluster.
 
         Args:
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
             proxmox_api_endpoints (list): A list of Proxmox API endpoints to test.
 
         Returns:
@@ -175,21 +177,25 @@ class ProxmoxApi:
             logger.critical(f"No proxmox_api hosts are defined.")
             sys.exit(1)
 
-        # Get a suitable Proxmox API endpoint. Therefore, we check if we only have
-        # a single Proxmox API endpoint or multiple ones. If only one, we can return
-        # this one immediately. If this one does not work, the urllib will raise an
-        # exception during the connection attempt.
-        if len(proxmox_api_endpoints) == 1:
-            return proxmox_api_endpoints[0]
-
         # If we have multiple Proxmox API endpoints, we need to check each one by
         # doing a connection attempt for IPv4 and IPv6. If we find a working one,
         # we return that one. This allows us to define multiple endpoints in a cluster.
         validated_api_hosts = []
         for host in proxmox_api_endpoints:
-            validated = self.test_api_proxmox_host(host)
-            if validated:
-                validated_api_hosts.append(validated)
+
+            # Get or set a default value for a maximum of retries when connecting to
+            # the Proxmox API
+            api_connection_retries = proxlb_config["proxmox_api"].get("retries", 1)
+            api_connection_wait_time = proxlb_config["proxmox_api"].get("wait_time", 1)
+
+            for api_connection_attempt in range(api_connection_retries):
+                validated = self.test_api_proxmox_host(host)
+                if validated:
+                    validated_api_hosts.append(validated)
+                    break
+                else:
+                    logger.warning(f"Attempt {api_connection_attempt + 1}/{api_connection_retries} failed for host {host}. Retrying in {api_connection_wait_time} seconds...")
+                    time.sleep(api_connection_wait_time)
 
         if len(validated_api_hosts) > 0:
             # Choose a random host to distribute the load across the cluster
@@ -307,7 +313,7 @@ class ProxmoxApi:
         sock.close()
         logger.warning(f"Host {host} is unreachable on IPv6 for tcp/{port}.")
 
-        logger.debug("Finished: test_api_proxmox_host_ipv4.")
+        logger.debug("Finished: test_api_proxmox_host_ipv6.")
         return False
 
     def test_api_user_permissions(self, proxmox_api: any):
@@ -372,7 +378,7 @@ class ProxmoxApi:
         self.validate_config(proxlb_config)
 
         # Get a valid Proxmox API endpoint
-        proxmox_api_endpoint = self.api_connect_get_hosts(proxlb_config.get("proxmox_api", {}).get("hosts", []))
+        proxmox_api_endpoint = self.api_connect_get_hosts(proxlb_config, proxlb_config.get("proxmox_api", {}).get("hosts", []))
 
         # Disable warnings for SSL certificate validation
         if not proxlb_config.get("proxmox_api").get("ssl_verification", True):

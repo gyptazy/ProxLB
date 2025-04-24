@@ -244,6 +244,8 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | token_secret |  | 430e308f-1337-1337-beef-1337beefcafe | `Str` | Secret of the token ID for the API. |
 |  | ssl_verification |  | True | `Bool` | Validate SSL certificates (1) or ignore (0). [values: `1` (default), `0`] |
 |  | timeout |  | 10 | `Int` | Timeout for the Proxmox API in sec. |
+|  | retries |  | 1 | `Int` | How often a connection attempt to the defined API host should be performed. |
+|  | wait_time |  | 1 | `Int` | How many seconds should be waited before performing another connection attempt to the API host. |
 | `proxmox_cluster` |  |  |  |  |  |
 |  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. |
 |  | ignore_nodes |  | [] | `List` | A list of Proxmox nodes that are defined to be ignored. |
@@ -272,11 +274,15 @@ An example of the configuration file looks like:
 proxmox_api:
   hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
   user: root@pam
-  #pass: crazyPassw0rd!
-  token_id: proxlb
-  token_secret: 430e308f-1337-1337-beef-1337beefcafe
+  pass: crazyPassw0rd!
+  # API Token method
+  # token_id: proxlb
+  # token_secret: 430e308f-1337-1337-beef-1337beefcafe
   ssl_verification: True
   timeout: 10
+  # API Connection retries
+  # retries: 1
+  # wait_time: 1
 
 proxmox_cluster:
   maintenance_nodes: ['virt66.example.com']
