@@ -90,6 +90,7 @@ class Guests:
                     guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
+                    guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'vm'
                 else:
                     logger.debug(f'Metric for VM {guest["name"]} ignored because VM is not running.')
@@ -115,6 +116,7 @@ class Guests:
                     guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
+                    guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'ct'
                 else:
                     logger.debug(f'Metric for CT {guest["name"]} ignored because CT is not running.')

@@ -225,6 +225,7 @@ class Calculations:
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
                     proxlb_data["meta"]["balancing"]["balance_next_guest"] = guest_name
                     Calculations.val_anti_affinity(proxlb_data, guest_name)
+                    Calculations.val_node_relationship(proxlb_data, guest_name)
                     Calculations.update_node_resources(proxlb_data)
 
         logger.debug("Finished: relocate_guests.")
@@ -277,6 +278,37 @@ class Calculations:
                 logger.debug(f"Guest: {guest_name} is not included in anti-affinity group: {group_name}. Skipping.")
 
         logger.debug("Finished: val_anti_affinity.")
+
+    @staticmethod
+    def val_node_relationship(proxlb_data: Dict[str, Any], guest_name: str):
+        """
+        Validates and assigns guests to nodes based on defined relationships based on tags.
+
+        Parameters:
+        proxlb_data (Dict[str, Any]): The data holding all content of all objects.
+        guest_name (str): The name of the guest to be validated and assigned a node.
+
+        Returns:
+        None
+        """
+        logger.debug("Starting: val_node_relationship.")
+        proxlb_data["guests"][guest_name]["processed"] = True
+
+        if proxlb_data["guests"][guest_name]["node_relationship"]:
+            logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']}. Pinning to node.")
+
+            # Validate if the specified node name is really part of the cluster
+            if proxlb_data['guests'][guest_name]['node_relationship'] in proxlb_data["nodes"].keys():
+                logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']} is a known hypervisor node in the cluster.")
+                # Pin the guest to the specified hypervisor node.
+                proxlb_data["meta"]["balancing"]["balance_next_node"] = proxlb_data['guests'][guest_name]['node_relationship']
+            else:
+                logger.warning(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']} but this node name is not known in the cluster!")
+
+        else:
+            logger.info(f"Guest '{guest_name}' does not have any specific node relationships.")
+
+        logger.debug("Finished: val_node_relationship.")
 
     @staticmethod
     def update_node_resources(proxlb_data):

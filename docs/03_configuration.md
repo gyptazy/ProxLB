@@ -11,6 +11,7 @@
         2. [Anti-Affinity Rules](#anti-affinity-rules)
         3. [Affinity / Anti-Affinity Enforcing](#affinity--anti-affinity-enforcing)
         4. [Ignore VMs](#ignore-vms)
+        5. [Pin VMs to Hypervisor Nodes](#pin-vms-to-hypervisor-nodes)
     2. [API Loadbalancing](#api-loadbalancing)
     3. [Ignore Host-Nodes or Guests](#ignore-host-nodes-or-guests)
     4. [IPv6 Support](#ipv6-support)
@@ -123,6 +124,20 @@ plb_ignore_dev
 As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to any other node.
 
 **Note:** Ignored guests are really ignored. Even by enforcing affinity rules this guest will be ignored.
+
+### Pin VMs to Specific Hypervisor Nodes
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-tag-node-pinning.jpg"/> Guests, such as VMs or CTs, can also be pinned to specific nodes in the cluster. This might be usefull when running applications with some special licensing requirements that are only fulfilled on certain nodes. It might also be interesting, when some physical hardware is attached to a node, that is not available in general within the cluster.
+
+To pin a guest to a specific cluster node, users assign a tag with the prefix `plb_pin_$nodename` to the desired guest:
+
+#### Example for Screenshot
+```
+plb_pin_node03
+```
+
+As a result, ProxLB will pin the guest `dev-vm01` to the node `virt03`.
+
+**Note:** The given node names from the tag are validated. This means, ProxLB validated if the given node name is really part of the cluster. In case of a wrongly defined or unavailable node name it continous to use the regular processes to make sure the guest keeps running.
 
 ### API Loadbalancing
 ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without further changes when one or more nodes are offline or in a maintenance. When defining multiple hosts, the first reachable one will be picked.
