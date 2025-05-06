@@ -9,6 +9,7 @@ __license__ = "GPL-3.0"
 
 
 import json
+import urllib
 import uuid
 import sys
 import time
@@ -162,3 +163,34 @@ class Helper:
             print(json.dumps(filtered_data, indent=4))
 
         logger.debug("Finished: print_json.")
+
+    @staticmethod
+    def http_client_get(uri: str, show_errors=True) -> str:
+        """
+        Receives the content of a GET request from a given URI.
+
+        Parameters:
+            uri (str): The URI to get the content from.
+
+        Returns:
+            str: The response content.
+        """
+        logger.debug("Starting: http_client_get.")
+        http_charset = "utf-8"
+        http_headers = {
+            "User-Agent": "ProxLB API client/1.0"
+        }
+        http_request = urllib.request.Request(uri, headers=http_headers, method="GET")
+
+        try:
+            logger.debug(f"Get http client information from {uri}.")
+            with urllib.request.urlopen(http_request) as response:
+                http_client_content = response.read().decode(http_charset)
+                return http_client_content
+        except urllib.error.HTTPError as e:
+            if show_errors:
+                logger.error(f"HTTP error: {e.code} - {e.reason}")
+        except urllib.error.URLError as e:
+            if show_errors:
+                logger.error(f"URL error: {e.reason}")
+        logger.debug("Finished: http_client_get.")

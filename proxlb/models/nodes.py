@@ -21,7 +21,9 @@ __copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
 __license__ = "GPL-3.0"
 
 
+import json
 from typing import Dict, Any
+from utils.helper import Helper
 from utils.logger import SystemdLogger
 
 logger = SystemdLogger()
@@ -87,6 +89,24 @@ class Nodes:
                 if Nodes.set_node_maintenance(proxlb_config, node["node"]):
                     nodes["nodes"][node["node"]]["maintenance"] = True
 
+                # Evaluate guest count on node
+                guests_vm = [
+                    guest for guest in proxmox_api.nodes(node["node"]).qemu.get()
+                    if guest.get('status') == 'running'
+                ]
+
+                guests_ct = [
+                    guest for guest in proxmox_api.nodes(node["node"]).lxc.get()
+                    if guest.get('status') == 'running'
+                ]
+
+                guests_vm = len(guests_vm)
+                guests_ct = len(guests_ct)
+                nodes["nodes"][node["node"]]["guest_count"] = guests_vm + guests_ct
+
+                # Add debug log of node
+                logger.debug(f"Added node: {nodes['nodes'][node['node']]}.")
+
         logger.debug("Finished: get_nodes.")
         return nodes
 
@@ -107,11 +127,51 @@ class Nodes:
         """
         logger.debug("Starting: set_node_maintenance.")
 
-        if proxlb_config.get("proxmox_cluster", None).get("maintenance_nodes", None) is not None:
-            if len(proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", [])) > 0:
+        # Only validate if we have more than a single node in our cluster
+        if len(proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", [])) > 0:
+
+            # Evaluate maintenance mode by config
+            logger.debug("Evaluate maintenance mode by config.")
+            if proxlb_config.get("proxmox_cluster", None).get("maintenance_nodes", None) is not None:
                 if node_name in proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", []):
                     logger.warning(f"Node: {node_name} has been set to maintenance mode.")
                     return True
+
+            # Evaluate maintenance mode by ProxLB API
+            logger.debug("Evaluate maintenance mode by ProxLB API.")
+            if proxlb_config.get("proxlb_api", {}).get("enable", False):
+                logger.debug("ProxLB API is active.")
+                proxlb_api_listener = proxlb_config.get("proxlb_api", {}).get("listen_address", "127.0.0.1")
+                proxlb_api_port = proxlb_config.get("proxlb_api", {}).get("port", 8008)
+                try:
+                    api_node_status = Helper.http_client_get(f"http://{proxlb_api_listener}:{proxlb_api_port}/nodes/{node_name}", show_errors=False)
+                    api_node_status = json.loads(api_node_status)
+                except:
+                    pass
+
+                # Set to maintenance when DPM or node patching is active and the
+                # node has not been released yet
+                if isinstance(api_node_status, dict):
+                    logger.debug(f"Information for Node: {node_name} in ProxLB API available.")
+
+                    if api_node_status.get("mode_dpm") or api_node_status.get("mode_patch"):
+                        logger.debug(f"Node: {node_name} is defined for DPM or node-patching.")
+
+                        if not api_node_status.get("processed"):
+                            logger.debug(f"Node: {node_name} has not been processed. Setting to maintenance.")
+
+                            if not api_node_status.get("release"):
+                                logger.debug(f"Node: {node_name} has not been released. Waiting until node has been released. Setting to maintenance.")
+                                return True
+
+                            else:
+                                logger.debug(f"Node: {node_name} has been released. Removing maintenance.")
+                        else:
+                            logger.debug(f"Node: {node_name} has been processed. Removing maintenance.")
+                    else:
+                        logger.debug(f"Node: {node_name} is not defined for DPM or node-patching.")
+            else:
+                logger.debug("ProxLB API is not active. Skipping ProxLB API validations.")
 
         logger.debug("Finished: set_node_maintenance.")
 

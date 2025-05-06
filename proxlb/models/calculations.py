@@ -306,7 +306,7 @@ class Calculations:
                 logger.warning(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']} but this node name is not known in the cluster!")
 
         else:
-            logger.info(f"Guest '{guest_name}' does not have any specific node relationships.")
+            logger.debug(f"Guest '{guest_name}' does not have any specific node relationships.")
 
         logger.debug("Finished: val_node_relationship.")
 

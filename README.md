@@ -246,6 +246,11 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | timeout |  | 10 | `Int` | Timeout for the Proxmox API in sec. |
 |  | retries |  | 1 | `Int` | How often a connection attempt to the defined API host should be performed. |
 |  | wait_time |  | 1 | `Int` | How many seconds should be waited before performing another connection attempt to the API host. |
+| `proxlb_api` |  |  |  |  |  |
+|  | enable |  | True | `Bool` | Enables the ProxLB API (required for DPM & auto-patching).|
+|  | listen_address |  | 0.0.0.0 | `Str` | Defines the listener of the ProxLB API Server. (default: `127.0.0.1`)|
+|  | port |  | 8008 | `Int` | Defines the listen port of the ProxLB API Server. (default: `8008`)|
+|  | allowed_api_keys |  | ['RatpmrqUbmXqV7kmcoNu9w4y4ParWyAbYgky94b9', ...] | `List` | List of allowed API Tokens. (default: `[]`)|
 | `proxmox_cluster` |  |  |  |  |  |
 |  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. |
 |  | ignore_nodes |  | [] | `List` | A list of Proxmox nodes that are defined to be ignored. |
@@ -283,6 +288,11 @@ proxmox_api:
   # API Connection retries
   # retries: 1
   # wait_time: 1
+
+proxlb_api:
+  enable: True
+  listen_address: 0.0.0.0
+  port: 8008
 
 proxmox_cluster:
   maintenance_nodes: ['virt66.example.com']

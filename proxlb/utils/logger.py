@@ -53,7 +53,7 @@ class SystemdLogger:
     # Create a singleton instance variable
     instance = None
 
-    def __new__(cls, name: str = "ProxLB", level: str = logging.INFO) -> 'SystemdLogger':
+    def __new__(cls, name: str = "ProxLB App", level: str = logging.INFO) -> 'SystemdLogger':
         """
         Creating a new systemd logger class based on a given logging name
         and its logging level/verbosity.

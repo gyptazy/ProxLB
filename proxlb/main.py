@@ -17,6 +17,7 @@ from utils.logger import SystemdLogger
 from utils.cli_parser import CliParser
 from utils.config_parser import ConfigParser
 from utils.proxmox_api import ProxmoxApi
+from models.proxlb_api import ProxlbApi
 from models.nodes import Nodes
 from models.guests import Guests
 from models.groups import Groups
@@ -49,6 +50,14 @@ def main():
 
     # Overwrite password after creating the API object
     proxlb_config["proxmox_api"]["pass"] = "********"
+
+    # ProxLB API Server
+    proxlb_api_content = {}
+    proxlb_api = ProxlbApi(proxlb_config)
+    proxlb_api.server(proxlb_config)
+
+    import time
+    time.sleep(5)
 
     while True:
         # Get all required objects from the Proxmox cluster

@@ -11,6 +11,14 @@ proxmox_api:
   # retries: 1
   # wait_time: 1
 
+proxlb_api:
+  enable: True
+  listen_address: 0.0.0.0
+  port: 8008
+  allowed_api_keys:
+    - "RatpmrqUbmXqV7kmcoNu9w4y4ParWyAbYgky94b9"
+    - "fzeHoWKzFyinpNJHVjAx9PakAPhsVdffrTpFyEjC"
+
 proxmox_cluster:
   maintenance_nodes: ['virt66.example.com']
   ignore_nodes: []
