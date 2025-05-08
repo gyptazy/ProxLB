@@ -82,6 +82,7 @@ class Calculations:
                 guest_node_current = proxlb_data["guests"][guest_name]["node_current"]
                 # Update Hardware assignments
                 # Update assigned values for the current node
+                logger.debug(f"set_node_assignment of guest {guest_name} on node {guest_node_current} with cpu_total: {proxlb_data['guests'][guest_name]['cpu_total']}, memory_total: {proxlb_data['guests'][guest_name]['memory_total']}, disk_total: {proxlb_data['guests'][guest_name]['disk_total']}.")
                 proxlb_data["nodes"][guest_node_current]["cpu_assigned"] += proxlb_data["guests"][guest_name]["cpu_total"]
                 proxlb_data["nodes"][guest_node_current]["memory_assigned"] += proxlb_data["guests"][guest_name]["memory_total"]
                 proxlb_data["nodes"][guest_node_current]["disk_assigned"] += proxlb_data["guests"][guest_name]["disk_total"]

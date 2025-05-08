@@ -1,0 +1,2 @@
+fixed:
+  - Force type cast cpu count of guests to int for some corner cases where a str got returned (by @gyptazy). [#222]

@@ -76,7 +76,7 @@ class Guests:
 
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
-                    guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
+                    guests['guests'][guest['name']]['cpu_total'] = int(guest['cpus'])
                     guests['guests'][guest['name']]['cpu_used'] = guest['cpu'] * guest['cpus']
                     guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
                     guests['guests'][guest['name']]['memory_used'] = guest['mem']
@@ -92,6 +92,8 @@ class Guests:
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'vm'
+
+                    logger.debug(f"Resources of Guest {guest['name']} (type VM) added: {guests['guests'][guest['name']]}")
                 else:
                     logger.debug(f'Metric for VM {guest["name"]} ignored because VM is not running.')
 
@@ -102,7 +104,7 @@ class Guests:
                 if guest['status'] == 'running':
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
-                    guests['guests'][guest['name']]['cpu_total'] = guest['cpus']
+                    guests['guests'][guest['name']]['cpu_total'] = int(guest['cpus'])
                     guests['guests'][guest['name']]['cpu_used'] = guest['cpu']
                     guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
                     guests['guests'][guest['name']]['memory_used'] = guest['mem']
@@ -118,6 +120,8 @@ class Guests:
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'ct'
+
+                    logger.debug(f"Resources of Guest {guest['name']} (type CT) added: {guests['guests'][guest['name']]}")
                 else:
                     logger.debug(f'Metric for CT {guest["name"]} ignored because CT is not running.')
 
