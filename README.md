@@ -46,28 +46,29 @@ Overall, ProxLB significantly enhances resource management by intelligently dist
 <img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
 
 ## Features
-ProxLB's key features are by enabling automatic rebalancing of VMs and CTs across a Proxmox cluster based on memory, CPU, and local disk usage while identifying optimal nodes for automation. It supports maintenance mode, affinity rules, and seamless Proxmox API integration with ACL support, offering flexible usage as a one-time operation, a daemon, or through the Proxmox Web GUI.
+ProxLB's key features are by enabling automatic rebalancing of VMs and CTs across a Proxmox cluster based on memory, CPU, and local disk usage while identifying optimal nodes for automation. It supports maintenance mode, affinity rules, and seamless Proxmox API integration with ACL support, offering flexible usage as a one-time operation, a daemon, or through the Proxmox Web GUI. In addition, ProxLB also supports additional enterprise alike features like power managements for nodes (often also known as DPM) where nodes can be turned on/off on demand when workloads are higher/lower than usual. Also the automated security-patching of nodes within the cluster (known as ASPM) may help to reduce the manual work from cluster admins, where nodes will install patches, move guests across the cluster, reboot and then reblance the cluster again.
 
 **Features**
-* Rebalance VMs/CTs in the cluster by:
-  * Memory
-  * Disk (only local storage)
-  * CPU
-* Get best nodes for further automation
-* Supported Guest Types
-  * VMs
-  * CTs
+* Re-Balancing (DRS)
+  * Supporting VMs & CTs
+  * Balancing by:
+    * CPU
+    * Memory
+    * Disk
+  * Affinity / Anti-Affinity Rules
+    * Affinity: Groups guests together
+    * Anti-Affinity: Ensuring guests run on different nodes
+  * Best node evaluation
+    * Get the best node for guest placement (e.g., CI/CD)
 * Maintenance Mode
-  * Set node(s) into maintenance
-  * Move all workloads to different nodes
-* Affinity / Anti-Affinity Rules
+  * Evacuating a sinlge or multiple nodes
+* Node Power Management (DPM)
+* Auto Node Security-Patch-Management (ASPM)
 * Fully based on Proxmox API
-  * Fully integrated into the Proxmox ACL
-  * No SSH required
-* Usage
-  * One-Time
-  * Daemon
-  * Proxmox Web GUI Integration
+  * Utilizing the Proxmox User Authentications
+  * Supporting API tokens
+  * No SSH or Agents required
+  * Can run everywhere
 
 ## How does it work?
 ProxLB is a load-balancing system designed to optimize the distribution of virtual machines (VMs) and containers (CTs) across a cluster. It works by first gathering resource usage metrics from all nodes in the cluster through the Proxmox API. This includes detailed resource metrics for each VM and CT on every node. ProxLB then evaluates the difference between the maximum and minimum resource usage of the nodes, referred to as "Balanciness." If this difference exceeds a predefined threshold (which is configurable), the system initiates the rebalancing process.
@@ -261,6 +262,12 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
 |  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`] |
+| `dpm` |  |  |  |  |  |
+|  | enable |  | True | `Bool` | Enables the Dynamic Power Management functions.|
+|  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
+|  | mode |  | static | `Str` | The balancing mode that should be used. [values: `static` (default), `auto`] |
+|  | cluster_min_free_resources |  | 60 | `Int` | Representing the minimum required free resouzrces in percent within the cluster. [values: `60`% (default)] |
+|  | cluster_min_nodes |  | 3 | `Int` | The minimum of required nodes that should remain in a cluster. [values: `3` (default)] |
 | `service` |  |  |  |  |  |
 |  | daemon |  | True | `Bool` | If daemon mode should be activated. |
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
@@ -300,6 +307,15 @@ balancing:
   balanciness: 5
   method: memory
   mode: used
+
+dpm:
+  # DPM requires you to define the WOL (Wake-on-Lan)
+  # MAC address for each node in Proxmox.
+  enable: True
+  method: memory
+  mode: static
+  cluster_min_free_resources: 60
+  cluster_min_nodes: 1
 
 service:
   daemon: True

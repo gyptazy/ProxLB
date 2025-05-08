@@ -28,6 +28,13 @@ balancing:
   method: memory
   mode: used
 
+dpm:
+  enable: True
+  method: memory
+  mode: static
+  cluster_min_free_resources: 60
+  cluster_min_nodes: 1
+
 service:
   daemon: True
   schedule:

@@ -54,6 +54,7 @@ class Nodes:
         """
         logger.debug("Starting: get_nodes.")
         nodes = {"nodes": {}}
+        cluster = {"cluster": {}}
 
         for node in proxmox_api.nodes.get():
             # Ignoring a node results into ignoring all placed guests on the ignored node!
@@ -61,6 +62,8 @@ class Nodes:
                 nodes["nodes"][node["node"]] = {}
                 nodes["nodes"][node["node"]]["name"] = node["node"]
                 nodes["nodes"][node["node"]]["maintenance"] = False
+                nodes["nodes"][node["node"]]["dpm_shutdown"] = False
+                nodes["nodes"][node["node"]]["dpm_startup"] = False
                 nodes["nodes"][node["node"]]["cpu_total"] = node["maxcpu"]
                 nodes["nodes"][node["node"]]["cpu_assigned"] = 0
                 nodes["nodes"][node["node"]]["cpu_used"] = node["cpu"] * node["maxcpu"]
@@ -87,8 +90,35 @@ class Nodes:
                 if Nodes.set_node_maintenance(proxlb_config, node["node"]):
                     nodes["nodes"][node["node"]]["maintenance"] = True
 
+                # Generate the intial cluster statistics within the same loop to avoid a further one.
+                logger.debug(f"Updating cluster statistics by online node {node['node']}.")
+                cluster["cluster"]["node_count"] = cluster["cluster"].get("node_count", 0) + 1
+                cluster["cluster"]["cpu_total"] = cluster["cluster"].get("cpu_total", 0) + nodes["nodes"][node["node"]]["cpu_total"]
+                cluster["cluster"]["cpu_used"] = cluster["cluster"].get("cpu_used", 0) + nodes["nodes"][node["node"]]["cpu_used"]
+                cluster["cluster"]["cpu_free"] = cluster["cluster"].get("cpu_free", 0) + nodes["nodes"][node["node"]]["cpu_free"]
+                cluster["cluster"]["cpu_free_percent"] = cluster["cluster"].get("cpu_free", 0) / cluster["cluster"].get("cpu_total", 0) * 100
+                cluster["cluster"]["cpu_used_percent"] = cluster["cluster"].get("cpu_used", 0) / cluster["cluster"].get("cpu_total", 0) * 100
+                cluster["cluster"]["memory_total"] = cluster["cluster"].get("memory_total", 0) + nodes["nodes"][node["node"]]["memory_total"]
+                cluster["cluster"]["memory_used"] = cluster["cluster"].get("memory_used", 0) + nodes["nodes"][node["node"]]["memory_used"]
+                cluster["cluster"]["memory_free"] = cluster["cluster"].get("memory_free", 0) + nodes["nodes"][node["node"]]["memory_free"]
+                cluster["cluster"]["memory_free_percent"] = cluster["cluster"].get("memory_free", 0) / cluster["cluster"].get("memory_total", 0) * 100
+                cluster["cluster"]["memory_used_percent"] = cluster["cluster"].get("memory_used", 0) / cluster["cluster"].get("memory_total", 0) * 100
+                cluster["cluster"]["disk_total"] = cluster["cluster"].get("disk_total", 0) + nodes["nodes"][node["node"]]["disk_total"]
+                cluster["cluster"]["disk_used"] = cluster["cluster"].get("disk_used", 0) + nodes["nodes"][node["node"]]["disk_used"]
+                cluster["cluster"]["disk_free"] = cluster["cluster"].get("disk_free", 0) + nodes["nodes"][node["node"]]["disk_free"]
+                cluster["cluster"]["disk_free_percent"] = cluster["cluster"].get("disk_free", 0) / cluster["cluster"].get("disk_total", 0) * 100
+                cluster["cluster"]["disk_used_percent"] = cluster["cluster"].get("disk_used", 0) / cluster["cluster"].get("disk_total", 0) * 100
+
+                cluster["cluster"]["node_count_available"] = cluster["cluster"].get("node_count_available", 0) + 1
+                cluster["cluster"]["node_count_overall"] = cluster["cluster"].get("node_count_overall", 0) + 1
+
+            # Update the cluster statistics by offline nodes to have the overall count of nodes in the cluster
+            else:
+                logger.debug(f"Updating cluster statistics by offline node {node['node']}.")
+                cluster["cluster"]["node_count_overall"] = cluster["cluster"].get("node_count_overall", 0) + 1
+
         logger.debug("Finished: get_nodes.")
-        return nodes
+        return nodes, cluster
 
     @staticmethod
     def set_node_maintenance(proxlb_config: Dict[str, Any], node_name: str) -> Dict[str, Any]:

@@ -17,6 +17,7 @@ from utils.logger import SystemdLogger
 from utils.cli_parser import CliParser
 from utils.config_parser import ConfigParser
 from utils.proxmox_api import ProxmoxApi
+from models.dpm import DPM
 from models.nodes import Nodes
 from models.guests import Guests
 from models.groups import Groups
@@ -53,13 +54,16 @@ def main():
     while True:
         # Get all required objects from the Proxmox cluster
         meta = {"meta": proxlb_config}
-        nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
+        nodes, cluster = Nodes.get_nodes(proxmox_api, proxlb_config)
         guests = Guests.get_guests(proxmox_api, nodes, meta)
         groups = Groups.get_groups(guests, nodes)
 
         # Merge obtained objects from the Proxmox cluster for further usage
-        proxlb_data = {**meta, **nodes, **guests, **groups}
+        proxlb_data = {**meta, **cluster, **nodes, **guests, **groups}
         Helper.log_node_metrics(proxlb_data)
+
+        # Evaluate the dynamic power management for nodes in the clustet
+        DPM(proxlb_data)
 
         # Update the initial node resource assignments
         # by the previously created groups.
@@ -70,9 +74,13 @@ def main():
         Calculations.relocate_guests(proxlb_data)
         Helper.log_node_metrics(proxlb_data, init=False)
 
-        # Perform balancing actions via Proxmox API
+        # Perform balancing
         if not cli_args.dry_run or not proxlb_data["meta"]["balancing"].get("enable", False):
             Balancing(proxmox_api, proxlb_data)
+
+        # Perform DPM
+        if not cli_args.dry_run:
+            DPM.dpm_shutdown_nodes(proxmox_api, proxlb_data)
 
         # Validate if the JSON output should be
         # printed to stdout

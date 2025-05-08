@@ -162,7 +162,7 @@ class Calculations:
         logger.debug("Finished: get_most_free_node.")
 
     @staticmethod
-    def relocate_guests_on_maintenance_nodes(proxlb_data: Dict[str, Any]):
+    def relocate_guests_on_maintenance_nodes(proxlb_data: Dict[str, Any]) -> None:
         """
         Relocates guests that are currently on nodes marked for maintenance to
         nodes with the most available resources.
@@ -192,7 +192,7 @@ class Calculations:
         logger.debug("Finished: get_most_free_node.")
 
     @staticmethod
-    def relocate_guests(proxlb_data: Dict[str, Any]):
+    def relocate_guests(proxlb_data: Dict[str, Any]) -> None:
         """
         Relocates guests within the provided data structure to ensure affinity groups are
         placed on nodes with the most free resources.
@@ -231,7 +231,7 @@ class Calculations:
         logger.debug("Finished: relocate_guests.")
 
     @staticmethod
-    def val_anti_affinity(proxlb_data: Dict[str, Any], guest_name: str):
+    def val_anti_affinity(proxlb_data: Dict[str, Any], guest_name: str) -> None:
         """
         Validates and assigns nodes to guests based on anti-affinity rules.
 
@@ -280,7 +280,7 @@ class Calculations:
         logger.debug("Finished: val_anti_affinity.")
 
     @staticmethod
-    def val_node_relationship(proxlb_data: Dict[str, Any], guest_name: str):
+    def val_node_relationship(proxlb_data: Dict[str, Any], guest_name: str) -> None:
         """
         Validates and assigns guests to nodes based on defined relationships based on tags.
 
@@ -311,7 +311,7 @@ class Calculations:
         logger.debug("Finished: val_node_relationship.")
 
     @staticmethod
-    def update_node_resources(proxlb_data):
+    def update_node_resources(proxlb_data: Dict[str, Any]) -> None:
         """
         Updates the resource allocation and usage statistics for nodes when a guest
         is moved from one node to another.
@@ -375,3 +375,68 @@ class Calculations:
         logger.debug(f"Set guest {guest_name} from node {node_current} to node {node_target}.")
 
         logger.debug("Finished: update_node_resources.")
+
+    @staticmethod
+    def update_cluster_resources(proxlb_data: Dict[str, Any], node: str, action: str) -> None:
+        """
+        Updates the cluster resource statistics based on the specified action and node.
+
+        This method modifies the cluster-level resource data (such as CPU, memory, disk usage,
+        and node counts) based on the action performed ('add' or 'remove') for the specified node.
+        It calculates the updated statistics after adding or removing a node and logs the results.
+
+        Parameters:
+            proxlb_data (Dict[str, Any]): The data representing the current state of the cluster,
+                                        including node-level statistics for CPU, memory, and disk.
+            node (str): The identifier of the node whose resources are being added or removed from the cluster.
+            action (str): The action to perform, either 'add' or 'remove'. 'add' will include the node's
+                        resources in the cluster, while 'remove' will exclude the node's resources.
+
+        Returns:
+            None: The function modifies the `proxlb_data` dictionary in place to update the cluster resources.
+        """
+        logger.debug("Starting: update_cluster_resources.")
+        logger.debug(f"DPM: Updating cluster statistics by online node {node}. Action: {action}")
+        logger.debug(f"DPM: update_cluster_resources - Before {action}: {proxlb_data['cluster']['memory_free_percent']}")
+
+        if action == "add":
+            proxlb_data["cluster"]["node_count"] = proxlb_data["cluster"].get("node_count", 0) + 1
+            proxlb_data["cluster"]["cpu_total"] = proxlb_data["cluster"].get("cpu_total", 0) + proxlb_data["nodes"][node]["cpu_total"]
+            proxlb_data["cluster"]["cpu_used"] = proxlb_data["cluster"].get("cpu_used", 0) + proxlb_data["nodes"][node]["cpu_used"]
+            proxlb_data["cluster"]["cpu_free"] = proxlb_data["cluster"].get("cpu_free", 0) + proxlb_data["nodes"][node]["cpu_free"]
+            proxlb_data["cluster"]["cpu_free_percent"] = proxlb_data["cluster"].get("cpu_free", 0) / proxlb_data["cluster"].get("cpu_total", 0) * 100
+            proxlb_data["cluster"]["cpu_used_percent"] = proxlb_data["cluster"].get("cpu_used", 0) / proxlb_data["cluster"].get("cpu_total", 0) * 100
+            proxlb_data["cluster"]["memory_total"] = proxlb_data["cluster"].get("memory_total", 0) + proxlb_data["nodes"][node]["memory_total"]
+            proxlb_data["cluster"]["memory_used"] = proxlb_data["cluster"].get("memory_used", 0) + proxlb_data["nodes"][node]["memory_used"]
+            proxlb_data["cluster"]["memory_free"] = proxlb_data["cluster"].get("memory_free", 0) + proxlb_data["nodes"][node]["memory_free"]
+            proxlb_data["cluster"]["memory_free_percent"] = proxlb_data["cluster"].get("memory_free", 0) / proxlb_data["cluster"].get("memory_total", 0) * 100
+            proxlb_data["cluster"]["memory_used_percent"] = proxlb_data["cluster"].get("memory_used", 0) / proxlb_data["cluster"].get("memory_total", 0) * 100
+            proxlb_data["cluster"]["disk_total"] = proxlb_data["cluster"].get("disk_total", 0) + proxlb_data["nodes"][node]["disk_total"]
+            proxlb_data["cluster"]["disk_used"] = proxlb_data["cluster"].get("disk_used", 0) + proxlb_data["nodes"][node]["disk_used"]
+            proxlb_data["cluster"]["disk_free"] = proxlb_data["cluster"].get("disk_free", 0) + proxlb_data["nodes"][node]["disk_free"]
+            proxlb_data["cluster"]["disk_free_percent"] = proxlb_data["cluster"].get("disk_free", 0) / proxlb_data["cluster"].get("disk_total", 0) * 100
+            proxlb_data["cluster"]["disk_used_percent"] = proxlb_data["cluster"].get("disk_used", 0) / proxlb_data["cluster"].get("disk_total", 0) * 100
+            proxlb_data["cluster"]["node_count_available"] = proxlb_data["cluster"].get("node_count_available", 0) + 1
+            proxlb_data["cluster"]["node_count_overall"] = proxlb_data["cluster"].get("node_count_overall", 0) + 1
+
+        if action == "remove":
+            proxlb_data["cluster"]["node_count"] = proxlb_data["cluster"].get("node_count", 0) - 1
+            proxlb_data["cluster"]["cpu_total"] = proxlb_data["cluster"].get("cpu_total", 0) - proxlb_data["nodes"][node]["cpu_total"]
+            proxlb_data["cluster"]["cpu_used"] = proxlb_data["cluster"].get("cpu_used", 0) - proxlb_data["nodes"][node]["cpu_used"]
+            proxlb_data["cluster"]["cpu_free"] = proxlb_data["cluster"].get("cpu_free", 0) - proxlb_data["nodes"][node]["cpu_free"]
+            proxlb_data["cluster"]["cpu_free_percent"] = proxlb_data["cluster"].get("cpu_free", 0) / proxlb_data["cluster"].get("cpu_total", 0) * 100
+            proxlb_data["cluster"]["cpu_used_percent"] = proxlb_data["cluster"].get("cpu_used", 0) / proxlb_data["cluster"].get("cpu_total", 0) * 100
+            proxlb_data["cluster"]["memory_total"] = proxlb_data["cluster"].get("memory_total", 0) - proxlb_data["nodes"][node]["memory_total"]
+            proxlb_data["cluster"]["memory_used"] = proxlb_data["cluster"].get("memory_used") - proxlb_data["nodes"][node]["memory_used"]
+            proxlb_data["cluster"]["memory_free"] = proxlb_data["cluster"].get("memory_free") - proxlb_data["nodes"][node]["memory_free"]
+            proxlb_data["cluster"]["memory_free_percent"] = proxlb_data["cluster"].get("memory_free") / proxlb_data["cluster"].get("memory_total", 0) * 100
+            proxlb_data["cluster"]["memory_used_percent"] = proxlb_data["cluster"].get("memory_used") / proxlb_data["cluster"].get("memory_total", 0) * 100
+            proxlb_data["cluster"]["disk_total"] = proxlb_data["cluster"].get("disk_total", 0) - proxlb_data["nodes"][node]["disk_total"]
+            proxlb_data["cluster"]["disk_used"] = proxlb_data["cluster"].get("disk_used", 0) - proxlb_data["nodes"][node]["disk_used"]
+            proxlb_data["cluster"]["disk_free"] = proxlb_data["cluster"].get("disk_free", 0) - proxlb_data["nodes"][node]["disk_free"]
+            proxlb_data["cluster"]["disk_free_percent"] = proxlb_data["cluster"].get("disk_free", 0) / proxlb_data["cluster"].get("disk_total", 0) * 100
+            proxlb_data["cluster"]["disk_used_percent"] = proxlb_data["cluster"].get("disk_used", 0) / proxlb_data["cluster"].get("disk_total", 0) * 100
+            proxlb_data["cluster"]["node_count_available"] = proxlb_data["cluster"].get("node_count_available", 0) - 1
+
+        logger.debug(f"DPM: update_cluster_resources - After {action}: {proxlb_data['cluster']['memory_free_percent']}")
+        logger.debug("Finished: update_cluster_resources.")
