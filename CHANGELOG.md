@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-05-13
+
+### Added
+
+- Add a configurable retry mechanism when connecting to the Proxmox API (by @gyptazy) [#157]
+- Add 1-to-1 relationships between guest and hypervisor node to ping a guest on a node (by @gyptazy) [#218]
+
+### Fixed
+
+- Force type cast cpu count of guests to int for some corner cases where a str got returned (by @gyptazy). [#222]
+- Fix systemd unit file to run after network on non PVE nodes (by @robertdahlem) [#137]
+
+
 ## [1.1.1] - 2025-04-20
 
 ### Added

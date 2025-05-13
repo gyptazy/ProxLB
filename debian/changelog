@@ -1,8 +1,11 @@
-proxlb (1.1.2~b1) stable; urgency=medium
+proxlb (1.1.2) stable; urgency=medium
 
-  * Auto-created 1.1.2 beta 1 release.
+  * Add a configurable retry mechanism when connecting to the Proxmox API. (Closed: #157)
+  * Add 1-to-1 relationships between guest and hypervisor node to ping a guest on a node. (Closes #218)
+  * Force type cast cpu count of guests to int for some corner cases where a str got returned. (Closed #222)
+  * Fix systemd unit file to run after network on non PVE nodes. (Closes #137)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 17 Mar 2025 18:55:02 +0000
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 13 May 2025 18:12:04 +0000
 
 proxlb (1.1.1) stable; urgency=medium
 
