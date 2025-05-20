@@ -1,0 +1,26 @@
+name: "Build Container Image: AMD64"
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build amd64 image and save as tar
+      run: |
+        docker buildx build \
+          --platform linux/amd64 \
+          --load \
+          -t proxlb-image:amd64 \
+          .
+
+        docker save proxlb-image:amd64 -o proxlb_image_amd64.tar
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: proxlb-image-amd64
+        path: proxlb_image_amd64.tar
