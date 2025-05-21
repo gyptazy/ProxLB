@@ -84,14 +84,14 @@ class Nodes:
                 nodes["nodes"][node["node"]]["disk_used_percent"] = nodes["nodes"][node["node"]]["disk_used"] / node["maxdisk"] * 100
 
                 # Evaluate if node should be set to maintenance mode
-                if Nodes.set_node_maintenance(proxlb_config, node["node"]):
+                if Nodes.set_node_maintenance(proxmox_api, proxlb_config, node["node"]):
                     nodes["nodes"][node["node"]]["maintenance"] = True
 
         logger.debug("Finished: get_nodes.")
         return nodes
 
     @staticmethod
-    def set_node_maintenance(proxlb_config: Dict[str, Any], node_name: str) -> Dict[str, Any]:
+    def set_node_maintenance(proxmox_api, proxlb_config: Dict[str, Any], node_name: str) -> Dict[str, Any]:
         """
         Set nodes to maintenance mode based on the provided configuration.
 
@@ -99,6 +99,7 @@ class Nodes:
         based on the configuration provided in proxlb_config.
 
         Args:
+            proxmox_api (any): The Proxmox API client instance.
             proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration, including maintenance nodes.
             node_name: (str): The current node name within the outer iteration.
 
@@ -107,11 +108,24 @@ class Nodes:
         """
         logger.debug("Starting: set_node_maintenance.")
 
+        # Evaluate maintenance mode by config
         if proxlb_config.get("proxmox_cluster", None).get("maintenance_nodes", None) is not None:
             if len(proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", [])) > 0:
                 if node_name in proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", []):
-                    logger.warning(f"Node: {node_name} has been set to maintenance mode.")
+                    logger.warning(f"Node: {node_name} has been set to maintenance mode (by ProxLB config).")
                     return True
+                else:
+                    logger.debug(f"Node: {node_name} is not in maintenance mode by ProxLB config.")
+
+        # Evaluate maintenance mode by Proxmox HA
+        for ha_element in proxmox_api.cluster.ha.status.current.get():
+            if ha_element.get("status"):
+                if "maintenance mode" in ha_element.get("status"):
+                    if ha_element.get("node") == node_name:
+                        logger.warning(f"Node: {node_name} has been set to maintenance mode (by Proxmox HA API).")
+                        return True
+                    else:
+                        logger.debug(f"Node: {node_name} is not in maintenance mode by Proxmox HA API.")
 
         logger.debug("Finished: set_node_maintenance.")
 

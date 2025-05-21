@@ -1,0 +1,2 @@
+feature:
+  - Align maintenance mode with Proxmox HA maintenance mode (by @gyptazy). [#232]
