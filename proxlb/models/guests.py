@@ -63,21 +63,10 @@ class Guests:
             for guest in proxmox_api.nodes(node).qemu.get():
                 if guest['status'] == 'running':
 
-                    # If the balancing method is set to cpu, we need to wait for the guest to report
-                    # cpu usage. This is important for the balancing process to ensure that we do not
-                    # wait for a guest for an infinite time.
-                    if meta["meta"]["balancing"]["method"] == "cpu":
-                        retry_counter = 0
-                        while guest['cpu'] == 0 and retry_counter < 10:
-                            guest = proxmox_api.nodes(node).qemu(guest['vmid']).status.current.get()
-                            logger.debug(f"Guest {guest['name']} (type VM) is reporting {guest['cpu']} cpu usage on retry {retry_counter}.")
-                            retry_counter += 1
-                            time.sleep(1)
-
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
                     guests['guests'][guest['name']]['cpu_total'] = int(guest['cpus'])
-                    guests['guests'][guest['name']]['cpu_used'] = guest['cpu'] * guest['cpus']
+                    guests['guests'][guest['name']]['cpu_used'] = Guests.get_guest_cpu_usage(proxmox_api, node, guest['vmid'], guest['name'])
                     guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
                     guests['guests'][guest['name']]['memory_used'] = guest['mem']
                     guests['guests'][guest['name']]['disk_total'] = guest['maxdisk']
@@ -105,7 +94,7 @@ class Guests:
                     guests['guests'][guest['name']] = {}
                     guests['guests'][guest['name']]['name'] = guest['name']
                     guests['guests'][guest['name']]['cpu_total'] = int(guest['cpus'])
-                    guests['guests'][guest['name']]['cpu_used'] = guest['cpu']
+                    guests['guests'][guest['name']]['cpu_used'] = Guests.get_guest_cpu_usage(proxmox_api, node, guest['vmid'], guest['name'])
                     guests['guests'][guest['name']]['memory_total'] = guest['maxmem']
                     guests['guests'][guest['name']]['memory_used'] = guest['mem']
                     guests['guests'][guest['name']]['disk_total'] = guest['maxdisk']
@@ -127,3 +116,38 @@ class Guests:
 
         logger.debug("Finished: get_guests.")
         return guests
+
+    @staticmethod
+    def get_guest_cpu_usage(proxmox_api, node_name: str, vm_id: int, vm_name: str) -> float:
+        """
+        Retrieve the average CPU usage of a guest instance (VM/CT) over the past hour.
+
+        This method queries the Proxmox VE API for RRD (Round-Robin Database) data
+        related to CPU usage of a specific guest instance and calculates the average CPU usage
+        over the last hour using the "AVERAGE" consolidation function.
+
+        Args:
+            proxmox_api: An instance of the Proxmox API client.
+            node_name (str): The name of the Proxmox node hosting the VM.
+            vm_id (int): The unique identifier of the guest instance (VM/CT).
+            vm_name (str): The name of the guest instance (VM/CT).
+
+        Returns:
+            float: The average CPU usage as a fraction (0.0 to 1.0) over the past hour.
+                   Returns 0.0 if no data is available.
+        """
+        logger.debug("Finished: get_guest_cpu_usage.")
+        time.sleep(0.1)
+
+        try:
+            logger.debug(f"Getting RRD dara for guest: {vm_name}.")
+            guest_data_rrd = proxmox_api.nodes(node_name).qemu(vm_id).rrddata.get(timeframe="hour", cf="AVERAGE")
+        except Exception:
+            logger.error(f"Failed to retrieve RRD data for guest: {vm_name} (ID: {vm_id}) on node: {node_name}. Using 0.0 as CPU usage.")
+            logger.debug("Finished: get_guest_cpu_usage.")
+            return 0.0
+
+        cpu_usage = sum(entry.get("cpu", 0.0) for entry in guest_data_rrd) / len(guest_data_rrd)
+        logger.debug(f"CPU RRD data for guest: {vm_name}: {cpu_usage}")
+        logger.debug("Finished: get_guest_cpu_usage.")
+        return cpu_usage
