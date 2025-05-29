@@ -19,6 +19,7 @@
     6. [Parallel Migrations](#parallel-migrations)
     7. [Run as a Systemd-Service](#run-as-a-systemd-service)
     8. [SSL Self-Signed Certificates](#ssl-self-signed-certificates)
+    9. [Dynamic Power Management (DPM)](#dynamic-power-management)
 
 ## Authentication / User Accounts / Permissions
 ### Authentication
@@ -208,3 +209,33 @@ proxmox_api:
 ```
 
 *Note: Disabling SSL certificate validation is not recommended.*
+
+### Dynamic Power Management (DPM)
+<img align="left" src="https://cdn.gyptazy.com/images/proxlb-proxmox-node-wakeonlan-wol-mac-dpm.jpg"/> Configuring Dynamic Power Management (DPM) in ProxLB within a Proxmox cluster involves a few critical steps to ensure proper operation. The first consideration is that any node intended for automatic shutdown and startup must support Wake-on-LAN (WOL). This is essential because DPM relies on the ability to power nodes back on remotely. For this to work, the ProxLB instance must be able to reach the target node’s MAC address directly over the network.
+
+To make this possible, you must configure the correct MAC address for WOL within the Proxmox web interface. This is done by selecting the node, going to the “System” section, then “Options,” and finally setting the “MAC address for Wake-on-LAN.” Alternatively, this value can also be submitted using the Proxmox API. Without this MAC address in place, ProxLB will not allow the node to be shut down. This restriction is in place to prevent nodes from being turned off without a way to bring them back online, which could lead to service disruption. By ensuring that each node has a valid WOL MAC address configured, DPM can operate safely and effectively, allowing ProxLB to manage the cluster’s power consumption dynamically.
+
+#### Requirements
+Using the powermanagement feature within clusters comes along with several requirements:
+* ProxLB needs to reach the WOL-Mac address of the node (plain network)
+* WOL must be enabled of the node in general (BIOS/UEFI)
+* The related WOL network interface must be defined
+* The related WOL network interface MAC address must be defined in Proxmox for the node
+
+#### Options
+| Section | Option | Sub Option | Example | Type | Description |
+|---------|:------:|:----------:|:-------:|:----:|:-----------:|
+| `dpm` |  |  |  |  |  |
+|  | enable |  | True | `Bool` | Enables the Dynamic Power Management functions.|
+|  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
+|  | mode |  | static | `Str` | The balancing mode that should be used. [values: `static` (default), `auto`] |
+|  | cluster_min_free_resources |  | 60 | `Int` | Representing the minimum required free resouzrces in percent within the cluster. [values: `60`% (default)] |
+|  | cluster_min_nodes |  | 3 | `Int` | The minimum of required nodes that should remain in a cluster. [values: `3` (default)] |
+
+#### DPM Modes
+##### Static
+Static mode in DPM lets you set a fixed number of nodes that should always stay powered on in a Proxmox cluster. This is important to keep the cluster working properly, since you need at least three nodes to maintain quorum. The system won’t let you go below that limit to avoid breaking cluster functionality.
+
+Besides the minimum number of active nodes, you can also define a baseline for how many free resources—like CPU or RAM—should always be available when the virtual machines are running. If the available resources drop below that level, ProxLB will try to power on more nodes, as long as they're available and can be started. On the other hand, if the cluster has more than enough resources, ProxLB will begin to shut down nodes again, but only until the free resource threshold is reached.
+
+This mode gives you a more stable setup by always keeping a minimum number of nodes ready while still adjusting the rest of the cluster based on resource usage, but in a controlled and predictable way.
