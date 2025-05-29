@@ -40,6 +40,8 @@ class Helper:
         get_daemon_mode(proxlb_config: Dict[str, Any]) -> None:
             Checks if the daemon mode is active and handles the scheduling accordingly.
     """
+    proxlb_reload = False
+
     def __init__(self):
         """
         Initializes the general Helper clas.
@@ -162,3 +164,21 @@ class Helper:
             print(json.dumps(filtered_data, indent=4))
 
         logger.debug("Finished: print_json.")
+
+    @staticmethod
+    def handler_sighup(signum, frame):
+        """
+        Signal handler for SIGHUP.
+
+        This method is triggered when the process receives a SIGHUP signal.
+        It sets the `proxlb_reload` class variable to True to indicate that
+        configuration should be reloaded in the main loop.
+
+        Args:
+            signum (int): The signal number (expected to be signal.SIGHUP).
+            frame (frame object): Current stack frame (unused but required by signal handler signature).
+        """
+        logger.debug("Starting: handle_sighup.")
+        logger.debug("Got SIGHUP signal. Reloading...")
+        Helper.proxlb_reload = True
+        logger.debug("Starting: handle_sighup.")

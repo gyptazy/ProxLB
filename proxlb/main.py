@@ -13,6 +13,7 @@ __license__ = "GPL-3.0"
 
 
 import logging
+import signal
 from utils.logger import SystemdLogger
 from utils.cli_parser import CliParser
 from utils.config_parser import ConfigParser
@@ -31,6 +32,9 @@ def main():
     """
     # Initialize logging handler
     logger = SystemdLogger(level=logging.INFO)
+
+    # Signal handler for SIGHUP
+    signal.signal(signal.SIGHUP, Helper.handler_sighup)
 
     # Parses arguments passed from the CLI
     cli_parser = CliParser()
@@ -51,6 +55,15 @@ def main():
     proxlb_config["proxmox_api"]["pass"] = "********"
 
     while True:
+
+        # Validate if reload signal was sent during runtime
+        # and reload the ProxLB configuration and adjust log level
+        if Helper.proxlb_reload:
+            logger.info("Reloading ProxLB configuration.")
+            proxlb_config = config_parser.get_config()
+            logger.set_log_level(proxlb_config.get('service', {}).get('log_level', 'INFO'))
+            Helper.proxlb_reload = False
+
         # Get all required objects from the Proxmox cluster
         meta = {"meta": proxlb_config}
         nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
