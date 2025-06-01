@@ -48,6 +48,9 @@ def main():
     # Update log level from config and fallback to INFO if not defined
     logger.set_log_level(proxlb_config.get('service', {}).get('log_level', 'INFO'))
 
+    # Validate of an optional service delay
+    Helper.get_service_delay(proxlb_config)
+
     # Connect to Proxmox API & create API object
     proxmox_api = ProxmoxApi(proxlb_config)
 

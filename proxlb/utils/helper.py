@@ -146,6 +146,39 @@ class Helper:
         logger.debug("Finished: get_daemon_mode.")
 
     @staticmethod
+    def get_service_delay(proxlb_config: Dict[str, Any]) -> None:
+        """
+        Checks if a start up delay for the service is defined and waits to proceed until
+        the time is up.
+
+        Parameters:
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
+
+        Returns:
+            None
+        """
+        logger.debug("Starting: get_service_delay.")
+        if proxlb_config.get("service", {}).get("delay", {}).get("enable", False):
+
+            # Convert hours to seconds
+            if proxlb_config["service"]["delay"].get("format", "hours") == "hours":
+                sleep_seconds = proxlb_config.get("service", {}).get("delay", {}).get("time", 1) * 3600
+            # Convert minutes to seconds
+            elif proxlb_config["service"]["delay"].get("format", "hours") == "minutes":
+                sleep_seconds = proxlb_config.get("service", {}).get("delay", {}).get("time", 60) * 60
+            else:
+                logger.error("Invalid format for service delay. Please use 'hours' or 'minutes'.")
+                sys.exit(1)
+
+            logger.info(f"Service delay active: First run in: {proxlb_config.get('service', {}).get('delay', {}).get('time', 1)} {proxlb_config['service']['delay'].get('format', 'hours')}.")
+            time.sleep(sleep_seconds)
+
+        else:
+            logger.debug("Service delay not active. Proceeding without delay.")
+
+        logger.debug("Finished: get_service_delay.")
+
+    @staticmethod
     def print_json(proxlb_config: Dict[str, Any], print_json: bool = False) -> None:
         """
         Prints the calculated balancing matrix as a JSON output to stdout.

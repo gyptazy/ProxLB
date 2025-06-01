@@ -267,6 +267,10 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
 |  |  | interval | 12 | `Int` | How often rebalancing should occur in daemon mode.|
 |  |  | format | hours | `Str` | Sets the time format. [values: `hours` (default), `minutes`]|
+|  | `delay` |  |  | `Dict` | Schedule config block for an optional delay until the service starts. |
+|  |  | enable | False | `Bool` | If a delay time should be validated.|
+|  |  | time | 1 | `Int` | Delay time until the service starts after the initial execution.|
+|  |  | format | hours | `Str` | Sets the time format. [values: `hours` (default), `minutes`]|
 |  | log_level |  | INFO | `Str` | Defines the default log level that should be logged. [values: `INFO` (default), `WARNING`, `CRITICAL`, `DEBUG`] |
 
 
@@ -306,6 +310,10 @@ service:
   daemon: True
   schedule:
     interval: 12
+    format: hours
+  delay:
+    enable: False
+    time: 1
     format: hours
   log_level: INFO
 ```
