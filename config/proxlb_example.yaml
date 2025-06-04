@@ -33,4 +33,8 @@ service:
   schedule:
     interval: 12
     format: hours
+  delay:
+    enable: False
+    time: 1
+    format: hours
   log_level: INFO
