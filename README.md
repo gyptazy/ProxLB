@@ -255,6 +255,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | enable |  | True | `Bool` | Enables the guest balancing.|
 |  | enforce_affinity |  | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse. |
 |  | parallel |  | False | `Bool` | If guests should be moved in parallel or sequentially.|
+|  | parallel_jobs |  | 5 | `Int` | The amount if parallel jobs when migrating guests. (default: `5`)|
 |  | live |  | True | `Bool` | If guests should be moved live or shutdown.|
 |  | with_local_disks |  | True | `Bool` | If balancing of guests should include local disks.|
 |  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored. [values: `vm`, `ct`]|

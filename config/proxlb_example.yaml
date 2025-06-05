@@ -20,6 +20,9 @@ balancing:
   enable: True
   enforce_affinity: False
   parallel: False
+  # If running parallel job, you can define
+  # the amount of prallel jobs (default: 5)
+  parallel_jobs: 1
   live: True
   with_local_disks: True
   balance_types: ['vm', 'ct']
