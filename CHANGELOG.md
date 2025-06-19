@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-06-29
+
+### Added
+
+- Add relaod (SIGHUP) function to ProxLB to reload the configuration (by @gyptazy). [#189]
+- Add optional wait time parameter to delay execution until the service takes action (by @gyptazy). [#239]
+- Make the amount of parallel migrations configurable (by @gyptazy). [#241]
+
+### Changed
+
+- Use the average CPU consumption of a guest within the last 60 minutes instead of the current CPU usage (by @philslab-ninja & @gyptazy). [#94]
+
+### Fixed
+
+- Align maintenance mode with Proxmox HA maintenance mode (by @gyptazy). [#232]
+
+
 ## [1.1.2] - 2025-05-13
 
 ### Added

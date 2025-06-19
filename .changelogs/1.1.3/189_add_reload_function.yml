@@ -1,2 +1,2 @@
-feature:
+added:
   - Add relaod (SIGHUP) function to ProxLB to reload the configuration (by @gyptazy). [#189]

@@ -1,2 +1,2 @@
-feature:
+added:
   - Add optional wait time parameter to delay execution until the service takes action (by @gyptazy). #239

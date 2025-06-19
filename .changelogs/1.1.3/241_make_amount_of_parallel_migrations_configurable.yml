@@ -1,2 +1,2 @@
-feature:
+added:
   - Make the amount of parallel migrations configurable (by @gyptazy). [#241]
