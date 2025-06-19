@@ -1,8 +1,12 @@
-proxlb (1.1.3~beta1) stable; urgency=medium
+proxlb (1.1.3) stable; urgency=medium
 
-  * Build for 1.1.3 beta.
+  * Add relaod (SIGHUP) function to ProxLB to reload the configuration. (Closes: #189)
+  * Add optional wait time parameter to delay execution until the service takes action. (Closes: #239)
+  * Make the amount of parallel migrations configurable. (Closes: #241)
+  * Use the average CPU consumption of a guest within the last 60 minutes instead of the current CPU usage. (Closes: #94)
+  * Align maintenance mode with Proxmox HA maintenance mode. (Closes: #232)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 22 May 2025 06:58:12 +0000
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 19 Jun 2025 09:10:43 +0000
 
 proxlb (1.1.2) stable; urgency=medium
 

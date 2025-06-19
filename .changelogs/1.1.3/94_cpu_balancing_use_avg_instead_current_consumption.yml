@@ -1,2 +1,2 @@
-feature:
+changed:
   - Use the average CPU consumption of a guest within the last 60 minutes instead of the current CPU usage (by @philslab-ninja & @gyptazy). [#94]
