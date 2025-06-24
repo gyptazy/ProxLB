@@ -1,0 +1,2 @@
+fixed:
+  - Fixed an issue where balancing was performed in combination of deactivated balancing and dry-run mode (@gyptazy). [#248]
