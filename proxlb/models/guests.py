@@ -79,7 +79,7 @@ class Guests:
                     guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
-                    guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
+                    guests['guests'][guest['name']]['node_relationships'] = Tags.get_node_relationships(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'vm'
 
                     logger.debug(f"Resources of Guest {guest['name']} (type VM) added: {guests['guests'][guest['name']]}")
@@ -107,7 +107,7 @@ class Guests:
                     guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
-                    guests['guests'][guest['name']]['node_relationship'] = Tags.get_node_relationship(guests['guests'][guest['name']]['tags'])
+                    guests['guests'][guest['name']]['node_relationships'] = Tags.get_node_relationships(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['type'] = 'ct'
 
                     logger.debug(f"Resources of Guest {guest['name']} (type CT) added: {guests['guests'][guest['name']]}")
