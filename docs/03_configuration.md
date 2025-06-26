@@ -137,6 +137,8 @@ plb_pin_node03
 
 As a result, ProxLB will pin the guest `dev-vm01` to the node `virt03`.
 
+You can also repeat this step multiple times for different node names to create a potential group of allowed hosts where a the guest may be served on. In this case, ProxLB takes the node with the lowest used resources according to the defined balancing values from this group.
+
 **Note:** The given node names from the tag are validated. This means, ProxLB validated if the given node name is really part of the cluster. In case of a wrongly defined or unavailable node name it continous to use the regular processes to make sure the guest keeps running.
 
 ### API Loadbalancing

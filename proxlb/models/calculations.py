@@ -129,7 +129,7 @@ class Calculations:
         logger.debug("Finished: get_balanciness.")
 
     @staticmethod
-    def get_most_free_node(proxlb_data: Dict[str, Any], return_node: bool = False) -> Dict[str, Any]:
+    def get_most_free_node(proxlb_data: Dict[str, Any], return_node: bool = False, guest_node_relation_list: list = []) -> Dict[str, Any]:
         """
         Get the name of the Proxmox node in the cluster with the most free resources based on
         the user defined method (e.g.: memory) and mode (e.g.: used).
@@ -138,6 +138,8 @@ class Calculations:
             proxlb_data (Dict[str, Any]): The data holding all content of all objects.
             return_node (bool): The indicator to simply return the best node for further
                                 assignments.
+            guest_node_relation_list (list): A list of nodes that have a tag on the given
+                                             guest relationship for pinning.
 
         Returns:
             Dict[str, Any]: Updated meta data section of the node with the most free resources that should
@@ -146,8 +148,15 @@ class Calculations:
         logger.debug("Starting: get_most_free_node.")
         proxlb_data["meta"]["balancing"]["balance_next_node"] = ""
 
-        # Do not include nodes that are marked in 'maintenance'
+        # Filter and exclude nodes that are in maintenance mode
         filtered_nodes = [node for node in proxlb_data["nodes"].values() if not node["maintenance"]]
+
+        # Filter and include nodes that given by a relationship between guest and node. This is only
+        # used if the guest has a relationship to a node defined by "pin" tags.
+        if len(guest_node_relation_list) > 0:
+            filtered_nodes = [node for node in proxlb_data["nodes"].values() if node["name"] in guest_node_relation_list]
+
+        # Filter by the defined methods and modes for balancing
         method = proxlb_data["meta"]["balancing"].get("method", "memory")
         mode = proxlb_data["meta"]["balancing"].get("mode", "used")
         lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_{mode}_percent"])
@@ -226,7 +235,7 @@ class Calculations:
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
                     proxlb_data["meta"]["balancing"]["balance_next_guest"] = guest_name
                     Calculations.val_anti_affinity(proxlb_data, guest_name)
-                    Calculations.val_node_relationship(proxlb_data, guest_name)
+                    Calculations.val_node_relationships(proxlb_data, guest_name)
                     Calculations.update_node_resources(proxlb_data)
 
         logger.debug("Finished: relocate_guests.")
@@ -281,7 +290,7 @@ class Calculations:
         logger.debug("Finished: val_anti_affinity.")
 
     @staticmethod
-    def val_node_relationship(proxlb_data: Dict[str, Any], guest_name: str):
+    def val_node_relationships(proxlb_data: Dict[str, Any], guest_name: str):
         """
         Validates and assigns guests to nodes based on defined relationships based on tags.
 
@@ -292,24 +301,26 @@ class Calculations:
         Returns:
         None
         """
-        logger.debug("Starting: val_node_relationship.")
+        logger.debug("Starting: val_node_relationships.")
         proxlb_data["guests"][guest_name]["processed"] = True
 
-        if proxlb_data["guests"][guest_name]["node_relationship"]:
-            logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']}. Pinning to node.")
+        if len(proxlb_data["guests"][guest_name]["node_relationships"]) > 0:
+            logger.info(f"Guest '{guest_name}' has relationships defined to node(s): {','.join(proxlb_data['guests'][guest_name]['node_relationships'])}. Pinning to node.")
+
+            # Get the node with the most free resources of the group
+            guest_node_relation_list = proxlb_data["guests"][guest_name]["node_relationships"]
+            Calculations.get_most_free_node(proxlb_data, False, guest_node_relation_list)
 
             # Validate if the specified node name is really part of the cluster
-            if proxlb_data['guests'][guest_name]['node_relationship'] in proxlb_data["nodes"].keys():
-                logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']} is a known hypervisor node in the cluster.")
-                # Pin the guest to the specified hypervisor node.
-                proxlb_data["meta"]["balancing"]["balance_next_node"] = proxlb_data['guests'][guest_name]['node_relationship']
+            if proxlb_data["meta"]["balancing"]["balance_next_node"] in proxlb_data["nodes"].keys():
+                logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['meta']['balancing']['balance_next_node']} is a known hypervisor node in the cluster.")
             else:
-                logger.warning(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['guests'][guest_name]['node_relationship']} but this node name is not known in the cluster!")
+                logger.warning(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['meta']['balancing']['balance_next_node']} but this node name is not known in the cluster!")
 
         else:
             logger.info(f"Guest '{guest_name}' does not have any specific node relationships.")
 
-        logger.debug("Finished: val_node_relationship.")
+        logger.debug("Finished: val_node_relationships.")
 
     @staticmethod
     def update_node_resources(proxlb_data):
