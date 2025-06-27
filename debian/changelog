@@ -1,8 +1,10 @@
-proxlb (1.1.4~b1) stable; urgency=medium
+proxlb (1.1.4) stable; urgency=medium
 
-  * ProxLB 1.1.4 beta 1
+  * Allow pinning of guests to a group of nodes. (Closes: #245)
+  * Modified log levels to make output lighter at INFO level. (Closes: #255)
+  * ixed an issue where balancing was performed in combination of deactivated balancing and dry-run mode. (Closes: #248)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 24 Jun 2025 09:56:02 +0000
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Fri, 27 Jun 2025 16:22:58 +0000
 
 proxlb (1.1.3) stable; urgency=medium
 

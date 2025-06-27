@@ -161,6 +161,7 @@ docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.4 | cr.gyptazy.com/proxlb/proxlb:v1.1.4 |
 | v1.1.3 | cr.gyptazy.com/proxlb/proxlb:v1.1.3 |
 | v1.1.2 | cr.gyptazy.com/proxlb/proxlb:v1.1.2 |
 | v1.1.1 | cr.gyptazy.com/proxlb/proxlb:v1.1.1 |
