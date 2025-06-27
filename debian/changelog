@@ -1,3 +1,9 @@
+proxlb (1.1.5~b1) stable; urgency=medium
+
+  * Draft beta release 1.1.5
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Fri, 27 Jun 2025 16:49:12 +0000
+
 proxlb (1.1.4) stable; urgency=medium
 
   * Allow pinning of guests to a group of nodes. (Closes: #245)
