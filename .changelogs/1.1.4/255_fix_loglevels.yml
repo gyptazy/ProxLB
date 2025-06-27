@@ -1,0 +1,2 @@
+fixed:
+  - Modified log levels to make output lighter at INFO level (@pmarasse) [#255]

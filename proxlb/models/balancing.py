@@ -149,7 +149,7 @@ class Balancing:
         }
 
         try:
-            logger.debug(f"Balancing: Starting to migrate guest {guest_name} of type VM.")
+            logger.info(f"Balancing: Starting to migrate VM guest {guest_name} from {guest_node_current} to {guest_node_target}.")
             job_id = proxmox_api.nodes(guest_node_current).qemu(guest_id).migrate().post(**migration_options)
         except proxmoxer.core.ResourceException as proxmox_api_error:
             logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type VM due to some Proxmox errors. Please check if resource is locked or similar.")
@@ -178,7 +178,7 @@ class Balancing:
         guest_node_target = proxlb_data["guests"][guest_name]["node_target"]
 
         try:
-            logger.debug(f"Balancing: Starting to migrate guest {guest_name} of type CT.")
+            logger.info(f"Balancing: Starting to migrate CT guest {guest_name} from {guest_node_current} to {guest_node_target}.")
             job_id = proxmox_api.nodes(guest_node_current).lxc(guest_id).migrate().post(target=guest_node_target, restart=1)
         except proxmoxer.core.ResourceException as proxmox_api_error:
             logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors. Please check if resource is locked or similar.")
