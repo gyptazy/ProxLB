@@ -112,7 +112,7 @@ class Nodes:
         if proxlb_config.get("proxmox_cluster", None).get("maintenance_nodes", None) is not None:
             if len(proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", [])) > 0:
                 if node_name in proxlb_config.get("proxmox_cluster", {}).get("maintenance_nodes", []):
-                    logger.warning(f"Node: {node_name} has been set to maintenance mode (by ProxLB config).")
+                    logger.info(f"Node: {node_name} has been set to maintenance mode (by ProxLB config).")
                     return True
                 else:
                     logger.debug(f"Node: {node_name} is not in maintenance mode by ProxLB config.")
@@ -122,7 +122,7 @@ class Nodes:
             if ha_element.get("status"):
                 if "maintenance mode" in ha_element.get("status"):
                     if ha_element.get("node") == node_name:
-                        logger.warning(f"Node: {node_name} has been set to maintenance mode (by Proxmox HA API).")
+                        logger.info(f"Node: {node_name} has been set to maintenance mode (by Proxmox HA API).")
                         return True
                     else:
                         logger.debug(f"Node: {node_name} is not in maintenance mode by Proxmox HA API.")
@@ -149,7 +149,7 @@ class Nodes:
         if proxlb_config.get("proxmox_cluster", None).get("ignore_nodes", None) is not None:
             if len(proxlb_config.get("proxmox_cluster", {}).get("ignore_nodes", [])) > 0:
                 if node_name in proxlb_config.get("proxmox_cluster", {}).get("ignore_nodes", []):
-                    logger.warning(f"Node: {node_name} has been set to be ignored. Not adding node!")
+                    logger.info(f"Node: {node_name} has been set to be ignored. Not adding node!")
                     return True
 
         logger.debug("Finished: set_node_ignore.")

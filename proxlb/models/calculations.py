@@ -305,7 +305,7 @@ class Calculations:
         proxlb_data["guests"][guest_name]["processed"] = True
 
         if len(proxlb_data["guests"][guest_name]["node_relationships"]) > 0:
-            logger.info(f"Guest '{guest_name}' has relationships defined to node(s): {','.join(proxlb_data['guests'][guest_name]['node_relationships'])}. Pinning to node.")
+            logger.debug(f"Guest '{guest_name}' has relationships defined to node(s): {','.join(proxlb_data['guests'][guest_name]['node_relationships'])}. Pinning to node.")
 
             # Get the node with the most free resources of the group
             guest_node_relation_list = proxlb_data["guests"][guest_name]["node_relationships"]
@@ -313,12 +313,12 @@ class Calculations:
 
             # Validate if the specified node name is really part of the cluster
             if proxlb_data["meta"]["balancing"]["balance_next_node"] in proxlb_data["nodes"].keys():
-                logger.info(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['meta']['balancing']['balance_next_node']} is a known hypervisor node in the cluster.")
+                logger.debug(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['meta']['balancing']['balance_next_node']} is a known hypervisor node in the cluster.")
             else:
                 logger.warning(f"Guest '{guest_name}' has a specific relationship defined to node: {proxlb_data['meta']['balancing']['balance_next_node']} but this node name is not known in the cluster!")
 
         else:
-            logger.info(f"Guest '{guest_name}' does not have any specific node relationships.")
+            logger.debug(f"Guest '{guest_name}' does not have any specific node relationships.")
 
         logger.debug("Finished: val_node_relationships.")
 
