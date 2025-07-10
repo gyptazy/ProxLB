@@ -150,7 +150,7 @@ ProxLB supports API loadbalancing, where one or more host objects can be defined
 
 ```
 proxmox_api:
-  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe', 'virt01.example.com:8006', '[fc00::1]', '[fc00::1]:8006', 'fc00::1:8006']
+  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe', 'virt01.example.com:443', '[fc00::1]', '[fc00::1]:443', 'fc00::1:8006']
 ```
 
 ### Ignore Host-Nodes or Guests
