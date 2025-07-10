@@ -1,0 +1,2 @@
+added:
+  - Allow custom API ports instead of fixed tcp/8006 (@gyptazy). [#260]

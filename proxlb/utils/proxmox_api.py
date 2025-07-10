@@ -33,6 +33,7 @@ try:
 except ImportError:
     URLLIB3_PRESENT = False
 from typing import Dict, Any
+from utils.helper import Helper
 from utils.logger import SystemdLogger
 
 
@@ -189,9 +190,9 @@ class ProxmoxApi:
             api_connection_wait_time = proxlb_config["proxmox_api"].get("wait_time", 1)
 
             for api_connection_attempt in range(api_connection_retries):
-                validated = self.test_api_proxmox_host(host)
-                if validated:
-                    validated_api_hosts.append(validated)
+                validated_api_host, api_port = self.test_api_proxmox_host(host)
+                if validated_api_host:
+                    validated_api_hosts.append(validated_api_host)
                     break
                 else:
                     logger.warning(f"Attempt {api_connection_attempt + 1}/{api_connection_retries} failed for host {host}. Retrying in {api_connection_wait_time} seconds...")
@@ -200,7 +201,7 @@ class ProxmoxApi:
         if len(validated_api_hosts) > 0:
             # Choose a random host to distribute the load across the cluster
             # as a simple load balancing mechanism.
-            return random.choice(validated_api_hosts)
+            return random.choice(validated_api_hosts), api_port
 
         logger.critical("No valid Proxmox API hosts found.")
         print("No valid Proxmox API hosts found.")
@@ -228,6 +229,10 @@ class ProxmoxApi:
         """
         logger.debug("Starting: test_api_proxmox_host.")
 
+        # Validate for custom ports in API hosts which might indicate
+        # that an external loadbalancer will be used.
+        host, port = Helper.get_host_port_from_string(host)
+
         # Try resolving DNS to IP and log non-resolvable ones
         try:
             ip = socket.getaddrinfo(host, None, socket.AF_UNSPEC)
@@ -239,12 +244,12 @@ class ProxmoxApi:
         for address_type in ip:
             if address_type[0] == socket.AF_INET:
                 logger.debug(f"{host} is type ipv4.")
-                if self.test_api_proxmox_host_ipv4(host):
-                    return host
+                if self.test_api_proxmox_host_ipv4(host, port):
+                    return host, port
             elif address_type[0] == socket.AF_INET6:
                 logger.debug(f"{host} is type ipv6.")
-                if self.test_api_proxmox_host_ipv6(host):
-                    return host
+                if self.test_api_proxmox_host_ipv6(host, port):
+                    return host, port
             else:
                 return False
 
@@ -378,7 +383,7 @@ class ProxmoxApi:
         self.validate_config(proxlb_config)
 
         # Get a valid Proxmox API endpoint
-        proxmox_api_endpoint = self.api_connect_get_hosts(proxlb_config, proxlb_config.get("proxmox_api", {}).get("hosts", []))
+        proxmox_api_endpoint, proxmox_api_port = self.api_connect_get_hosts(proxlb_config, proxlb_config.get("proxmox_api", {}).get("hosts", []))
 
         # Disable warnings for SSL certificate validation
         if not proxlb_config.get("proxmox_api").get("ssl_verification", True):
@@ -392,6 +397,7 @@ class ProxmoxApi:
             if proxlb_config.get("proxmox_api").get("token_secret", False):
                 proxmox_api = proxmoxer.ProxmoxAPI(
                     proxmox_api_endpoint,
+                    port=proxmox_api_port,
                     user=proxlb_config.get("proxmox_api").get("user", True),
                     token_name=proxlb_config.get("proxmox_api").get("token_id", True),
                     token_value=proxlb_config.get("proxmox_api").get("token_secret", True),
@@ -401,6 +407,7 @@ class ProxmoxApi:
             else:
                 proxmox_api = proxmoxer.ProxmoxAPI(
                     proxmox_api_endpoint,
+                    port=proxmox_api_port,
                     user=proxlb_config.get("proxmox_api").get("user", True),
                     password=proxlb_config.get("proxmox_api").get("pass", True),
                     verify_ssl=proxlb_config.get("proxmox_api").get("ssl_verification", True),
@@ -420,6 +427,5 @@ class ProxmoxApi:
             sys.exit(2)
 
         logger.info(f"API connection to host {proxmox_api_endpoint} succeeded.")
-
         logger.debug("Finished: api_connect.")
         return proxmox_api

@@ -10,6 +10,7 @@ __license__ = "GPL-3.0"
 
 import json
 import uuid
+import re
 import sys
 import time
 import utils.version
@@ -214,4 +215,53 @@ class Helper:
         logger.debug("Starting: handle_sighup.")
         logger.debug("Got SIGHUP signal. Reloading...")
         Helper.proxlb_reload = True
-        logger.debug("Starting: handle_sighup.")
+        logger.debug("Finished: handle_sighup.")
+
+    @staticmethod
+    def get_host_port_from_string(host_object):
+        """
+        Parses a string containing a host (IPv4, IPv6, or hostname) and an optional port, and returns a tuple of (host, port).
+
+        Supported formats:
+        - Hostname or IPv4 without port: "example.com" or "192.168.0.1"
+        - Hostname or IPv4 with port: "example.com:8006" or "192.168.0.1:8006"
+        - IPv6 in brackets with optional port: "[fc00::1]" or "[fc00::1]:8006"
+        - IPv6 without brackets, port is assumed after last colon: "fc00::1:8006"
+
+        If no port is specified, port 8006 is used as the default.
+
+        Args:
+            host_object (str): A string representing a host with or without a port.
+
+        Returns:
+            tuple: A tuple (host: str, port: int)
+        """
+        logger.debug("Starting: get_host_port_from_string.")
+
+        # IPv6 (with or without port, written in brackets)
+        match = re.match(r'^\[(.+)\](?::(\d+))?$', host_object)
+        if match:
+            host = match.group(1)
+            port = int(match.group(2)) if match.group(2) else 8006
+            return host, port
+
+        # Count colons to identify IPv6 addresses without brackets
+        colon_count = host_object.count(':')
+
+        # IPv4 or hostname without port
+        if colon_count == 0:
+            return host_object, 8006
+
+        # IPv4 or hostname with port
+        elif colon_count == 1:
+            host, port = host_object.split(':')
+            return host, int(port)
+
+        # IPv6 (with or without port, assume last colon is port)
+        else:
+            parts = host_object.rsplit(':', 1)
+            try:
+                port = int(parts[1])
+                return parts[0], port
+            except ValueError:
+                return host_object, 8006
