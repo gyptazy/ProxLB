@@ -142,11 +142,15 @@ You can also repeat this step multiple times for different node names to create 
 **Note:** The given node names from the tag are validated. This means, ProxLB validated if the given node name is really part of the cluster. In case of a wrongly defined or unavailable node name it continous to use the regular processes to make sure the guest keeps running.
 
 ### API Loadbalancing
-ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without further changes when one or more nodes are offline or in a maintenance. When defining multiple hosts, the first reachable one will be picked.
+ProxLB supports API loadbalancing, where one or more host objects can be defined as a list. This ensures, that you can even operator ProxLB without further changes when one or more nodes are offline or in a maintenance. When defining multiple hosts, the first reachable one will be picked. You can speficy custom ports in the list. There are 4 ways of defining hosts with ports:
+1. Hostname of IPv4 without port (in this case the default 8006 will be used)
+2. Hostname or IPv4 with port
+3. IPv6 in brackets with optional port
+4. IPv6 without brackets, in this case the port is assumed after last colon
 
 ```
 proxmox_api:
-  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
+  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe', 'virt01.example.com:443', '[fc00::1]', '[fc00::1]:443', 'fc00::1:8006']
 ```
 
 ### Ignore Host-Nodes or Guests
