@@ -1,8 +1,8 @@
-proxlb (1.1.5~b1) stable; urgency=medium
+proxlb (1.1.5) stable; urgency=medium
 
-  * Draft beta release 1.1.5
+  * Allow custom API ports instead of fixed tcp/8006. (Closes: #260)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Fri, 27 Jun 2025 16:49:12 +0000
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 14 Jul 2025 11:07:34 +0000
 
 proxlb (1.1.4) stable; urgency=medium
 
