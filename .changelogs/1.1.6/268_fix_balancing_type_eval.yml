@@ -1,0 +1,2 @@
+fixed:
+  - Fix balancing evaluation of guest types (e.g., VM or CT) (@gyptazy). [#268]
