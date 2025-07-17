@@ -19,6 +19,7 @@
     6. [Parallel Migrations](#parallel-migrations)
     7. [Run as a Systemd-Service](#run-as-a-systemd-service)
     8. [SSL Self-Signed Certificates](#ssl-self-signed-certificates)
+    9. [Node Maintenances](#node-maintenances)
 
 ## Authentication / User Accounts / Permissions
 ### Authentication
@@ -214,3 +215,24 @@ proxmox_api:
 ```
 
 *Note: Disabling SSL certificate validation is not recommended.*
+
+### Node Maintenances
+To exclude specific nodes from receiving any new workloads during the balancing process, the `maintenance_nodes` configuration option can be used. This option allows administrators to define a list of nodes that are currently undergoing maintenance or should otherwise not be used for running virtual machines or containers.
+
+```yaml
+maintenance_nodes:
+  - virt66.example.com
+```
+
+which can also be written as:
+
+```yaml
+maintenance_nodes: ['virt66.example.com']
+```
+
+The maintenance_nodes key must be defined as a list, even if it only includes a single node. Each entry in the list must exactly match the node name as it is known within the Proxmox VE cluster. Do not use IP addresses, alternative DNS names, or aliases—only the actual cluster node names are valid. Once a node is marked as being in maintenance mode:
+
+* No new workloads will be balanced or migrated onto it.
+* Any existing workloads currently running on the node will be migrated away in accordance with the configured balancing strategies, assuming resources on other nodes allow. 
+
+This feature is particularly useful during planned maintenance, upgrades, or troubleshooting, ensuring that services continue to run with minimal disruption while the specified node is being worked on.

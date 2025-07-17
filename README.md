@@ -251,7 +251,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | retries |  | 1 | `Int` | How often a connection attempt to the defined API host should be performed. |
 |  | wait_time |  | 1 | `Int` | How many seconds should be waited before performing another connection attempt to the API host. |
 | `proxmox_cluster` |  |  |  |  |  |
-|  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. |
+|  | maintenance_nodes |  | ['virt66.example.com'] | `List` | A list of Proxmox nodes that are defined to be in a maintenance. (must be the same node names as used within the cluster) |
 |  | ignore_nodes |  | [] | `List` | A list of Proxmox nodes that are defined to be ignored. |
 |  | overprovisioning |  | False | `Bool` | Avoids balancing when nodes would become overprovisioned. |
 | `balancing` |  |  |  |  |  |
