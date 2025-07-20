@@ -77,6 +77,10 @@ Before starting any migrations, ProxLB validates that rebalancing actions are ne
 ## Installation
 
 ### Requirements / Dependencies
+* Proxmox
+    * Proxmox 7.x
+    * Proxmox 8.x
+    * Proxmox 9.x (Beta 1 tested)
 * Python3.x
 * proxmoxer
 * requests
