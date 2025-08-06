@@ -245,7 +245,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 | Section | Option | Sub Option | Example | Type | Description |
 |---------|:------:|:----------:|:-------:|:----:|:-----------:|
 | `proxmox_api` |  |  |  |  |  |
-|  | hosts |  | ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe', 'virt01.example.com:443', '[fc00::1]', '[fc00::1]:443', 'fc00::1:8006'] | `List` | List of Proxmox nodes. Can be IPv4, IPv6 or mixed. You can specify custom ports. In case of IPv6 without brackets the port is considered after the last colon |
+|  | hosts |  | ['virt01.example.com', '10.10.10.10', 'fe01:bad:code::cafe', 'virt01.example.com:443', '[fc00::1]', '[fc00::1]:443', 'fc00::1:8006'] | `List` | List of Proxmox nodes. Can be IPv4, IPv6 or mixed. You can specify custom ports. In case of IPv6 without brackets the port is considered after the last colon |
 |  | user |  | root@pam | `Str` | Username for the API. |
 |  | pass |  | FooBar | `Str` | Password for the API. (Recommended: Use API token authorization!) |
 |  | token_id |  | proxlb | `Str` | Token ID of the user for the API. |
@@ -285,7 +285,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 An example of the configuration file looks like:
 ```
 proxmox_api:
-  hosts: ['virt01.example.com', '10.10.10.10', 'fe01::bad:code::cafe']
+  hosts: ['virt01.example.com', '10.10.10.10', 'fe01:bad:code::cafe']
   user: root@pam
   pass: crazyPassw0rd!
   # API Token method
