@@ -1,0 +1,47 @@
+image:
+  registry: cr.gyptazy.com
+  repository: proxlb/proxlb
+  tag: v1.1.5
+  pullPolicy: IfNotPresent
+  imagePullSecrets: [ ]
+
+extraArgs:
+  dryRun: false
+
+configmap:
+  create: true
+  config:
+    proxmox_api:
+      hosts: []
+      user: ""
+      pass: ""
+      ssl_verification: True
+      timeout: 10
+    proxmox_cluster:
+      maintenance_nodes: [ ]
+      ignore_nodes: [ ]
+      overprovisioning: True
+    balancing:
+      enable: True
+      enforce_affinity: False
+      parallel: False
+      # If running parallel job, you can define
+      # the amount of prallel jobs (default: 5)
+      parallel_jobs: 1
+      live: True
+      with_local_disks: True
+      balance_types: [ 'vm', 'ct' ]
+      max_job_validation: 1800
+      balanciness: 5
+      method: memory
+      mode: used
+    service:
+      daemon: True
+      schedule:
+        interval: 12
+        format: "hours"
+      delay:
+        enable: False
+        time: 1
+        format: "hours"
+      log_level: INFO

@@ -1,0 +1,4 @@
+{{ define "proxlb.fullname" }}
+{{ .Release.Name }}-{{ .Chart.Name }}
+{{ end }}
+
