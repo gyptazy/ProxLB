@@ -18,6 +18,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      # not interacting with the k8s cluster
+      automountServiceAccountToken: False
       containers:
       - name: proxlb
         image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -30,6 +32,12 @@ spec:
           - name: config
             mountPath: /etc/proxlb/proxlb.yaml
             subPath: proxlb.yaml
+        {{ if .Values.resources }}
+        resources:
+          {{ with .Values.resources }}
+            {{ toYaml . | nindent 10 }}
+          {{ end }}
+        {{ end }}
       volumes:
         - name: config
           configMap:
