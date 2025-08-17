@@ -5,6 +5,8 @@ image:
   pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
 
+labels: {}
+
 extraArgs:
   dryRun: false
 
@@ -13,8 +15,11 @@ configmap:
   config:
     proxmox_api:
       hosts: []
-      user: ""
-      pass: ""
+#Can be either a user or a token
+#      user: ""
+#      pass: ""
+#      token_id: ""
+#      token_secret: ""
       ssl_verification: True
       timeout: 10
     proxmox_cluster:

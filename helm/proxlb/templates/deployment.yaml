@@ -3,16 +3,16 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   labels:
-    app.kubernetes.io/name: "{{ .Release.Name }}"
+    {{- include "proxlb.labels" . | nindent 4 }}
 spec:
   replicas: 1 # Number of replicas cannot be more than 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: "{{ .Release.Name }}"
+      {{- include "proxlb.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: "{{ .Release.Name }}"
+        {{- include "proxlb.labels" . | nindent 8 }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
       imagePullSecrets:

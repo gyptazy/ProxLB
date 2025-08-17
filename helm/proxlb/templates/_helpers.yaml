@@ -2,3 +2,11 @@
 {{ .Release.Name }}-{{ .Chart.Name }}
 {{ end }}
 
+{{ define "proxlb.labels" }}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/managed-by: Helm
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+{{- if .Values.labels }}
+{{ toYaml .Values.labels }}
+{{- end }}
+{{ end }}

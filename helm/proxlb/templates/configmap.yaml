@@ -4,11 +4,7 @@ kind: ConfigMap
 metadata:
   name: proxlb-config
   labels:
-    app.kubernetes.io/name: "{{ .Release.Name }}"
-    app.kubernetes.io/instance: "{{ .Chart.Name }}"
-    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-    app.kubernetes.io/part-of: proxlb
-    app.kubernetes.io/managed-by: Helm
+    {{- include "proxlb.labels" . | nindent 4 }}
 data:
   proxlb.yaml: |
 {{ toYaml .Values.configmap.config | indent 4 }}
