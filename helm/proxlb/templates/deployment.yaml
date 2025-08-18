@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "proxlb.labels" . | nindent 4 }}
+spec:
+  replicas: 1 # Number of replicas cannot be more than 1
+  selector:
+    matchLabels:
+      {{- include "proxlb.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "proxlb.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # not interacting with the k8s cluster
+      automountServiceAccountToken: False
+      containers:
+      - name: proxlb
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        {{- if .Values.extraArgs.dryRun }}
+          - --dry-run
+        {{- end }}
+        volumeMounts:
+          - name: config
+            mountPath: /etc/proxlb/proxlb.yaml
+            subPath: proxlb.yaml
+        {{ if .Values.resources }}
+        resources:
+          {{ with .Values.resources }}
+            {{ toYaml . | nindent 10 }}
+          {{ end }}
+        {{ end }}
+      volumes:
+        - name: config
+          configMap:
+            name: proxlb-config

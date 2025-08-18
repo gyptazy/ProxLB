@@ -1,0 +1,11 @@
+{{- if .Values.configmap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxlb-config
+  labels:
+    {{- include "proxlb.labels" . | nindent 4 }}
+data:
+  proxlb.yaml: |
+{{ toYaml .Values.configmap.config | indent 4 }}
+{{ end }}

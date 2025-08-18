@@ -1,0 +1,13 @@
+{{- define "proxlb.fullname" -}}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{ define "proxlb.labels" }}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/managed-by: Helm
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+app.kubernetes.io/component: proxlb
+{{- if .Values.labels }}
+{{ toYaml .Values.labels }}
+{{- end }}
+{{ end }}
