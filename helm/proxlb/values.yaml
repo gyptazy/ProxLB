@@ -7,8 +7,8 @@ image:
 
 resources:
   limits:
-    cpu: "100m"
-    memory: "100Mi"
+    cpu: "1000m"
+    memory: "2Gi"
   requests:
     cpu: "100m"
     memory: "100Mi"
