@@ -135,6 +135,14 @@ class ProxmoxApi:
         proxlb_credentials = proxlb_config["proxmox_api"]
         present_auth_pass = "pass" in proxlb_credentials
         present_auth_secret = "token_secret" in proxlb_credentials
+        token_id = proxlb_credentials.get("token_id", None)
+
+        if token_id:
+            non_allowed_chars = ["@", "!"]
+            for char in non_allowed_chars:
+                if char in token_id:
+                    logger.error(f"Wrong user/token format defined. User and token id must be splitted! Please see: https://github.com/gyptazy/ProxLB/blob/main/docs/03_configuration.md#required-permissions-for-a-user")
+                    sys.exit(1)
 
         if present_auth_pass and present_auth_secret:
             logger.critical(f"Username/password and API token authentication are mutal exclusive. Please use only one!")
