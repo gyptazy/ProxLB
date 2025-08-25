@@ -336,7 +336,15 @@ class ProxmoxApi:
         permissions_available = []
 
         # Get the permissions for the current user/token from API
-        permissions = proxmox_api.access.permissions.get()
+        try:
+            permissions = proxmox_api.access.permissions.get()
+        except proxmoxer.core.ResourceException as api_error:
+            if "no such user" in str(api_error):
+                logger.error("Authentication to Proxmox API not possible: User not known - please check your username and config file.")
+                sys.exit(1)
+            else:
+                logger.error(f"Proxmox API error: {api_error}")
+                sys.exit(1)
 
         # Get all available permissions of the current user/token
         for path, permission in permissions.items():
