@@ -1,0 +1,2 @@
+added:
+  - Add validation for provided API user token id to avoid confusions (@gyptazy). [#291]
