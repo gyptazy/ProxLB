@@ -51,13 +51,13 @@ def main():
     # Validate of an optional service delay
     Helper.get_service_delay(proxlb_config)
 
-    # Connect to Proxmox API & create API object
-    proxmox_api = ProxmoxApi(proxlb_config)
-
-    # Overwrite password after creating the API object
-    proxlb_config["proxmox_api"]["pass"] = "********"
-
     while True:
+
+        # Connect to Proxmox API & create API object
+        proxmox_api = ProxmoxApi(proxlb_config)
+
+        # Overwrite password after creating the API object
+        proxlb_config["proxmox_api"]["pass"] = "********"
 
         # Validate if reload signal was sent during runtime
         # and reload the ProxLB configuration and adjust log level

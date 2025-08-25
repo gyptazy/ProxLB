@@ -1,0 +1,2 @@
+fixed:
+  - Fix authentication timeout in rare cases that could lead to a stacktrace (@gyptazy). [#285]
