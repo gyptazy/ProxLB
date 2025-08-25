@@ -1,0 +1,2 @@
+fixed:
+  - Fix stacktrace output when validating permissions on non existing users in Proxmox (@gyptazy). [#291]
