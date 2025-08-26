@@ -287,7 +287,7 @@ class Calculations:
                         else:
                             logger.critical(f"Node: {node_name} already got used for anti-affinity group:: {group_name}. (Tried for guest: {guest_name})")
                 else:
-                    logger.debug(f"Anti-Affinity: Group has less than 1 member. Skipping node calucation for the group.")
+                    logger.debug(f"Anti-Affinity: Group has less than 2 members. Skipping node calculation for the group.")
 
             else:
                 logger.debug(f"Guest: {guest_name} is not included in anti-affinity group: {group_name}. Skipping.")
