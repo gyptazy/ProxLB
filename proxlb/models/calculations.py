@@ -266,23 +266,28 @@ class Calculations:
             if guest_name in proxlb_data["groups"]["anti_affinity"][group_name]['guests'] and not proxlb_data["guests"][guest_name]["processed"]:
                 logger.debug(f"Anti-Affinity: Guest: {guest_name} is included in anti-affinity group: {group_name}.")
 
-                # Iterate over all available nodes
-                for node_name in proxlb_data["nodes"].keys():
+                # Check if the group has only one member. If so skip new guest node assignment.
+                if proxlb_data["groups"]["anti_affinity"][group_name]["counter"] > 1:
+                    logger.debug(f"Anti-Affinity: Group has more than 1 member.")
+                    # Iterate over all available nodes
+                    for node_name in proxlb_data["nodes"].keys():
 
-                    # Only select node if it was not used before and is not in a
-                    # maintenance mode. Afterwards, add it to the list of already
-                    # used nodes for the current anti-affinity group
-                    if node_name not in proxlb_data["groups"]["anti_affinity"][group_name]["used_nodes"]:
+                        # Only select node if it was not used before and is not in a
+                        # maintenance mode. Afterwards, add it to the list of already
+                        # used nodes for the current anti-affinity group
+                        if node_name not in proxlb_data["groups"]["anti_affinity"][group_name]["used_nodes"]:
 
-                        if not proxlb_data["nodes"][node_name]["maintenance"]:
-                            # If the node has not been used yet, we assign this node to the guest
-                            proxlb_data["meta"]["balancing"]["balance_next_node"] = node_name
-                            proxlb_data["groups"]["anti_affinity"][group_name]["used_nodes"].append(node_name)
-                            logger.debug(f"Node: {node_name} marked as used for anti-affinity group: {group_name} with guest {guest_name}")
-                            break
+                            if not proxlb_data["nodes"][node_name]["maintenance"]:
+                                # If the node has not been used yet, we assign this node to the guest
+                                proxlb_data["meta"]["balancing"]["balance_next_node"] = node_name
+                                proxlb_data["groups"]["anti_affinity"][group_name]["used_nodes"].append(node_name)
+                                logger.debug(f"Node: {node_name} marked as used for anti-affinity group: {group_name} with guest {guest_name}")
+                                break
 
-                    else:
-                        logger.critical(f"Node: {node_name} already got used for anti-affinity group:: {group_name}. (Tried for guest: {guest_name})")
+                        else:
+                            logger.critical(f"Node: {node_name} already got used for anti-affinity group:: {group_name}. (Tried for guest: {guest_name})")
+                else:
+                    logger.debug(f"Anti-Affinity: Group has less than 2 members. Skipping node calculation for the group.")
 
             else:
                 logger.debug(f"Guest: {guest_name} is not included in anti-affinity group: {group_name}. Skipping.")
