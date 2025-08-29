@@ -265,3 +265,27 @@ class Helper:
                 return parts[0], port
             except ValueError:
                 return host_object, 8006
+
+    @staticmethod
+    def validate_node_presence(node: str, nodes: Dict[str, Any]) -> bool:
+        """
+        Validates whether a given node exists in the provided cluster nodes dictionary.
+
+        Args:
+            node (str): The name of the node to validate.
+            nodes (Dict[str, Any]): A dictionary containing cluster information.
+                                    Must include a "nodes" key mapping to a dict of available nodes.
+
+        Returns:
+            bool: True if the node exists in the cluster, False otherwise.
+        """
+        logger.debug("Starting: validate_node_presence.")
+
+        if node in nodes["nodes"].keys():
+            logger.info(f"Node {node} found in cluster. Applying pinning.")
+            logger.debug("Finished: validate_node_presence.")
+            return True
+        else:
+            logger.warning(f"Node {node} not found in cluster. Not applying pinning!")
+            logger.debug("Finished: validate_node_presence.")
+            return False

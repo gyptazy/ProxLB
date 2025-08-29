@@ -1,0 +1,3 @@
+fixed:
+  - Validate for node presence when pinning guests to avoid crashing (@gyptazy). [#296]
+  
