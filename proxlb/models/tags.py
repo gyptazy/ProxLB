@@ -12,7 +12,9 @@ __license__ = "GPL-3.0"
 
 import time
 from typing import List
+from typing import Dict, Any
 from utils.logger import SystemdLogger
+from utils.helper import Helper
 
 logger = SystemdLogger()
 
@@ -153,7 +155,7 @@ class Tags:
         return ignore_tag
 
     @staticmethod
-    def get_node_relationships(tags: List[str]) -> str:
+    def get_node_relationships(tags: List[str], nodes: Dict[str, Any]) -> str:
         """
         Get a node relationship tag for a guest from the Proxmox cluster by the API to pin
         a guest to a node.
@@ -163,6 +165,7 @@ class Tags:
 
         Args:
             tags (List): A list holding all defined tags for a given guest.
+            nodes (Dict): A dictionary holding all available nodes in the cluster.
 
         Returns:
             Str: The related hypervisor node name.
@@ -174,7 +177,13 @@ class Tags:
             for tag in tags:
                 if tag.startswith("plb_pin"):
                     node_relationship_tag = tag.replace("plb_pin_", "")
-                    node_relationship_tags.append(node_relationship_tag)
+
+                    # Validate if the node to pin is present in the cluster
+                    if Helper.validate_node_presence(node_relationship_tag, nodes):
+                        logger.info(f"Tag {node_relationship_tag} is valid! Defined node exists in the cluster.")
+                        node_relationship_tags.append(node_relationship_tag)
+                    else:
+                        logger.warning(f"Tag {node_relationship_tag} is invalid! Defined node does not exist in the cluster. Not applying pinning.")
 
         logger.debug("Finished: get_node_relationships.")
         return node_relationship_tags
