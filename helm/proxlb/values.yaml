@@ -1,7 +1,7 @@
 image:
   registry: cr.gyptazy.com
   repository: proxlb/proxlb
-  tag: v1.1.5
+  tag: v1.1.6
   pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
 
