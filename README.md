@@ -1,5 +1,5 @@
 # ProxLB - (Re)Balance VM Workloads in Proxmox Clusters
-<img align="left" src="https://cdn.gyptazy.com/images/Prox-LB-logo.jpg"/>
+<img align="left" src="https://cdn.gyptazy.com/img/ProxLB.jpg"/>
 <br>
 
 <p float="center"><img src="https://img.shields.io/github/license/gyptazy/ProxLB"/><img src="https://img.shields.io/github/contributors/gyptazy/ProxLB"/><img src="https://img.shields.io/github/last-commit/gyptazy/ProxLB/main"/><img src="https://img.shields.io/github/issues-raw/gyptazy/ProxLB"/><img src="https://img.shields.io/github/issues-pr/gyptazy/ProxLB"/></p>
@@ -80,7 +80,7 @@ Before starting any migrations, ProxLB validates that rebalancing actions are ne
 * Proxmox
     * Proxmox 7.x
     * Proxmox 8.x
-    * Proxmox 9.x (Beta 1 tested)
+    * Proxmox 9.x
 * Python3.x
 * proxmoxer
 * requests
@@ -134,7 +134,7 @@ wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.com/repository.gp
 
 #### Debian Packages (.deb files)
 If you do not want to use the repository you can also find the debian packages as a .deb file on gyptazy's CDN at:
-* https://cdn.gyptazy.com/files/os/debian/proxlb/
+* https://cdn.gyptazy.com/debian/
 
 Afterwards, you can simply install the package by running:
 ```bash
@@ -165,6 +165,7 @@ docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.6 | cr.gyptazy.com/proxlb/proxlb:v1.1.6 |
 | v1.1.5 | cr.gyptazy.com/proxlb/proxlb:v1.1.5 |
 | v1.1.4 | cr.gyptazy.com/proxlb/proxlb:v1.1.4 |
 | v1.1.3 | cr.gyptazy.com/proxlb/proxlb:v1.1.3 |

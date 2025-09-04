@@ -1,3 +1,13 @@
+proxlb (1.1.6) stable; urgency=medium
+
+  * Add validation for provided API user token id to avoid confusions. (Closes: #291)
+  * Fix stacktrace output when validating permissions on non existing users in Proxmox. (Closes: #291)
+  * Fix Overprovisioning first node if anti_affinity_group has only one member. (Closes: #295)
+  * Validate for node presence when pinning guests to avoid crashing. (Closes: #296)
+  * Fix balancing evaluation of guest types (e.g., VM or CT). (Closes: #268)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 04 Sep 2025 05:12:19 +0000
+
 proxlb (1.1.5) stable; urgency=medium
 
   * Allow custom API ports instead of fixed tcp/8006. (Closes: #260)

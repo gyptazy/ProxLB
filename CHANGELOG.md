@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.6] - 2027-09-04
+
+### Added
+
+- Add validation for provided API user token id to avoid confusions (@gyptazy). [#291]
+
+### Fixed
+
+- Fix stacktrace output when validating permissions on non existing users in Proxmox (@gyptazy). [#291]
+- Fix Overprovisioning first node if anti_affinity_group has only one member (@MiBUl-eu). [#295]
+- Validate for node presence when pinning guests to avoid crashing (@gyptazy). [#296]
+- Fix balancing evaluation of guest types (e.g., VM or CT) (@gyptazy). [#268]
+
 ## [1.1.5] - 2025-07-14
 
 ### Added
