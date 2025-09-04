@@ -1,0 +1,2 @@
+fixed:
+  - Validate for node presence when pinning VMs to avoid crashing (@gyptazy). [#296]

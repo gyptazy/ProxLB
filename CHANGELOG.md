@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.6] - 2027-09-04
+## [1.1.6.1] - 2025-09-04
+
+### Fixed
+
+- Validate for node presence when pinning VMs to avoid crashing (@gyptazy). [#296]
+
+## [1.1.6] - 2025-09-04
 
 ### Added
 
