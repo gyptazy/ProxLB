@@ -154,10 +154,16 @@ class Balancing:
         else:
             with_local_disks = 0
 
+        if proxlb_data["meta"]["balancing"].get("with_conntrack_state", True):
+            with_conntrack_state = 1
+        else:
+            with_conntrack_state = 0
+
         migration_options = {
             'target': {guest_node_target},
             'online': online_migration,
-            'with-local-disks': with_local_disks
+            'with-local-disks': with_local_disks,
+            'with-conntrack-state': with_conntrack_state,
         }
 
         try:

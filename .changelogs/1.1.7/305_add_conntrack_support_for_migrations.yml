@@ -1,0 +1,2 @@
+added:
+  - Add conntrack state aware migrations of VMs (@gyptazy). [#305]

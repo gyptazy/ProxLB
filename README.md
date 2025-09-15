@@ -267,6 +267,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | parallel_jobs |  | 5 | `Int` | The amount if parallel jobs when migrating guests. (default: `5`)|
 |  | live |  | True | `Bool` | If guests should be moved live or shutdown.|
 |  | with_local_disks |  | True | `Bool` | If balancing of guests should include local disks.|
+|  | with_conntrack_state |  | True | `Bool` | If balancing of guests should including the conntrack state.|
 |  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored. [values: `vm`, `ct`]|
 |  | max_job_validation |  | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
@@ -310,6 +311,7 @@ balancing:
   parallel: False
   live: True
   with_local_disks: True
+  with_conntrack_state: True
   balance_types: ['vm', 'ct']
   max_job_validation: 1800
   balanciness: 5
