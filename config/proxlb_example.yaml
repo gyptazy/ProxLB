@@ -25,6 +25,7 @@ balancing:
   parallel_jobs: 1
   live: True
   with_local_disks: True
+  with_conntrack_state: True
   balance_types: ['vm', 'ct']
   max_job_validation: 1800
   balanciness: 5
