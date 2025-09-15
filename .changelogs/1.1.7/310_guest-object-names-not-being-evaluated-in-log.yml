@@ -1,0 +1,2 @@
+fixed:
+  - Fix guest object names are not being evaluated in debug log. (@gyptazy). [#310]
