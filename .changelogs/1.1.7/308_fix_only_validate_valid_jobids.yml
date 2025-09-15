@@ -1,0 +1,2 @@
+fixed:
+  - Fix crash when validating absent migration job ids. (@gyptazy). [#308]

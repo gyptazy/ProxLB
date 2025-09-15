@@ -122,7 +122,8 @@ class Balancing:
 
             # Wait for all jobs in the current chunk to complete
             for guest_name, node, job_id in jobs_to_wait:
-                self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, node, job_id)
+                if job_id:
+                    self.get_rebalancing_job_status(proxmox_api, proxlb_data, guest_name, node, job_id)
 
     def exec_rebalancing_vm(self, proxmox_api: any, proxlb_data: Dict[str, Any], guest_name: str) -> None:
         """
@@ -143,6 +144,7 @@ class Balancing:
         guest_id = proxlb_data["guests"][guest_name]["id"]
         guest_node_current = proxlb_data["guests"][guest_name]["node_current"]
         guest_node_target = proxlb_data["guests"][guest_name]["node_target"]
+        job_id = None
 
         if proxlb_data["meta"]["balancing"].get("live", True):
             online_migration = 1
@@ -160,7 +162,7 @@ class Balancing:
             with_conntrack_state = 0
 
         migration_options = {
-            'target': {guest_node_target},
+            'target': guest_node_target,
             'online': online_migration,
             'with-local-disks': with_local_disks,
             'with-conntrack-state': with_conntrack_state,
@@ -194,6 +196,7 @@ class Balancing:
         guest_id = proxlb_data["guests"][guest_name]["id"]
         guest_node_current = proxlb_data["guests"][guest_name]["node_current"]
         guest_node_target = proxlb_data["guests"][guest_name]["node_target"]
+        job_id = None
 
         try:
             logger.info(f"Balancing: Starting to migrate CT guest {guest_name} from {guest_node_current} to {guest_node_target}.")
