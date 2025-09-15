@@ -33,8 +33,9 @@ def main():
     # Initialize logging handler
     logger = SystemdLogger(level=logging.INFO)
 
-    # Signal handler for SIGHUP
+    # Initialize handlers
     signal.signal(signal.SIGHUP, Helper.handler_sighup)
+    signal.signal(signal.SIGINT, Helper.handler_sigint)
 
     # Parses arguments passed from the CLI
     cli_parser = CliParser()

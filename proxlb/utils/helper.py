@@ -16,6 +16,7 @@ import time
 import utils.version
 from utils.logger import SystemdLogger
 from typing import Dict, Any
+from types import FrameType
 
 logger = SystemdLogger()
 
@@ -200,7 +201,7 @@ class Helper:
         logger.debug("Finished: print_json.")
 
     @staticmethod
-    def handler_sighup(signum, frame):
+    def handler_sighup(signum: int, frame: FrameType) -> None:
         """
         Signal handler for SIGHUP.
 
@@ -216,6 +217,23 @@ class Helper:
         logger.debug("Got SIGHUP signal. Reloading...")
         Helper.proxlb_reload = True
         logger.debug("Finished: handle_sighup.")
+
+    @staticmethod
+    def handler_sigint(signum: int, frame: FrameType) -> None:
+        """
+        Signal handler for SIGINT. (triggered by CTRL+C).
+
+        Args:
+            signum (int): The signal number (e.g., SIGINT).
+            frame (FrameType): The current stack frame when the signal was received.
+
+        Returns:
+            None
+        """
+        exit_message = "ProxLB has been successfully terminated by user."
+        logger.debug(exit_message)
+        print(f"\n {exit_message}")
+        sys.exit(0)
 
     @staticmethod
     def get_host_port_from_string(host_object):

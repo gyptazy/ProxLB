@@ -1,0 +1,2 @@
+added:
+  - Add graceful shutdown for SIGINT (e.g., CTRL + C abort). (@gyptazy). [#304]
