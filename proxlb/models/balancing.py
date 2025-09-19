@@ -174,6 +174,7 @@ class Balancing:
         except proxmoxer.core.ResourceException as proxmox_api_error:
             logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type VM due to some Proxmox errors. Please check if resource is locked or similar.")
             logger.debug(f"Balancing: Failed to migrate guest {guest_name} of type VM due to some Proxmox errors: {proxmox_api_error}")
+
         logger.debug("Finished: exec_rebalancing_vm.")
         return job_id
 
@@ -204,6 +205,7 @@ class Balancing:
         except proxmoxer.core.ResourceException as proxmox_api_error:
             logger.critical(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors. Please check if resource is locked or similar.")
             logger.debug(f"Balancing: Failed to migrate guest {guest_name} of type CT due to some Proxmox errors: {proxmox_api_error}")
+
         logger.debug("Finished: exec_rebalancing_ct.")
         return job_id
 
