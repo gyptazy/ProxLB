@@ -1,3 +1,13 @@
+proxlb (1.1.7) stable; urgency=medium
+
+  * Add conntrack state aware migrations of VMs. (Closes: #305)
+  * Add graceful shutdown for SIGINT command. (Closes: #304)
+  * Fix crash when validating absent migration job ids. (Closes: #308)
+  * Fix guest object names are not being evaluated in debug log. (Closes: #310)
+  * Note: Have a great Dutch Proxmox Day 2025!
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 04 Sep 2025 19:23:51 +0000
+
 proxlb (1.1.6.1) stable; urgency=medium
 
   * Validate for node presence when pinning VMs to avoid crashing. (Closes: #296)

@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.7] - 2025-09-19
+
+### Added
+
+- Add conntrack state aware migrations of VMs (@gyptazy). [#305]
+- Add graceful shutdown for SIGINT (e.g., CTRL + C abort). (@gyptazy). [#304]
+
+### Fixed
+
+- Fix crash when validating absent migration job ids. (@gyptazy). [#308]
+- Fix guest object names are not being evaluated in debug log. (@gyptazy). [#310]
+
 ## [1.1.6.1] - 2025-09-04
 
 ### Fixed
