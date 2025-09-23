@@ -1,5 +1,5 @@
 __app_name__ = "ProxLB"
-__app_desc__ = "A DRS alike loadbalancer for Proxmox clusters."
+__app_desc__ = "A resource scheduler and load balancer for Proxmox clusters."
 __author__ = "Florian Paul Azim Hoberg <gyptazy>"
 __copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
 __license__ = "GPL-3.0"
