@@ -32,7 +32,7 @@
 
 
 ## Introduction
-ProxLB is an advanced load balancing solution specifically designed for Proxmox clusters, addressing the absence of a intelligent resource scheduler that is familiar to VMware users. As a third-party solution, ProxLB enhances the management and efficiency of Proxmox clusters by intelligently distributing workloads across available nodes. Workloads can be balanced by different times like the guest's memory, CPU or disk usage or their assignment to avoid overprovisioning and ensuring resources.
+ProxLB is an advanced load balancing solution specifically designed for Proxmox clusters, addressing the absence of an intelligent and more advanced resource scheduler. As a third-party solution, ProxLB enhances the management and efficiency of Proxmox clusters by intelligently distributing workloads across available nodes. Workloads can be balanced by different times like the guest's memory, CPU or disk usage or their assignment to avoid overprovisioning and ensuring resources.
 
 One of the key advantages of ProxLB is that it is fully open-source and free, making it accessible for anyone to use, modify, and contribute to. This ensures transparency and fosters community-driven improvements. ProxLB supports filtering and ignoring specific nodes and guests through configuration files and API calls, providing administrators with the flexibility to tailor the load balancing behavior to their specific needs.
 
