@@ -156,17 +156,16 @@ class Balancing:
         else:
             with_local_disks = 0
 
-        if proxlb_data["meta"]["balancing"].get("with_conntrack_state", True):
-            with_conntrack_state = 1
-        else:
-            with_conntrack_state = 0
-
         migration_options = {
             'target': guest_node_target,
             'online': online_migration,
             'with-local-disks': with_local_disks,
-            'with-conntrack-state': with_conntrack_state,
         }
+
+        # Conntrack state aware migrations are not supported in older
+        # PVE versions, so we should not add it by default.
+        if proxlb_data["meta"]["balancing"].get("with_conntrack_state", True):
+            migration_options['with-conntrack-state'] = 1
 
         try:
             logger.info(f"Balancing: Starting to migrate VM guest {guest_name} from {guest_node_current} to {guest_node_target}.")
