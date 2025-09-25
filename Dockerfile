@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --chown=plb:plb requirements.txt /app/requirements.txt
 
 # --- Step 2 (appuser): venv + deps + code ---
-USER appuser
+USER plb
 
 # Create venv owned by appuser and put it on PATH
 RUN python3 -m venv /opt/venv
