@@ -28,6 +28,7 @@
    2. [Contributing](#contributing)
    3. [Documentation](#documentation)
    4. [Support](#support)
+   5. [Enterprise-Support](#enterprise-support)
 9. [Author(s)](#authors)
 
 
@@ -439,6 +440,19 @@ Connect with us in our dedicated chat room for immediate support and live intera
 | GitHub | [ProxLB GitHub](https://github.com/gyptazy/ProxLB/issues) |
 
 **Note:** Please always keep in mind that this is a one-man show project without any further help. This includes coding, testing, packaging and all the infrastructure around it to keep this project up and running.
+
+### Enterprise-Support
+Running critical infrastructure in an enterprise environment often comes with requirements that go far beyond functionality alone. Enterprises typically expect predictable service levels, defined escalation paths, and guaranteed response times. In many cases, organizations also demand 24x7 support availability to ensure that their systems remain stable and resilient, even under unexpected circumstances.
+
+As the creator and maintainer of ProxLB, I operate as a one-man project. While I am continuously working to improve the software, I cannot provide the type of enterprise-grade support that large organizations may require. To address this need, several companies have stepped in to offer professional services around ProxLB in Proxmox VE clusters.
+
+Below is a list of organizations currently known to provide enterprise-level support for ProxLB. If your business relies on ProxLB in production and you require more than community-based support, these providers may be a good fit for your needs:
+
+| Company| Country | Web |
+|------|:------:|:------:|
+| credativ | DE | [credativ.de](https://www.credativ.de/en/portfolio/support/proxmox-virtualization/) |
+
+*Note: If you provide support for ProxLB, feel free to create PR with your addition.*
 
 ### Author(s)
  * Florian Paul Azim Hoberg @gyptazy (https://gyptazy.com)
