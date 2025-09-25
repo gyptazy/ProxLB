@@ -10,16 +10,16 @@ LABEL org.label-schema.url="https://proxlb.de"
 LABEL org.label-schema.vcs-url="https://github.com/gyptazy/ProxLB"
 
 # --- Step 1 (root): system deps, user, dirs ---
-RUN apk add --no-cache python3 py3-pip py3-virtualenv \
-  && addgroup -S appgroup \
-  && adduser -S -G appgroup -h /home/appuser appuser \
+RUN apk add --no-cache python3 py3-pip \
+  && addgroup -S plb \
+  && adduser -S -G plb -h /home/plb plb \
   && mkdir -p /app/conf /opt/venv \
-  && chown -R appuser:appgroup /app /home/appuser /opt/venv
+  && chown -R plb:plb /app /home/plb /opt/venv
 
 WORKDIR /app
 
 # Copy only requirements first for better layer caching
-COPY --chown=appuser:appgroup requirements.txt /app/requirements.txt
+COPY --chown=plb:plb requirements.txt /app/requirements.txt
 
 # --- Step 2 (appuser): venv + deps + code ---
 USER appuser
@@ -32,10 +32,10 @@ ENV PATH="/opt/venv/bin:${PATH}"
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy application code (owned by appuser)
-COPY --chown=appuser:appgroup proxlb /app/proxlb
+COPY --chown=plb:plb proxlb /app/proxlb
 
 # Optional: placeholder config so a bind-mount can override cleanly
-RUN : > /app/conf/proxlb.yaml || true
+RUN touch /app/conf/proxlb.yaml
 
 # Run as non-root using venv Python
 ENTRYPOINT ["/opt/venv/bin/python", "/app/proxlb/main.py"]
