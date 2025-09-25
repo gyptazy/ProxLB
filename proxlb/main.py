@@ -23,6 +23,7 @@ from models.guests import Guests
 from models.groups import Groups
 from models.calculations import Calculations
 from models.balancing import Balancing
+from models.patching import Patching
 from utils.helper import Helper
 
 
@@ -78,6 +79,10 @@ def main():
         proxlb_data = {**meta, **nodes, **guests, **groups}
         Helper.log_node_metrics(proxlb_data)
 
+        # Perform preparing patching actions via Proxmox API
+        if proxlb_data["meta"]["patching"].get("enable", False):
+            Patching(proxmox_api, proxlb_data)
+
         # Update the initial node resource assignments
         # by the previously created groups.
         Calculations.set_node_assignments(proxlb_data)
@@ -95,6 +100,11 @@ def main():
         # Validate if the JSON output should be
         # printed to stdout
         Helper.print_json(proxlb_data, cli_args.json)
+
+        # Perform patching actions via Proxmox API
+        if proxlb_data["meta"]["patching"].get("enable", False):
+            Patching(proxmox_api, proxlb_data, calculations_done=True)
+
         # Validate daemon mode
         Helper.get_daemon_mode(proxlb_config)
 

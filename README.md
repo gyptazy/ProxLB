@@ -274,6 +274,9 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
 |  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`] |
+| `patching` |  |  |  |  |  |
+|  | enable |  | True | `Bool` | Enables the guest balancing.|
+|  | maximum_nodes |  | 1 | `Int` | How many nodes may be patched at the same time during a ProxLB run. |
 | `service` |  |  |  |  |  |
 |  | daemon |  | True | `Bool` | If daemon mode should be activated. |
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
