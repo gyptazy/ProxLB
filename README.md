@@ -44,7 +44,7 @@ ProxLB can also return the best next node for guest placement, which can be inte
 Overall, ProxLB significantly enhances resource management by intelligently distributing workloads, reducing downtime through its maintenance mode, and providing improved flexibility with affinity and anti-affinity rules. Its seamless integration with CI/CD tools and reliance on the Proxmox API make it a robust and secure solution for optimizing Proxmox cluster performance.
 
 ### Video of Migration
-<img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
+<img src="https://cdn.gyptazy.com/img/proxlb-rebalancing-demo.gif"/>
 
 ## Features
 ProxLB's key features are by enabling automatic rebalancing of VMs and CTs across a Proxmox cluster based on memory, CPU, and local disk usage while identifying optimal nodes for automation. It supports maintenance mode, affinity rules, and seamless Proxmox API integration with ACL support, offering flexible usage as a one-time operation, a daemon, or through the Proxmox Web GUI.
@@ -226,7 +226,7 @@ docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 Running ProxLB is straightforward and versatile, as it only requires `Python3` and the `proxmoxer` library. This means ProxLB can be executed directly on a Proxmox node or on dedicated systems such as Debian, RedHat, or even FreeBSD, provided that the Proxmox API is accessible from the client running ProxLB. ProxLB can also run inside a Container - Docker or LXC - and is simply up to you.
 
 ### GUI Integration
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-GUI-integration.jpg"/> ProxLB can also be accessed through the Proxmox Web UI by installing the optional `pve-proxmoxlb-service-ui` package, which depends on the proxlb package. For full Web UI integration, this package must be installed on all nodes within the cluster. Once installed, a new menu item - `Rebalancing`, appears in the cluster level under the HA section. Once installed, it offers two key functionalities:
+<img align="left" src="https://cdn.gyptazy.com/img/rebalance-ui.jpg"/> ProxLB can also be accessed through the Proxmox Web UI by installing the optional `pve-proxmoxlb-service-ui` package, which depends on the proxlb package. For full Web UI integration, this package must be installed on all nodes within the cluster. Once installed, a new menu item - `Rebalancing`, appears in the cluster level under the HA section. Once installed, it offers two key functionalities:
 * Rebalancing VM workloads
 * Migrate VM workloads away from a defined node (e.g. maintenance preparation)
 
@@ -349,7 +349,7 @@ ProxLB provides an advanced mechanism to define affinity and anti-affinity rules
 ProxLB implements affinity and anti-affinity rules through a tag-based system within the Proxmox web interface. Each guest (virtual machine or container) can be assigned specific tags, which then dictate its placement behavior. This method maintains a streamlined and secure approach to managing VM relationships while preserving Proxmox’s inherent permission model.
 
 ### Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data.
 
 To define an affinity rule which keeps all guests assigned to this tag together on a node, users assign a tag with the prefix `plb_affinity_$TAG`:
 
@@ -361,7 +361,7 @@ plb_affinity_talos
 As a result, ProxLB will attempt to place all VMs with the `plb_affinity_web` tag on the same host (see also the attached screenshot with the same node).
 
 ### Anti-Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure.
 
 To define an anti-affinity rule that ensures to not move systems within this group to the same node, users assign a tag with the prefix:
 
@@ -375,7 +375,7 @@ As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` t
 **Note:** While this ensures that ProxLB tries distribute these VMs across different physical hosts within the Proxmox cluster this may not always work. If you have more guests attached to the group than nodes in the cluster, we still need to run them anywhere. If this case occurs, the next one with the most free resources will be selected.
 
 ### Ignore VMs
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
 
 To define a guest to be ignored from the balancing, users assign a tag with the prefix `plb_ignore_$TAG`:
 
@@ -389,7 +389,7 @@ As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to
 **Note:** Ignored guests are really ignored. Even by enforcing affinity rules this guest will be ignored.
 
 ### Pin VMs to Specific Hypervisor Nodes
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-tag-node-pinning.jpg"/> Guests, such as VMs or CTs, can also be pinned to specific (and multiple) nodes in the cluster. This might be usefull when running applications with some special licensing requirements that are only fulfilled on certain nodes. It might also be interesting, when some physical hardware is attached to a node, that is not available in general within the cluster.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-tag-node-pinning.jpg"/> Guests, such as VMs or CTs, can also be pinned to specific (and multiple) nodes in the cluster. This might be usefull when running applications with some special licensing requirements that are only fulfilled on certain nodes. It might also be interesting, when some physical hardware is attached to a node, that is not available in general within the cluster.
 
 To pin a guest to a specific cluster node, users assign a tag with the prefix `plb_pin_$nodename` to the desired guest:
 
@@ -405,8 +405,6 @@ You can also repeat this step multiple times for different node names to create 
 **Note:** The given node names from the tag are validated. This means, ProxLB validated if the given node name is really part of the cluster. In case of a wrongly defined or unavailable node name it continous to use the regular processes to make sure the guest keeps running.
 
 ## Maintenance
-<img src="https://cdn.gyptazy.com/images/proxlb-rebalancing-demo.gif"/>
-
 The `maintenance_nodes` option allows operators to designate one or more Proxmox nodes for maintenance mode. When a node is set to maintenance, no new guest workloads will be assigned to it, and all existing workloads will be migrated to other available nodes within the cluster. This process ensures that (anti)-affinity rules and resource availability are respected, preventing disruptions while maintaining optimal performance across the infrastructure.
 
 ### Adding / Removing Nodes from Maintenance
