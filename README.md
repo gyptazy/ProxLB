@@ -8,28 +8,28 @@
 1. [Introduction](#introduction)
 2. [Features](#features)
 3. [How does it work?](#how-does-it-work)
-4. [Installation](#installation)
+4. [Documentation](#documentation)
+5. [Installation](#installation)
    1. [Requirements / Dependencies](#requirements--dependencies)
    2. [Debian Package](#debian-package)
    4. [Container / Docker](#container--docker)
    5. [Source](#source)
-5. [Usage / Configuration](#usage--configuration)
+6. [Usage / Configuration](#usage--configuration)
    1. [GUI Integration](#gui-integration)
    2. [Proxmox HA Integration](#proxmox-ha-integration)
    3. [Options](#options)
-6. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
+7. [Affinity & Anti-Affinity Rules](#affinity--anti-affinity-rules)
    1. [Affinity Rules](#affinity-rules)
    2. [Anti-Affinity Rules](#anti-affinity-rules)
    3. [Ignore VMs](#ignore-vms)
    4. [Pin VMs to Hypervisor Nodes](#pin-vms-to-hypervisor-nodes)
-7. [Maintenance](#maintenance)
-8. [Misc](#misc)
+8. [Maintenance](#maintenance)
+9. [Misc](#misc)
    1. [Bugs](#bugs)
    2. [Contributing](#contributing)
-   3. [Documentation](#documentation)
-   4. [Support](#support)
-   5. [Enterprise-Support](#enterprise-support)
-9. [Author(s)](#authors)
+   3. [Support](#support)
+   4. [Enterprise-Support](#enterprise-support)
+10. [Author(s)](#authors)
 
 
 ## Introduction
@@ -74,6 +74,9 @@ ProxLB's key features are by enabling automatic rebalancing of VMs and CTs acros
 ProxLB is a load-balancing system designed to optimize the distribution of virtual machines (VMs) and containers (CTs) across a cluster. It works by first gathering resource usage metrics from all nodes in the cluster through the Proxmox API. This includes detailed resource metrics for each VM and CT on every node. ProxLB then evaluates the difference between the maximum and minimum resource usage of the nodes, referred to as "Balanciness." If this difference exceeds a predefined threshold (which is configurable), the system initiates the rebalancing process.
 
 Before starting any migrations, ProxLB validates that rebalancing actions are necessary and beneficial. Depending on the selected balancing mode — such as CPU, memory, or disk — it creates a balancing matrix. This matrix sorts the VMs by their maximum used or assigned resources, identifying the VM with the highest usage. ProxLB then places this VM on the node with the most free resources in the selected balancing type. This process runs recursively until the operator-defined Balanciness is achieved. Balancing can be defined for the used or max. assigned resources of VMs/CTs.
+
+## Documentation
+This `README.md` doesn't contain all information and only highlights the most important facts. Extended information, such like API permissions, creating dedicated user, best-practices in running ProxLB and mich more can be found in the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory. Please consult the documentation before creating issues.
 
 ## Installation
 
@@ -421,9 +424,6 @@ Bugs can be reported via the GitHub issue tracker [here](https://github.com/gypt
 
 ### Contributing
 Feel free to add further documentation, to adjust already existing one or to contribute with code. Please take care about the style guide and naming conventions. You can find more in our [CONTRIBUTING.md](https://github.com/gyptazy/ProxLB/blob/main/CONTRIBUTING.md) file.
-
-### Documentation
-You can also find additional and more detailed documentation within the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory.
 
 ### Support
 If you need assistance or have any questions, we offer support through our dedicated [chat room](https://matrix.to/#/#proxlb:gyptazy.com) in Matrix or [Discord](https://discord.gg/JemGu7WbfQ). Join our community for real-time help, advice, and discussions. The Matrix and Discord room are bridged to ensure that the communication is not splitted - so simply feel free to join which fits most to you!
