@@ -76,7 +76,7 @@ ProxLB is a load-balancing system designed to optimize the distribution of virtu
 Before starting any migrations, ProxLB validates that rebalancing actions are necessary and beneficial. Depending on the selected balancing mode — such as CPU, memory, or disk — it creates a balancing matrix. This matrix sorts the VMs by their maximum used or assigned resources, identifying the VM with the highest usage. ProxLB then places this VM on the node with the most free resources in the selected balancing type. This process runs recursively until the operator-defined Balanciness is achieved. Balancing can be defined for the used or max. assigned resources of VMs/CTs.
 
 ## Documentation
-This `README.md` doesn't contain all information and only highlights the most important facts. Extended information, such like API permissions, creating dedicated user, best-practices in running ProxLB and mich more can be found in the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory. Please consult the documentation before creating issues.
+This `README.md` doesn't contain all information and only highlights the most important facts. Extended information, such like API permissions, creating dedicated user, best-practices in running ProxLB and much more can be found in the [docs/](https://github.com/gyptazy/ProxLB/tree/main/docs) directory. Please consult the documentation before creating issues.
 
 ## Installation
 
