@@ -32,6 +32,10 @@ balancing:
   method: memory
   mode: used
 
+patching:
+  enable: True
+  maximum_nodes: 1
+
 service:
   daemon: True
   schedule:
