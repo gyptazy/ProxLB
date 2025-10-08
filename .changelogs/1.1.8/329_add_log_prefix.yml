@@ -1,0 +1,2 @@
+fixed:
+  - Add a static ProxLB prefix to the log output when used by journal handler (@gyptazy). [#329]

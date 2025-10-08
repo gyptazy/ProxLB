@@ -1,2 +1,2 @@
 fixed:
-  - Fix API errors when using conntrack aware migration with older PVE versions. (@gyptazy). [#318]
+  - Fix API errors when using conntrack aware migration with older PVE versions (@gyptazy). [#318]
