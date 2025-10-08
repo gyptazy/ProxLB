@@ -88,7 +88,7 @@ class SystemdLogger:
         # logging is preferred.
         if SYSTEMD_PRESENT:
             # Add a JournalHandler for systemd integration
-            handler = JournalHandler()
+            handler = JournalHandler(SYSLOG_IDENTIFIER="ProxLB")
         else:
             # Add a stdout handler as a fallback
             handler = logging.StreamHandler(sys.stdout)
