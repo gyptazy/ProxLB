@@ -1,3 +1,10 @@
+proxlb (1.1.8) stable; urgency=medium
+
+  * Fix API errors when using conntrack aware migration with older PVE version. (Closes: #318)
+  * Add a static ProxLB prefix to the log output when used by journal handler. (Closes: #329)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 09 Oct 2025 09:04:13 +0002
+
 proxlb (1.1.7) stable; urgency=medium
 
   * Add conntrack state aware migrations of VMs. (Closes: #305)
