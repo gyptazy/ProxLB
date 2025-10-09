@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix API errors when using conntrack aware migration with older PVE versions (@gyptazy). [#318]
 - Add a static ProxLB prefix to the log output when used by journal handler (@gyptazy). [#329]
 
+### Changed
+- Container image does not run as root anymore (@mikaelkrantz945). [#317]
+- Container image uses venv for running ProxLB (@mikaelkrantz945). [#317]
+
 ## [1.1.7] - 2025-09-19
 
 ### Added
