@@ -61,6 +61,7 @@ class Nodes:
                 nodes["nodes"][node["node"]] = {}
                 nodes["nodes"][node["node"]]["name"] = node["node"]
                 nodes["nodes"][node["node"]]["maintenance"] = False
+                nodes["nodes"][node["node"]]["patching"] = False
                 nodes["nodes"][node["node"]]["cpu_total"] = node["maxcpu"]
                 nodes["nodes"][node["node"]]["cpu_assigned"] = 0
                 nodes["nodes"][node["node"]]["cpu_used"] = node["cpu"] * node["maxcpu"]
