@@ -1,0 +1,3 @@
+changed:
+  - Container image does not run as root anymore (@mikaelkrantz945). [#317]
+  - Container image uses venv for running ProxLB (@mikaelkrantz945). [#317]
