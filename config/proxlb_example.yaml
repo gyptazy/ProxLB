@@ -26,11 +26,39 @@ balancing:
   live: True
   with_local_disks: True
   with_conntrack_state: True
-  balance_types: ['vm', 'ct']
+  balance_types: ['vm', 'ct']         # 'vm' | 'ct'
   max_job_validation: 1800
   balanciness: 5
-  method: memory
-  mode: used
+  method: memory                      # 'memory' | 'cpu' | 'disk'
+  mode: used                          # 'assigned' | 'used' | 'psi'
+  # # PSI thresholds only apply when using mode 'psi'
+  # psi:
+  #   nodes:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #   guests:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
 
 service:
   daemon: True

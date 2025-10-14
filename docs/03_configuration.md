@@ -20,6 +20,10 @@
     7. [Run as a Systemd-Service](#run-as-a-systemd-service)
     8. [SSL Self-Signed Certificates](#ssl-self-signed-certificates)
     9. [Node Maintenances](#node-maintenances)
+    10. [Balancing Methods](#balancing-methods)
+        1. [Used Resources](#used-resources)
+        2. [Assigned Resources](#assigned-resources)
+        3. [Pressure (PSI) based Resources](#pressure-psi-based-resources)
 
 ## Authentication / User Accounts / Permissions
 ### Authentication
@@ -236,3 +240,114 @@ The maintenance_nodes key must be defined as a list, even if it only includes a 
 * Any existing workloads currently running on the node will be migrated away in accordance with the configured balancing strategies, assuming resources on other nodes allow. 
 
 This feature is particularly useful during planned maintenance, upgrades, or troubleshooting, ensuring that services continue to run with minimal disruption while the specified node is being worked on.
+
+## 10. Balancing Methods
+ProxLB provides multiple balancing modes that define *how* resources are evaluated and compared during cluster balancing.
+Each mode reflects a different strategy for determining load and distributing guests (VMs or containers) between nodes.
+
+Depending on your environment, provisioning strategy, and performance goals, you can choose between:
+
+| Mode | Description | Typical Use Case |
+|------|--------------|------------------|
+| `used` | Uses the *actual runtime resource usage* (e.g. CPU, memory, disk). | Dynamic or lab environments with frequent workload changes and tolerance for overprovisioning. |
+| `assigned` | Uses the *statically defined resource allocations* from guest configurations. | Production or SLA-driven clusters that require guaranteed resources and predictable performance. |
+| `psi` | Uses Linux *Pressure Stall Information (PSI)* metrics to evaluate real system contention and pressure. | Advanced clusters that require pressure-aware decisions for proactive rebalancing. |
+
+### 10.1 Used Resources
+When **mode: `used`** is configured, ProxLB evaluates the *real usage metrics* of guest objects (VMs and CTs).
+It collects the current CPU, memory, and disk usage directly from the Proxmox API to determine the *actual consumption* of each guest and node.
+
+This mode is ideal for **dynamic environments** where workloads frequently change and **overprovisioning is acceptable**. It provides the most reactive balancing behavior, since decisions are based on live usage instead of static assignment.
+
+Typical scenarios include:
+- Production environments to distribute workloads across the nodes.
+- Test or development clusters with frequent VM changes.
+- Clusters where resource spikes are short-lived.
+- Environments where slight resource contention is tolerable.
+
+#### Example Configuration
+```yaml
+balancing:
+  mode: used
+```
+
+### 10.2 Assigned Resources
+When **mode: `assigned`** is configured, ProxLB evaluates the *provisioned or allocated resources* of each guest (VM or CT) instead of their runtime usage.
+It uses data such as **CPU cores**, **memory limits**, and **disk allocations** defined in Proxmox to calculate how much of each node’s capacity is reserved.
+
+This mode is ideal for **production clusters** where:
+- Overcommitment is *not allowed or only minimally tolerated*.
+- Each node’s workload is planned based on the assigned capacities.
+- Administrators want predictable resource distribution aligned with provisioning policies.
+
+Unlike the `used` mode, `assigned` focuses purely on the *declared configuration* of guests and remains stable even if actual usage varies temporarily.
+
+Typical scenarios include:
+- Enterprise environments with SLA or QoS requirements.
+- Clusters where workloads are sized deterministically.
+- Situations where consistent node utilization and capacity awareness are crucial.
+
+#### Example Configuration
+```yaml
+balancing:
+  mode: assigned
+```
+
+### 10.3 Pressure (PSI) based Resources
+> [!IMPORTANT]
+> PSI based balancing is still in beta! If you find any bugs, please raise an issue including metrics of all nodes and affected guests. You can provide metrics directly from PVE or Grafana (via node_exporter or pve_exporter).
+
+When **mode: `psi`** is configured, ProxLB uses the **Linux Pressure Stall Information (PSI)** interface to measure the *real-time pressure* on system resources such as **CPU**, **memory**, and **disk I/O**.
+Unlike the `used` or `assigned` modes, which rely on static or average metrics, PSI provides *direct insight into how often and how long tasks are stalled* because of insufficient resources.
+
+This enables ProxLB to make **proactive balancing decisions** — moving workloads *before* performance degradation becomes visible to the user.
+
+**IMPORTANT**: Predicting distributing workloads is dangerous and might not result into the expected state. Therefore, ProxLB migrates only a single instance each 60 minutes to obtain new real-metrics and to validate if further changes are required. Keep in mind, that migrations are also costly and should be avoided as much as possible.
+
+PSI metrics are available for both **nodes** and **guest objects**, allowing fine-grained balancing decisions:
+- **Node-level PSI:** Detects cluster nodes under systemic load or contention.
+- **Guest-level PSI:** Identifies individual guests suffering from memory, CPU, or I/O stalls.
+
+### PSI Metrics Explained
+Each monitored resource defines three pressure thresholds:
+| Key | Description |
+|-----|--------------|
+| `pressure_some` | Indicates partial stall conditions where some tasks are waiting for a resource. |
+| `pressure_full` | Represents complete stall conditions where *all* tasks are blocked waiting for a resource. |
+| `pressure_spikes` | Defines short-term burst conditions that may signal saturation spikes. |
+
+These thresholds are expressed in **percentages** and represent how much time the kernel reports stalls over specific averaging windows (e.g. 5s, 10s, 60s).
+
+### Example Configuration
+
+```yaml
+balancing:
+  mode: psi
+  psi:
+    nodes:
+      memory:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+      cpu:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+      disk:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+    guests:
+      memory:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+      cpu:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+      disk:
+        pressure_full: 0.20
+        pressure_some: 0.20
+        pressure_spikes: 1.00
+```
