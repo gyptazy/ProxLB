@@ -282,6 +282,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored. [values: `vm`, `ct`]|
 |  | max_job_validation |  | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
+|  | memory_threshold |  | 75 | `Int` | The maximum threshold (in percent) that needs to be hit to perform balancing actions. (Optional) |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
 |  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`, `psi` (pressure)] |
 |  | psi |  | { nodes: { memory: { pressure_full: 0.20, pressure_some: 0.20, pressure_spikes: 1.00 } } } | `Dict` | A dict of PSI based thresholds for nodes and guests |
@@ -326,6 +327,7 @@ balancing:
   with_conntrack_state: True
   balance_types: ['vm', 'ct']
   max_job_validation: 1800
+  memory_threshold: 75
   balanciness: 5
   method: memory
   mode: used

@@ -194,8 +194,38 @@ class Calculations:
             if mode == "assigned":
                 method_value = [node_meta[f"{method}_{mode}_percent"] for node_meta in proxlb_data["nodes"].values()]
 
+                if proxlb_data["meta"]["balancing"].get(f"{method}_threshold", None):
+                    threshold = proxlb_data["meta"]["balancing"].get(f"{method}_threshold")
+                    highest_usage_node = max(proxlb_data["nodes"].values(), key=lambda x: x[f"{method}_{mode}_percent"])
+                    highest_node_value = highest_usage_node[f"{method}_{mode}_percent"]
+
+                    if highest_node_value >= threshold:
+                        logger.debug(f"Guest balancing is required. Highest {method} usage node {highest_usage_node['name']} is above the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = True
+                    else:
+                        logger.debug(f"Guest balancing is ok. Highest {method} usage node {highest_usage_node['name']} is below the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = False
+
+                else:
+                    logger.debug(f"No {method} threshold defined for balancing. Skipping threshold check.")
+
             elif mode == "used":
                 method_value = [node_meta[f"{method}_{mode}_percent"] for node_meta in proxlb_data["nodes"].values()]
+
+                if proxlb_data["meta"]["balancing"].get(f"{method}_threshold", None):
+                    threshold = proxlb_data["meta"]["balancing"].get(f"{method}_threshold")
+                    highest_usage_node = max(proxlb_data["nodes"].values(), key=lambda x: x[f"{method}_{mode}_percent"])
+                    highest_node_value = highest_usage_node[f"{method}_{mode}_percent"]
+
+                    if highest_node_value >= threshold:
+                        logger.debug(f"Guest balancing is required. Highest {method} usage node {highest_usage_node['name']} is above the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = True
+                    else:
+                        logger.debug(f"Guest balancing is ok. Highest {method} usage node {highest_usage_node['name']} is below the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = False
+
+                else:
+                    logger.debug(f"No {method} threshold defined for balancing. Skipping threshold check.")
 
             elif mode == "psi":
                 method_value = [node_meta[f"{method}_pressure_full_spikes_percent"] for node_meta in proxlb_data["nodes"].values()]

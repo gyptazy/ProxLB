@@ -27,8 +27,9 @@ balancing:
   with_local_disks: True
   with_conntrack_state: True
   balance_types: ['vm', 'ct']         # 'vm' | 'ct'
-  max_job_validation: 1800
-  balanciness: 5
+  max_job_validation: 1800            # Maximum time (in seconds) a job validation may take
+  memory_threshold: 75                # Optional: Maximum threshold (in percent) to trigger balancing actions
+  balanciness: 5                      # Maximum delta of resource usage between highest and lowest usage node
   method: memory                      # 'memory' | 'cpu' | 'disk'
   mode: used                          # 'assigned' | 'used' | 'psi'
   # # PSI thresholds only apply when using mode 'psi'
