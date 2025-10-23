@@ -48,6 +48,7 @@ class Nodes:
 
         Args:
             proxmox_api (any): The Proxmox API client instance.
+            proxmox_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
             nodes (Dict[str, Any]): A dictionary containing information about the nodes in the Proxmox cluster.
 
         Returns:

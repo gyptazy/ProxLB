@@ -80,8 +80,8 @@ ProxLB provides an advanced mechanism to define affinity and anti-affinity rules
 
 ProxLB implements affinity and anti-affinity rules through a tag-based system within the Proxmox web interface. Each guest (virtual machine or container) can be assigned specific tags, which then dictate its placement behavior. This method maintains a streamlined and secure approach to managing VM relationships while preserving Proxmox’s inherent permission model.
 
-#### Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data.
+#### Affinity Rules by Tags
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data.
 
 To define an affinity rule which keeps all guests assigned to this tag together on a node, users assign a tag with the prefix `plb_affinity_$TAG`:
 
@@ -92,8 +92,20 @@ plb_affinity_talos
 
 As a result, ProxLB will attempt to place all VMs with the `plb_affinity_web` tag on the same host (see also the attached screenshot with the same node).
 
-#### Anti-Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure.
+#### Affinity Rules by Pools
+Antoher approach is by using pools in Proxmox. This way, it can easily also combined with other resources like backup jobs. However, in this approach you need to modify the ProxLB config file to your needs. Within the `balancing` section you can create a dict of pools, including the pool name and the affinity type. Please see the example for further details:
+
+**Example Config**
+```
+balancing:
+  [...]
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+```
+
+#### Anti-Affinity Rules by Tags
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure.
 
 To define an anti-affinity rule that ensures to not move systems within this group to the same node, users assign a tag with the prefix:
 
@@ -106,6 +118,18 @@ As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` t
 
 **Note:** While this ensures that ProxLB tries distribute these VMs across different physical hosts within the Proxmox cluster this may not always work. If you have more guests attached to the group than nodes in the cluster, we still need to run them anywhere. If this case occurs, the next one with the most free resources will be selected.
 
+#### Anti-Affinity Rules by Pools
+Antoher approach is by using pools in Proxmox. This way, it can easily also combined with other resources like backup jobs. However, in this approach you need to modify the ProxLB config file to your needs. Within the `balancing` section you can create a dict of pools, including the pool name and the affinity type. Please see the example for further details:
+
+**Example Config**
+```
+balancing:
+  [...]
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    de-nbg01-db:                      # Pool name: de-nbg01-db
+      type: anti-affinity                  # Type: anti-affinity (spreading VMs apart)
+````
+
 ### Affinity / Anti-Affinity Enforcing
 When a cluster is already balanced and does not require further adjustments, enabling the enforce_affinity parameter ensures that affinity and anti-affinity rules are still respected. This parameter prioritizes the placement of guest objects according to these rules, even if it leads to slight resource imbalances or increased migration overhead. Regularly reviewing and updating these rules, along with monitoring cluster performance, helps maintain optimal performance and reliability. By carefully managing these aspects, you can create a cluster environment that meets your specific needs and maintains a good balance of resources.
 
@@ -117,7 +141,7 @@ balancing:
 *Note: This may have impacts to the cluster. Depending on the created group matrix, the result may also be an unbalanced cluster.*
 
 ### Ignore VMs / CTs
-<img align="left" src="https://cdn.gyptazy.com/images/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-ignore-vm-movement.jpg"/> Guests, such as VMs or CTs, can also be completely ignored. This means, they won't be affected by any migration (even when (anti-)affinity rules are enforced). To ensure a proper resource evaluation, these guests are still collected and evaluated but simply skipped for balancing actions. Another thing is the implementation. While ProxLB might have a very restricted configuration file including the file permissions, this file is only read- and writeable by the Proxmox administrators. However, we might have user and groups who want to define on their own that their systems shouldn't be moved. Therefore, these users can simpy set a specific tag to the guest object - just like the (anti)affinity rules.
 
 To define a guest to be ignored from the balancing, users assign a tag with the prefix `plb_ignore_$TAG`:
 

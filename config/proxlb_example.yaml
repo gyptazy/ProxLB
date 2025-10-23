@@ -60,6 +60,14 @@ balancing:
   #       pressure_full: 0.20
   #       pressure_some: 0.20
   #       pressure_spikes: 1.00
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+    de-nbg01-db:                      # Pool name: de-nbg01-db
+      type: anti-affinity             # Type: anti-affinity (spreading VMs apart)
+      pin:                            # Define a pinning og guests to specific node(s)
+        - virt66
+        - virt77
 
 service:
   daemon: True
