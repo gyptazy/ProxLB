@@ -54,6 +54,10 @@ ProxLB's key features are by enabling automatic rebalancing of VMs and CTs acros
   * Memory
   * Disk (only local storage)
   * CPU
+* Rebalance by different modes:
+  * Used resources
+  * Assigned resources
+  * PSI (Pressure) of resources
 * Get best nodes for further automation
 * Supported Guest Types
   * VMs
@@ -278,7 +282,8 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | max_job_validation |  | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
-|  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`] |
+|  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`, `psi` (pressure)] |
+|  | psi |  | { nodes: { memory: { pressure_full: 0.20, pressure_some: 0.20, pressure_spikes: 1.00 } } } | `Dict` | A dict of PSI based thresholds for nodes and guests |
 | `service` |  |  |  |  |  |
 |  | daemon |  | True | `Bool` | If daemon mode should be activated. |
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
@@ -323,6 +328,35 @@ balancing:
   balanciness: 5
   method: memory
   mode: used
+# # PSI thresholds only apply when using mode 'psi'
+# # PSI based balancing is currently in beta and req. PVE >= 9
+# psi:
+#   nodes:
+#     memory:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     cpu:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     disk:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#   guests:
+#     memory:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     cpu:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     disk:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
 
 service:
   daemon: True
