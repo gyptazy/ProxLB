@@ -109,7 +109,7 @@ class Tags:
 
         if len(pools) > 0:
             for pool in pools:
-                if pool in proxlb_config['balancing'].get('pools', []):
+                if pool in (proxlb_config['balancing'].get('pools') or {}):
                     if proxlb_config['balancing']['pools'][pool].get('type', None) == 'affinity':
                         logger.debug(f"Adding affinity group for pool {pool}.")
                         affinity_tags.append(pool)
@@ -149,7 +149,7 @@ class Tags:
 
         if len(pools) > 0:
             for pool in pools:
-                if pool in proxlb_config['balancing'].get('pools', []):
+                if pool in (proxlb_config['balancing'].get('pools') or {}):
                     if proxlb_config['balancing']['pools'][pool].get('type', None) == 'anti-affinity':
                         logger.debug(f"Adding anti-affinity group for pool {pool}.")
                         anti_affinity_tags.append(pool)
@@ -222,7 +222,7 @@ class Tags:
         if len(pools) > 0:
             logger.debug("Validating node pinning by pools.")
             for pool in pools:
-                if pool in proxlb_config['balancing'].get('pools', []):
+                if pool in (proxlb_config['balancing'].get('pools') or {}):
 
                     node = proxlb_config['balancing']['pools'][pool].get('pin', None)
                     # Validate if the node to pin is present in the cluster
