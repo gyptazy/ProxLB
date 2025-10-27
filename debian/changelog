@@ -1,6 +1,8 @@
 proxlb (1.1.9) stable; urgency=medium
 
   * Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater). (Closes: #339)
+  * Add (memory) threshold for nodes before running balancing. (Closes: #342)
+  * Add affinity/anti-affinity support by pools. (Closes: #343)
 
  -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 22 Oct 2025 09:04:13 +0002
 
