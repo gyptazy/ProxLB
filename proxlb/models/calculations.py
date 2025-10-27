@@ -80,7 +80,7 @@ class Calculations:
 
             for guest_name in group_meta["guests"]:
                 guest_node_current = proxlb_data["guests"][guest_name]["node_current"]
-                # Update Hardware assignments
+                # Update resource assignments
                 # Update assigned values for the current node
                 logger.debug(f"set_node_assignment of guest {guest_name} on node {guest_node_current} with cpu_total: {proxlb_data['guests'][guest_name]['cpu_total']}, memory_total: {proxlb_data['guests'][guest_name]['memory_total']}, disk_total: {proxlb_data['guests'][guest_name]['disk_total']}.")
                 proxlb_data["nodes"][guest_node_current]["cpu_assigned"] += proxlb_data["guests"][guest_name]["cpu_total"]
@@ -92,6 +92,83 @@ class Calculations:
                 proxlb_data["nodes"][guest_node_current]["disk_assigned_percent"] = proxlb_data["nodes"][guest_node_current]["disk_assigned"] / proxlb_data["nodes"][guest_node_current]["disk_total"] * 100
 
         logger.debug("Finished: set_node_assignments.")
+
+    def set_node_hot(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Evaluates node 'full' pressure metrics for memory, cpu, and io
+        against defined thresholds and sets <metric>_pressure_hot = True
+        when a node is considered HOT.
+
+        Returns the modified proxlb_data dict.
+        """
+        logger.debug("Starting: set_node_hot.")
+        balancing_cfg = proxlb_data.get("meta", {}).get("balancing", {})
+        thresholds = balancing_cfg.get("psi_thresholds", balancing_cfg.get("psi", {}).get("nodes", {}))
+        nodes = proxlb_data.get("nodes", {})
+
+        for node_name, node in nodes.items():
+
+            if node.get("maintenance"):
+                continue
+
+            if node.get("ignore"):
+                continue
+
+            # PSI metrics are only availavble on Proxmox VE 9.0 and higher.
+            if proxlb_data["meta"]["balancing"].get("mode", "used") == "psi":
+
+                if tuple(map(int, proxlb_data["nodes"][node["name"]]["pve_version"].split('.'))) < tuple(map(int, "9.0".split('.'))):
+                    logger.critical(f"Proxmox node {node['name']} runs Proxmox VE version {proxlb_data['nodes'][node['name']]['pve_version']}."
+                                    " PSI metrics require Proxmox VE 9.0 or higher. Balancing deactivated!")
+
+            for metric, threshold in thresholds.items():
+                pressure_full = node.get(f"{metric}_pressure_full_percent", 0.0)
+                pressure_some = node.get(f"{metric}_pressure_some_percent", 0.0)
+                pressure_spikes = node.get(f"{metric}_pressure_full_spikes_percent", 0.0)
+                is_hot = (pressure_full >= threshold["pressure_full"] and pressure_some >= threshold["pressure_some"]) or (pressure_spikes >= threshold["pressure_spikes"])
+
+                if is_hot:
+                    logger.debug(f"Set node {node["name"]} as hot based on {metric} pressure metrics.")
+                    proxlb_data["nodes"][node["name"]][f"{metric}_pressure_hot"] = True
+                    proxlb_data["nodes"][node["name"]][f"pressure_hot"] = True
+                else:
+                    logger.debug(f"Node {node["name"]} is not hot based on {metric} pressure metrics.")
+
+        logger.debug("Finished: set_node_hot.")
+        return proxlb_data
+
+    def set_guest_hot(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Evaluates guest 'full' pressure metrics for memory, cpu, and io
+        against defined thresholds and sets <metric>_pressure_hot = True
+        when a guest is considered HOT.
+
+        Returns the modified proxlb_data dict.
+        """
+        logger.debug("Starting: set_guest_hot.")
+        balancing_cfg = proxlb_data.get("meta", {}).get("balancing", {})
+        thresholds = balancing_cfg.get("psi_thresholds", balancing_cfg.get("psi", {}).get("guests", {}))
+        guests = proxlb_data.get("guests", {})
+
+        for guest_name, guest in guests.items():
+            if guest.get("ignore"):
+                continue
+
+            for metric, threshold in thresholds.items():
+                pressure_full = guest.get(f"{metric}_pressure_full_percent", 0.0)
+                pressure_some = guest.get(f"{metric}_pressure_some_percent", 0.0)
+                pressure_spikes = guest.get(f"{metric}_pressure_full_spikes_percent", 0.0)
+                is_hot = (pressure_full >= threshold["pressure_full"] and pressure_some >= threshold["pressure_some"]) or (pressure_spikes >= threshold["pressure_spikes"])
+
+                if is_hot:
+                    logger.debug(f"Set guest {guest["name"]} as hot based on {metric} pressure metrics.")
+                    proxlb_data["guests"][guest["name"]][f"{metric}_pressure_hot"] = True
+                    proxlb_data["guests"][guest["name"]][f"pressure_hot"] = True
+                else:
+                    logger.debug(f"guest {guest["name"]} is not hot based on {metric} pressure metrics.")
+
+        logger.debug("Finished: set_guest_hot.")
+        return proxlb_data
 
     @staticmethod
     def get_balanciness(proxlb_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -113,7 +190,66 @@ class Calculations:
             method = proxlb_data["meta"]["balancing"].get("method", "memory")
             mode = proxlb_data["meta"]["balancing"].get("mode", "used")
             balanciness = proxlb_data["meta"]["balancing"].get("balanciness", 10)
-            method_value = [node_meta[f"{method}_{mode}_percent"] for node_meta in proxlb_data["nodes"].values()]
+
+            if mode == "assigned":
+                method_value = [node_meta[f"{method}_{mode}_percent"] for node_meta in proxlb_data["nodes"].values()]
+
+                if proxlb_data["meta"]["balancing"].get(f"{method}_threshold", None):
+                    threshold = proxlb_data["meta"]["balancing"].get(f"{method}_threshold")
+                    highest_usage_node = max(proxlb_data["nodes"].values(), key=lambda x: x[f"{method}_{mode}_percent"])
+                    highest_node_value = highest_usage_node[f"{method}_{mode}_percent"]
+
+                    if highest_node_value >= threshold:
+                        logger.debug(f"Guest balancing is required. Highest {method} usage node {highest_usage_node['name']} is above the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = True
+                    else:
+                        logger.debug(f"Guest balancing is ok. Highest {method} usage node {highest_usage_node['name']} is below the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = False
+
+                else:
+                    logger.debug(f"No {method} threshold defined for balancing. Skipping threshold check.")
+
+            elif mode == "used":
+                method_value = [node_meta[f"{method}_{mode}_percent"] for node_meta in proxlb_data["nodes"].values()]
+
+                if proxlb_data["meta"]["balancing"].get(f"{method}_threshold", None):
+                    threshold = proxlb_data["meta"]["balancing"].get(f"{method}_threshold")
+                    highest_usage_node = max(proxlb_data["nodes"].values(), key=lambda x: x[f"{method}_{mode}_percent"])
+                    highest_node_value = highest_usage_node[f"{method}_{mode}_percent"]
+
+                    if highest_node_value >= threshold:
+                        logger.debug(f"Guest balancing is required. Highest {method} usage node {highest_usage_node['name']} is above the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = True
+                    else:
+                        logger.debug(f"Guest balancing is ok. Highest {method} usage node {highest_usage_node['name']} is below the defined threshold of {threshold}% with a value of {highest_node_value}%.")
+                        proxlb_data["meta"]["balancing"]["balance"] = False
+
+                else:
+                    logger.debug(f"No {method} threshold defined for balancing. Skipping threshold check.")
+
+            elif mode == "psi":
+                method_value = [node_meta[f"{method}_pressure_full_spikes_percent"] for node_meta in proxlb_data["nodes"].values()]
+                any_node_hot = any(node.get(f"{method}_pressure_hot", False) for node in proxlb_data["nodes"].values())
+                any_guest_hot = any(node.get(f"{method}_pressure_hot", False) for node in proxlb_data["guests"].values())
+
+                if any_node_hot:
+                    logger.debug(f"Guest balancing is required. A node is marked as HOT based on {method} pressure metrics.")
+                    proxlb_data["meta"]["balancing"]["balance"] = True
+                else:
+                    logger.debug(f"Guest balancing is ok. No node is marked as HOT based on {method} pressure metrics.")
+
+                if any_guest_hot:
+                    logger.debug(f"Guest balancing is required. A guest is marked as HOT based on {method} pressure metrics.")
+                    proxlb_data["meta"]["balancing"]["balance"] = True
+                else:
+                    logger.debug(f"Guest balancing is ok. No guest is marked as HOT based on {method} pressure metrics.")
+
+                return proxlb_data
+
+            else:
+                logger.critical(f"Unknown balancing mode: {mode} provided. Cannot get balanciness.")
+                sys.exit(1)
+
             method_value_highest = max(method_value)
             method_value_lowest = min(method_value)
 
@@ -159,7 +295,23 @@ class Calculations:
         # Filter by the defined methods and modes for balancing
         method = proxlb_data["meta"]["balancing"].get("method", "memory")
         mode = proxlb_data["meta"]["balancing"].get("mode", "used")
-        lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_{mode}_percent"])
+
+        if mode == "assigned":
+            logger.debug(f"Get best node for balancing by assigned {method} resources.")
+            lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_{mode}_percent"])
+
+        elif mode == "used":
+            logger.debug(f"Get best node for balancing by used {method} resources.")
+            lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_{mode}_percent"])
+
+        elif mode == "psi":
+            logger.debug(f"Get best node for balancing by pressure of {method} resources.")
+            lowest_usage_node = min(filtered_nodes, key=lambda x: x[f"{method}_pressure_full_spikes_percent"])
+
+        else:
+            logger.critical(f"Unknown balancing mode: {mode} provided. Cannot get best node.")
+            sys.exit(1)
+
         proxlb_data["meta"]["balancing"]["balance_reason"] = 'resources'
         proxlb_data["meta"]["balancing"]["balance_next_node"] = lowest_usage_node["name"]
 
@@ -188,7 +340,7 @@ class Calculations:
         Returns:
         None
         """
-        logger.debug("Starting: get_most_free_node.")
+        logger.debug("Starting: relocate_guests_on_maintenance_nodes.")
         proxlb_data["meta"]["balancing"]["balance_next_guest"] = ""
 
         for guest_name in proxlb_data["groups"]["maintenance"]:
@@ -199,7 +351,7 @@ class Calculations:
             Calculations.update_node_resources(proxlb_data)
             logger.warning(f"Warning: Balancing may not be perfect because guest {guest_name} was located on a node which is in maintenance mode.")
 
-        logger.debug("Finished: get_most_free_node.")
+        logger.debug("Finished: relocate_guests_on_maintenance_nodes.")
 
     @staticmethod
     def relocate_guests(proxlb_data: Dict[str, Any]):
@@ -233,7 +385,26 @@ class Calculations:
                 Calculations.get_most_free_node(proxlb_data)
 
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
-                    proxlb_data["meta"]["balancing"]["balance_next_guest"] = guest_name
+                    mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+
+                    if mode == 'psi':
+                        logger.debug(f"Evaluating guest relocation based on {mode} mode.")
+                        method = proxlb_data["meta"]["balancing"].get("method", "memory")
+                        processed_guests_psi = proxlb_data["meta"]["balancing"].setdefault("processed_guests_psi", [])
+                        unprocessed_guests_psi = [guest for guest in proxlb_data["guests"].values() if guest["name"] not in processed_guests_psi]
+
+                        # Filter by the defined methods and modes for balancing
+                        highest_usage_guest = max(unprocessed_guests_psi, key=lambda x: x[f"{method}_pressure_full_spikes_percent"])
+
+                        # Append guest to the psi based processed list of guests
+                        if highest_usage_guest["name"] == guest_name and guest_name not in proxlb_data["meta"]["balancing"]["processed_guests_psi"]:
+                            proxlb_data["meta"]["balancing"]["processed_guests_psi"].append(guest_name)
+                            proxlb_data["meta"]["balancing"]["balance_next_guest"] = guest_name
+
+                    else:
+                        logger.debug(f"Evaluating guest relocation based on {mode} mode.")
+                        proxlb_data["meta"]["balancing"]["balance_next_guest"] = guest_name
+
                     Calculations.val_anti_affinity(proxlb_data, guest_name)
                     Calculations.val_node_relationships(proxlb_data, guest_name)
                     Calculations.update_node_resources(proxlb_data)
@@ -348,6 +519,11 @@ class Calculations:
         """
         logger.debug("Starting: update_node_resources.")
         guest_name = proxlb_data["meta"]["balancing"]["balance_next_guest"]
+
+        if guest_name == "":
+            logger.debug("No guest defined to update node resources for.")
+            return
+
         node_current = proxlb_data["guests"][guest_name]["node_current"]
         node_target = proxlb_data["meta"]["balancing"]["balance_next_node"]
 

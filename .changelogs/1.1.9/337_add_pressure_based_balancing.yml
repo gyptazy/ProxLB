@@ -1,0 +1,5 @@
+added:
+  - Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater) (@gyptazy). [#337|
+  - Pressure (PSI) based balancing for nodes
+  - Pressure (PSI) based balancing for guests
+  - Add PVE version evaluation

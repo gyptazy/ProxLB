@@ -54,6 +54,10 @@ ProxLB's key features are by enabling automatic rebalancing of VMs and CTs acros
   * Memory
   * Disk (only local storage)
   * CPU
+* Rebalance by different modes:
+  * Used resources
+  * Assigned resources
+  * PSI (Pressure) of resources
 * Get best nodes for further automation
 * Supported Guest Types
   * VMs
@@ -169,6 +173,7 @@ docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.9 | cr.gyptazy.com/proxlb/proxlb:v1.1.9 |
 | v1.1.8 | cr.gyptazy.com/proxlb/proxlb:v1.1.8 |
 | v1.1.7 | cr.gyptazy.com/proxlb/proxlb:v1.1.7 |
 | v1.1.6.1 | cr.gyptazy.com/proxlb/proxlb:v1.1.6.1 |
@@ -277,8 +282,11 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | balance_types |  | ['vm', 'ct'] | `List` | Defined the types of guests that should be honored. [values: `vm`, `ct`]|
 |  | max_job_validation |  | 1800 | `Int` | How long a job validation may take in seconds. (default: 1800) |
 |  | balanciness |  | 10 | `Int` | The maximum delta of resource usage between node with highest and lowest usage. |
+|  | memory_threshold |  | 75 | `Int` | The maximum threshold (in percent) that needs to be hit to perform balancing actions. (Optional) |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
-|  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`] |
+|  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`, `psi` (pressure)] |
+|  | psi |  | { nodes: { memory: { pressure_full: 0.20, pressure_some: 0.20, pressure_spikes: 1.00 }}} | `Dict` | A dict of PSI based thresholds for nodes and guests |
+|  | pools |  | pools: { dev: { type: affinity }, de-nbg01-db: { type: anti-affinity }} | `Dict` | A dict of pool names and their type for creating affinity/anti-affinity rules |
 | `service` |  |  |  |  |  |
 |  | daemon |  | True | `Bool` | If daemon mode should be activated. |
 |  | `schedule` |  |  | `Dict` | Schedule config block for rebalancing. |
@@ -320,9 +328,47 @@ balancing:
   with_conntrack_state: True
   balance_types: ['vm', 'ct']
   max_job_validation: 1800
+  memory_threshold: 75
   balanciness: 5
   method: memory
   mode: used
+# # PSI thresholds only apply when using mode 'psi'
+# # PSI based balancing is currently in beta and req. PVE >= 9
+# psi:
+#   nodes:
+#     memory:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     cpu:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     disk:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#   guests:
+#     memory:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     cpu:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+#     disk:
+#       pressure_full: 0.20
+#       pressure_some: 0.20
+#       pressure_spikes: 1.00
+  pools:
+    dev:
+      type: affinity
+    de-nbg01-db
+      type: anti-affinity
+      pin:
+        - virt66
+        - virt77
 
 service:
   daemon: True
@@ -353,19 +399,33 @@ ProxLB provides an advanced mechanism to define affinity and anti-affinity rules
 ProxLB implements affinity and anti-affinity rules through a tag-based system within the Proxmox web interface. Each guest (virtual machine or container) can be assigned specific tags, which then dictate its placement behavior. This method maintains a streamlined and secure approach to managing VM relationships while preserving Proxmox’s inherent permission model.
 
 ### Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/img/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data.
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-affinity-rules.jpg"/> Affinity rules are used to group certain VMs together, ensuring that they run on the same host whenever possible. This can be beneficial for workloads requiring low-latency communication, such as clustered databases or application servers that frequently exchange data. In general, there're two ways to manage affinity rules:
 
+#### Affinity Rules by Tags
 To define an affinity rule which keeps all guests assigned to this tag together on a node, users assign a tag with the prefix `plb_affinity_$TAG`:
 
 #### Example for Screenshot
 ```
 plb_affinity_talos
 ```
-
 As a result, ProxLB will attempt to place all VMs with the `plb_affinity_web` tag on the same host (see also the attached screenshot with the same node).
 
-### Anti-Affinity Rules
-<img align="left" src="https://cdn.gyptazy.com/img/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure.
+#### Affinity Rules by Pools
+Antoher approach is by using pools in Proxmox. This way, it can easily also combined with other resources like backup jobs. However, in this approach you need to modify the ProxLB config file to your needs. Within the `balancing` section you can create a dict of pools, including the pool name and the affinity type. Please see the example for further details:
+
+**Example Config**
+```
+balancing:
+  [...]
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+      pin:                            # Pin VMs to Nodes
+        - virt77                        # Pinning to 'virt77' which is maybe an older system for dev labs
+```
+
+### Anti-Affinity Rules by Tags
+<img align="left" src="https://cdn.gyptazy.com/img/proxlb-anti-affinity-rules.jpg"/> Conversely, anti-affinity rules ensure that designated VMs do not run on the same physical host. This is particularly useful for high-availability setups, where redundancy is crucial. Ensuring that critical services are distributed across multiple hosts reduces the risk of a single point of failure. In general, there're two ways to manage anti-affinity rules:
 
 To define an anti-affinity rule that ensures to not move systems within this group to the same node, users assign a tag with the prefix:
 
@@ -375,6 +435,19 @@ plb_anti_affinity_ntp
 ```
 
 As a result, ProxLB will try to place the VMs with the `plb_anti_affinity_ntp` tag on different hosts (see also the attached screenshot with the different nodes).
+
+#### Anti-Affinity Rules by Pools
+Antoher approach is by using pools in Proxmox. This way, it can easily also combined with other resources like backup jobs. However, in this approach you need to modify the ProxLB config file to your needs. Within the `balancing` section you can create a dict of pools, including the pool name and the affinity type. Please see the example for further details:
+
+**Example Config**
+```
+balancing:
+  [...]
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    de-nbg01-db:                      # Pool name: de-nbg01-db
+      type: anti-affinity                  # Type: anti-affinity (spreading VMs apart)
+```
+
 
 **Note:** While this ensures that ProxLB tries distribute these VMs across different physical hosts within the Proxmox cluster this may not always work. If you have more guests attached to the group than nodes in the cluster, we still need to run them anywhere. If this case occurs, the next one with the most free resources will be selected.
 
@@ -395,6 +468,7 @@ As a result, ProxLB will not migrate this guest with the `plb_ignore_dev` tag to
 ### Pin VMs to Specific Hypervisor Nodes
 <img align="left" src="https://cdn.gyptazy.com/img/proxlb-tag-node-pinning.jpg"/> Guests, such as VMs or CTs, can also be pinned to specific (and multiple) nodes in the cluster. This might be usefull when running applications with some special licensing requirements that are only fulfilled on certain nodes. It might also be interesting, when some physical hardware is attached to a node, that is not available in general within the cluster.
 
+#### Pinning VMs to (a) specific Hypervisor Node(s) by Tag
 To pin a guest to a specific cluster node, users assign a tag with the prefix `plb_pin_$nodename` to the desired guest:
 
 #### Example for Screenshot
@@ -403,6 +477,22 @@ plb_pin_node03
 ```
 
 As a result, ProxLB will pin the guest `dev-vm01` to the node `virt03`.
+
+
+#### Pinning VMs to (a) specific Hypervisor Node(s) by Pools
+Beside the tag approach, you can also pin a resource group to a specific hypervisor or groups of hypervisors by defining a `pin` key of type list.
+
+**Example Config**
+```
+balancing:
+  [...]
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+      pin:                            # Pin VMs to Nodes
+        - virt77                        # Pinning to 'virt77' which is maybe an older system for dev labs
+```
+
 
 You can also repeat this step multiple times for different node names to create a potential group of allowed hosts where a the guest may be served on. In this case, ProxLB takes the node with the lowest used resources according to the defined balancing values from this group.
 

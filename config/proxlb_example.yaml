@@ -26,11 +26,48 @@ balancing:
   live: True
   with_local_disks: True
   with_conntrack_state: True
-  balance_types: ['vm', 'ct']
-  max_job_validation: 1800
-  balanciness: 5
-  method: memory
-  mode: used
+  balance_types: ['vm', 'ct']         # 'vm' | 'ct'
+  max_job_validation: 1800            # Maximum time (in seconds) a job validation may take
+  memory_threshold: 75                # Optional: Maximum threshold (in percent) to trigger balancing actions
+  balanciness: 5                      # Maximum delta of resource usage between highest and lowest usage node
+  method: memory                      # 'memory' | 'cpu' | 'disk'
+  mode: used                          # 'assigned' | 'used' | 'psi'
+  # # PSI thresholds only apply when using mode 'psi'
+  # psi:
+  #   nodes:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #   guests:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+    de-nbg01-db:                      # Pool name: de-nbg01-db
+      type: anti-affinity             # Type: anti-affinity (spreading VMs apart)
+      pin:                            # Define a pinning og guests to specific node(s)
+        - virt66
+        - virt77
 
 service:
   daemon: True
