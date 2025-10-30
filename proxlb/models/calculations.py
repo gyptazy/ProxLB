@@ -128,11 +128,11 @@ class Calculations:
                 is_hot = (pressure_full >= threshold["pressure_full"] and pressure_some >= threshold["pressure_some"]) or (pressure_spikes >= threshold["pressure_spikes"])
 
                 if is_hot:
-                    logger.debug(f"Set node {node["name"]} as hot based on {metric} pressure metrics.")
+                    logger.debug(f"Set node {node['name']} as hot based on {metric} pressure metrics.")
                     proxlb_data["nodes"][node["name"]][f"{metric}_pressure_hot"] = True
                     proxlb_data["nodes"][node["name"]][f"pressure_hot"] = True
                 else:
-                    logger.debug(f"Node {node["name"]} is not hot based on {metric} pressure metrics.")
+                    logger.debug(f"Node {node['name']} is not hot based on {metric} pressure metrics.")
 
         logger.debug("Finished: set_node_hot.")
         return proxlb_data
@@ -161,11 +161,11 @@ class Calculations:
                 is_hot = (pressure_full >= threshold["pressure_full"] and pressure_some >= threshold["pressure_some"]) or (pressure_spikes >= threshold["pressure_spikes"])
 
                 if is_hot:
-                    logger.debug(f"Set guest {guest["name"]} as hot based on {metric} pressure metrics.")
+                    logger.debug(f"Set guest {guest['name']} as hot based on {metric} pressure metrics.")
                     proxlb_data["guests"][guest["name"]][f"{metric}_pressure_hot"] = True
                     proxlb_data["guests"][guest["name"]][f"pressure_hot"] = True
                 else:
-                    logger.debug(f"guest {guest["name"]} is not hot based on {metric} pressure metrics.")
+                    logger.debug(f"guest {guest['name']} is not hot based on {metric} pressure metrics.")
 
         logger.debug("Finished: set_guest_hot.")
         return proxlb_data
