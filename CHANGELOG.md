@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.9] - 2025-10-30
+
+### Added
+
+- Add an optional memory balancing threshold (@gyptazy). [#342]
+- Add affinity/anti-affinity support by pools (@gyptazy). [#343]
+- Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater) (@gyptazy). [#337|
+    - Pressure (PSI) based balancing for nodes
+    - Pressure (PSI) based balancing for guests
+- Add PVE version evaluation
+
 ## [1.1.8] - 2025-10-09
 
 ### Fixed

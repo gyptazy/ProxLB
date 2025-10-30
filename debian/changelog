@@ -4,7 +4,7 @@ proxlb (1.1.9) stable; urgency=medium
   * Add (memory) threshold for nodes before running balancing. (Closes: #342)
   * Add affinity/anti-affinity support by pools. (Closes: #343)
 
- -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 22 Oct 2025 09:04:13 +0002
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 30 Oct 2025 06:58:43 +0001
 
 proxlb (1.1.8) stable; urgency=medium
 
