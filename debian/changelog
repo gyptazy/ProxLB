@@ -1,3 +1,9 @@
+proxlb (1.1.9.1) stable; urgency=medium
+
+  * Fix quoting in f-strings which may cause issues on PVE 8 / Debian Bookworm systems (Closes: #352)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 30 Oct 2025 17:41:02 +0001
+
 proxlb (1.1.9) stable; urgency=medium
 
   * Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater). (Closes: #339)

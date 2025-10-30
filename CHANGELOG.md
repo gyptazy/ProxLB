@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9.1] - 2025-10-30
+
+### Added
+
+- Fix quoting in f-strings which may cause issues on PVE 8 / Debian Bookworm systems (@gyptazy). [#352]
 
 ## [1.1.9] - 2025-10-30
 
@@ -12,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add an optional memory balancing threshold (@gyptazy). [#342]
 - Add affinity/anti-affinity support by pools (@gyptazy). [#343]
-- Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater) (@gyptazy). [#337|
+- Add pressure (PSI) based balancing for memory, cpu, disk (req. PVE9 or greater) (@gyptazy). [#337]
     - Pressure (PSI) based balancing for nodes
     - Pressure (PSI) based balancing for guests
 - Add PVE version evaluation
