@@ -247,8 +247,12 @@ class Nodes:
         try:
             logger.debug(f"Trying to get PVE version for node: {node_name}.")
             version = proxmox_api.nodes(node_name).version.get()
-        except Exception:
+        except Exception as version_error:
+            logger.debug(version_error)
             logger.error(f"Failed to get PVE version for node: {node_name}.")
+            # Set a fallback version number
+            version = {}
+            version["version"] = "8.0.0"
 
         logger.debug(f"Got version {version['version']} for node {node_name}.")
         logger.debug("Finished: get_node_pve_version.")
