@@ -58,6 +58,10 @@ jobs:
   integration-test-debian:
     needs: build-package-debian
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        debian_version: [bookworm, trixie]
+    name: Integration Test on Debian ${{ matrix.debian_version }}
     steps:
       - name: Download Debian package artifact
         uses: actions/download-artifact@v4
@@ -66,13 +70,18 @@ jobs:
           path: package/
 
       - name: Set up Docker with Debian image
-        run: docker pull debian:latest
+        run: docker pull debian:${{ matrix.debian_version }}
 
       - name: Install and test Debian package in Docker container
         run: |
-          docker run --rm -v $(pwd)/package:/package -w /package debian:latest bash -c "
-            apt-get update && \
-            apt-get install -y systemd && \
-            apt-get install -y ./proxlb*.deb && \
-            python3 -c 'import proxlb; print(\"OK: Debian package successfully installed.\")'
-          "
+          docker run --rm \
+            -v "$(pwd)/package:/package" \
+            -w /package \
+            debian:${{ matrix.debian_version }} \
+            bash -c "
+              set -e
+              apt-get update
+              apt-get install -y python3 systemd
+              apt-get install -y ./proxlb*.deb
+              python3 -c 'import proxlb; print(\"OK: Debian package successfully installed on ${{ matrix.debian_version }}.\")'
+            "
