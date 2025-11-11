@@ -1,0 +1,3 @@
+fixed:
+  - Fixed the Proxmox API connection validation which returned a false-positive logging message of timeouts (@gyptazy). [#361]
+  - Refactored Proxmox API connection functions

@@ -13,6 +13,7 @@ __copyright__ = "Copyright (C) 2025 Florian Paul Azim Hoberg (@gyptazy)"
 __license__ = "GPL-3.0"
 
 
+import errno
 try:
     import proxmoxer
     PROXMOXER_PRESENT = True
@@ -175,49 +176,40 @@ class ProxmoxApi:
         logger.debug("Starting: api_connect_get_hosts.")
         # Pre-validate the given API endpoints
         if not isinstance(proxmox_api_endpoints, list):
-            logger.critical(f"The proxmox_api hosts are not defined as a list type.")
+            logger.critical("The proxmox_api hosts are not defined as a list type.")
             sys.exit(1)
-
         if not proxmox_api_endpoints:
-            logger.critical(f"No proxmox_api hosts are defined.")
+            logger.critical("No proxmox_api hosts are defined.")
             sys.exit(1)
 
-        if len(proxmox_api_endpoints) == 0:
-            logger.critical(f"No proxmox_api hosts are defined.")
-            sys.exit(1)
+        validated_api_hosts: list[tuple[str, int]] = []
 
-        # If we have multiple Proxmox API endpoints, we need to check each one by
-        # doing a connection attempt for IPv4 and IPv6. If we find a working one,
-        # we return that one. This allows us to define multiple endpoints in a cluster.
-        validated_api_hosts = []
         for host in proxmox_api_endpoints:
+            retries = proxlb_config["proxmox_api"].get("retries", 1)
+            wait_time = proxlb_config["proxmox_api"].get("wait_time", 1)
 
-            # Get or set a default value for a maximum of retries when connecting to
-            # the Proxmox API
-            api_connection_retries = proxlb_config["proxmox_api"].get("retries", 1)
-            api_connection_wait_time = proxlb_config["proxmox_api"].get("wait_time", 1)
-
-            for api_connection_attempt in range(api_connection_retries):
-                validated_api_host, api_port = self.test_api_proxmox_host(host)
-                if validated_api_host:
-                    validated_api_hosts.append(validated_api_host)
+            for attempt in range(retries):
+                candidate_host, candidate_port = self.test_api_proxmox_host(host)
+                if candidate_host:
+                    validated_api_hosts.append((candidate_host, candidate_port))
                     break
                 else:
-                    logger.warning(f"Attempt {api_connection_attempt + 1}/{api_connection_retries} failed for host {host}. Retrying in {api_connection_wait_time} seconds...")
-                    time.sleep(api_connection_wait_time)
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{retries} failed for host {host}. "
+                        f"Retrying in {wait_time} seconds..."
+                    )
+                    time.sleep(wait_time)
 
-        if len(validated_api_hosts) > 0:
-            # Choose a random host to distribute the load across the cluster
-            # as a simple load balancing mechanism.
-            return random.choice(validated_api_hosts), api_port
+        if validated_api_hosts:
+            chosen_host, chosen_port = random.choice(validated_api_hosts)
+            return chosen_host, chosen_port
 
         logger.critical("No valid Proxmox API hosts found.")
         print("No valid Proxmox API hosts found.")
-
         logger.debug("Finished: api_connect_get_hosts.")
         sys.exit(1)
 
-    def test_api_proxmox_host(self, host: str) -> str:
+    def test_api_proxmox_host(self, host: str) -> tuple[str, int | None, None]:
         """
         Tests the connectivity to a Proxmox host by resolving its IP address and
         checking both IPv4 and IPv6 addresses.
@@ -237,31 +229,36 @@ class ProxmoxApi:
         """
         logger.debug("Starting: test_api_proxmox_host.")
 
-        # Validate for custom ports in API hosts which might indicate
-        # that an external loadbalancer will be used.
+        # Validate for custom port configurations (e.g., by given external
+        # loadbalancer systems)
         host, port = Helper.get_host_port_from_string(host)
+        if port is None:
+            port = 8006
 
         # Try resolving DNS to IP and log non-resolvable ones
         try:
-            ip = socket.getaddrinfo(host, None, socket.AF_UNSPEC)
+            infos = socket.getaddrinfo(host, None, socket.AF_UNSPEC)
         except socket.gaierror:
             logger.warning(f"Could not resolve {host}.")
-            return False
+            return (None, None)
 
-        # Validate if given object is IPv4 or IPv6
-        for address_type in ip:
-            if address_type[0] == socket.AF_INET:
-                logger.debug(f"{host} is type ipv4.")
-                if self.test_api_proxmox_host_ipv4(host, port):
-                    return host, port
-            elif address_type[0] == socket.AF_INET6:
-                logger.debug(f"{host} is type ipv6.")
-                if self.test_api_proxmox_host_ipv6(host, port):
-                    return host, port
-            else:
-                return False
+        # Check both families that are actually present
+        saw_family = set()
+        for family, *_rest in infos:
+            saw_family.add(family)
 
-        logger.debug("Finished: test_api_proxmox_host.")
+        if socket.AF_INET in saw_family:
+            logger.debug(f"{host} has IPv4.")
+            if self.test_api_proxmox_host_ipv4(host, port):
+                return (host, port)
+
+        if socket.AF_INET6 in saw_family:
+            logger.debug(f"{host} has IPv6.")
+            if self.test_api_proxmox_host_ipv6(host, port):
+                return (host, port)
+
+        logger.debug("Finished: test_api_proxmox_host (unreachable).")
+        return (None, None)
 
     def test_api_proxmox_host_ipv4(self, host: str, port: int = 8006, timeout: int = 1) -> bool:
         """
@@ -280,18 +277,16 @@ class ProxmoxApi:
             bool: True if the host is reachable on the specified port, False otherwise.
         """
         logger.debug("Starting: test_api_proxmox_host_ipv4.")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
-        logger.warning(f"Warning: Host {host} ran into a timeout when connecting on IPv4 for tcp/{port}.")
-        result = sock.connect_ex((host, port))
-
-        if result == 0:
-            sock.close()
+        ok, rc = Helper.tcp_connect_test(socket.AF_INET, host, port, timeout)
+        if ok:
             logger.debug(f"Host {host} is reachable on IPv4 for tcp/{port}.")
+            logger.debug("Finished: test_api_proxmox_host_ipv4.")
             return True
 
-        sock.close()
-        logger.warning(f"Host {host} is unreachable on IPv4 for tcp/{port}.")
+        if rc == errno.ETIMEDOUT:
+            logger.warning(f"Timeout connecting to {host} on IPv4 tcp/{port}.")
+        else:
+            logger.warning(f"Host {host} is unreachable on IPv4 for tcp/{port} (errno {rc}).")
 
         logger.debug("Finished: test_api_proxmox_host_ipv4.")
         return False
@@ -313,18 +308,16 @@ class ProxmoxApi:
             bool: True if the host is reachable on the specified port, False otherwise.
         """
         logger.debug("Starting: test_api_proxmox_host_ipv6.")
-        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
-        logger.warning(f"Host {host} ran into a timeout when connecting via IPv6 for tcp/{port}.")
-        result = sock.connect_ex((host, port))
-
-        if result == 0:
-            sock.close()
+        ok, rc = Helper.tcp_connect_test(socket.AF_INET6, host, port, timeout)
+        if ok:
             logger.debug(f"Host {host} is reachable on IPv6 for tcp/{port}.")
+            logger.debug("Finished: test_api_proxmox_host_ipv6.")
             return True
 
-        sock.close()
-        logger.warning(f"Host {host} is unreachable on IPv6 for tcp/{port}.")
+        if rc == errno.ETIMEDOUT:
+            logger.warning(f"Timeout connecting to {host} on IPv6 tcp/{port}.")
+        else:
+            logger.warning(f"Host {host} is unreachable on IPv6 for tcp/{port} (errno {rc}).")
 
         logger.debug("Finished: test_api_proxmox_host_ipv6.")
         return False
