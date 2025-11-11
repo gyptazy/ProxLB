@@ -19,6 +19,7 @@ from utils.cli_parser import CliParser
 from utils.config_parser import ConfigParser
 from utils.proxmox_api import ProxmoxApi
 from models.nodes import Nodes
+from models.features import Features
 from models.guests import Guests
 from models.groups import Groups
 from models.calculations import Calculations
@@ -79,6 +80,9 @@ def main():
         # Merge obtained objects from the Proxmox cluster for further usage
         proxlb_data = {**meta, **nodes, **guests, **pools, **groups}
         Helper.log_node_metrics(proxlb_data)
+
+        # Validate usable features by PVE versions
+        Features.validate_available_features(proxlb_data)
 
         # Update the initial node resource assignments
         # by the previously created groups.
