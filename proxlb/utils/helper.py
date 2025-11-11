@@ -11,6 +11,7 @@ __license__ = "GPL-3.0"
 import json
 import uuid
 import re
+import socket
 import sys
 import time
 import utils.version
@@ -307,3 +308,28 @@ class Helper:
             logger.warning(f"Node {node} not found in cluster. Not applying pinning!")
             logger.debug("Finished: validate_node_presence.")
             return False
+
+    @staticmethod
+    def tcp_connect_test(addr_family: int, host: str, port: int, timeout: int) -> tuple[bool, int | None]:
+        """
+        Attempt a TCP connection to the specified host and port to test the reachability.
+
+        Args:
+            addr_family (int): Address family for the socket (e.g., socket.AF_INET for IPv4, socket.AF_INET6 for IPv6).
+            host (str): The hostname or IP address to connect to.
+            port (int): The port number to connect to.
+            timeout (int): Connection timeout in seconds.
+
+        Returns:
+            tuple[bool, int | None]: A tuple containing:
+                - bool: True if the connection was successful, False otherwise.
+                - int | None: None if the connection was successful, otherwise the errno code indicating the reason for failure.
+        """
+        test_socket = socket.socket(addr_family, socket.SOCK_STREAM)
+        test_socket.settimeout(timeout)
+
+        try:
+            rc = test_socket.connect_ex((host, port))
+            return (rc == 0, rc if rc != 0 else None)
+        finally:
+            test_socket.close()
