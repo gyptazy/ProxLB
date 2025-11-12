@@ -499,7 +499,7 @@ class Calculations:
         logger.debug("Finished: val_node_relationships.")
 
     @staticmethod
-    def update_node_resources(proxlb_data):
+    def update_node_resources(proxlb_data: Dict[str, Any]):
         """
         Updates the resource allocation and usage statistics for nodes when a guest
         is moved from one node to another.
@@ -568,3 +568,142 @@ class Calculations:
         logger.debug(f"Set guest {guest_name} from node {node_current} to node {node_target}.")
 
         logger.debug("Finished: update_node_resources.")
+
+    def validate_affinity_map(proxlb_data: Dict[str, Any]):
+        """
+        Validates the affinity and anti-affinity constraints for all guests in the ProxLB data structure.
+
+        This function iterates through each guest and checks both affinity and anti-affinity rules.
+        If any guest violates these constraints, it sets the enforce_affinity flag to trigger rebalancing
+        and skips further validation for efficiency.
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing ProxLB configuration with the following structure:
+                - "guests" (list): List of guest identifiers to validate
+                - "meta" (dict): Metadata dictionary containing:
+                    - "balancing" (dict): Balancing configuration with "enforce_affinity" flag
+
+        Returns:
+            None: Modifies proxlb_data in-place by updating the "enforce_affinity" flag in meta.balancing
+
+        Raises:
+            None: Function handles validation gracefully and logs outcomes
+        """
+        logger.debug("Starting: validate_current_affinity.")
+        balancing_ok = True
+
+        for guest in proxlb_data["guests"]:
+
+            # We do not need to validate anymore if rebalancing is required
+            if balancing_ok is False:
+                proxlb_data["meta"]["balancing"]["enforce_affinity"] = True
+                logger.debug(f"Rebalancing based on affinity/anti-affinity map is required. Skipping further validation...")
+                break
+
+            balancing_state_affinity = Calculations.validate_current_affinity(proxlb_data, guest)
+            balancing_state_anti_affinity = Calculations.validate_current_anti_affinity(proxlb_data, guest)
+            logger.debug(f"Affinity for guest {guest} is {'valid' if balancing_state_affinity else 'NOT valid'}")
+            logger.debug(f"Anti-affinity for guest {guest} is {'valid' if balancing_state_anti_affinity else 'NOT valid'}")
+
+            balancing_ok = not balancing_state_affinity or not balancing_state_anti_affinity
+
+        if balancing_ok:
+            logger.debug(f"Rebalancing based on affinity/anti-affinity map is not required.")
+            proxlb_data["meta"]["balancing"]["enforce_affinity"] = False
+
+        logger.debug("Finished: validate_current_affinity.")
+
+    @staticmethod
+    def get_guest_node(proxlb_data: Dict[str, Any], guest_name: str) -> str:
+        """
+        Return a currently assoicated PVE node where the guest is running on.
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing ProxLB configuration.
+
+        Returns:
+            node_name_current (str): The name of the current node where the guest runs on.
+
+        """
+        return proxlb_data["guests"][guest_name]["node_current"]
+
+    @staticmethod
+    def validate_current_affinity(proxlb_data: Dict[str, Any], guest_name: str) -> bool:
+        """
+        Validate that all guests in affinity groups containing the specified guest are on the same non-maintenance node.
+
+        This function checks affinity group constraints for a given guest. It ensures that:
+        1. All guests within an affinity group are located on the same physical node
+        2. The node hosting the affinity group is not in maintenance mode
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing the complete ProxLB state including:
+                - "groups": Dictionary with "affinity" key containing affinity group definitions
+                - "guests": Dictionary with guest information
+                - "nodes": Dictionary with node information including maintenance status
+            guest_name (str): The name of the guest to validate affinity for
+
+        Returns:
+            bool: True if all affinity groups containing the guest are valid (all members on same
+                non-maintenance node), False otherwise
+        """
+        logger.debug("Starting: validate_current_affinity.")
+        for group_name, grp in proxlb_data["groups"]["affinity"].items():
+            if guest_name not in grp["guests"]:
+                continue
+
+            nodes = []
+            for group in grp["guests"]:
+                if group not in proxlb_data["guests"]:
+                    continue
+
+                node = Calculations.get_guest_node(proxlb_data, group)
+                if proxlb_data["nodes"][node]["maintenance"]:
+                    logger.debug(f"Group '{group_name}' invalid: node '{node}' in maintenance.")
+                    return False
+                nodes.append(node)
+
+            if len(set(nodes)) != 1:
+                logger.debug(f"Group '{group_name}' invalid: guests spread across nodes {set(nodes)}.")
+                return False
+
+        return True
+
+    @staticmethod
+    def validate_current_anti_affinity(proxlb_data: Dict[str, Any], guest_name: str) -> bool:
+        """
+        Validate that all guests in anti-affinity groups containing the specified guest are not on the same node.
+
+        This function checks anti-affinity group constraints for a given guest. It ensures that:
+        1. All guests within an anti-affinity group are located on the same physical node
+        2. The node hosting the anti-affinity group is not in maintenance mode
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing the complete ProxLB state including:
+                - "groups": Dictionary with "affinity" key containing affinity group definitions
+                - "guests": Dictionary with guest information
+                - "nodes": Dictionary with node information including maintenance status
+            guest_name (str): The name of the guest to validate affinity for
+
+        Returns:
+            bool: True if all anti-affinity groups containing the guest are valid (all members on different
+                non-maintenance node), False otherwise
+        """
+        logger.debug("Starting: validate_current_anti_affinity.")
+        for group_name, grp in proxlb_data["groups"]["anti_affinity"].items():
+            if guest_name not in grp["guests"]:
+                continue
+            nodes = []
+            for group in grp["guests"]:
+                if group not in proxlb_data["guests"]:
+                    continue
+
+                node = Calculations.get_guest_node(proxlb_data, group)
+                if proxlb_data["nodes"][node]["maintenance"]:
+                    return False
+                nodes.append(node)
+
+            if len(nodes) != len(set(nodes)):
+                return False
+
+        return True

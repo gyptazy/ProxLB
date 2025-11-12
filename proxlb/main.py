@@ -90,6 +90,7 @@ def main():
         Calculations.set_node_hot(proxlb_data)
         Calculations.set_guest_hot(proxlb_data)
         Calculations.get_most_free_node(proxlb_data, cli_args.best_node)
+        Calculations.validate_affinity_map(proxlb_data)
         Calculations.relocate_guests_on_maintenance_nodes(proxlb_data)
         Calculations.get_balanciness(proxlb_data)
         Calculations.relocate_guests(proxlb_data)

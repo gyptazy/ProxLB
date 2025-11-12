@@ -1,0 +1,2 @@
+added:
+  - Prevent redundant rebalancing by validating existing affinity enforcement before taking actions (@gyptazy). [#335]
