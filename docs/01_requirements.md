@@ -55,7 +55,7 @@ ProxLB itself requires minimal system resources to operate. However, for managin
 
 
 ## Where To Run?
-ProxLB can run on pretty anthing and only requires you to have a network connectivity to any of the Proxmox host's API (usually on tcp/8006).
+ProxLB can run on pretty much anthing and only requires you to have a network connectivity to any of the Proxmox host's API (usually on tcp/8006).
 
 Therefore, you can simply run ProxLB on:
 * Bare-metal Systems
