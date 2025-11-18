@@ -7,6 +7,6 @@ Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptoo
 
 Package: proxlb
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-requests, python3-urllib3, python3-proxmoxer, python3-yaml 
+Depends: ${python3:Depends}, ${misc:Depends}, python3-requests, python3-urllib3, python3-packaging, python3-proxmoxer, python3-yaml
 Description: An advanced resource scheduler and load balancer for Proxmox clusters
  An advanced resource scheduler and load balancer for Proxmox clusters that also supports maintenance mode and affinity/anti-affinity rules.
