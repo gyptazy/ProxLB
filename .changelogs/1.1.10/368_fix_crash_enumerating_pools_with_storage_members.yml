@@ -1,0 +1,2 @@
+fixed:
+  - Fixed a crash during PVE resource pool enumeration by skipping members not having a 'name' property (@stefanoettl). [#368]
