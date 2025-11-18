@@ -1,3 +1,4 @@
+packaging
 proxmoxer
 requests
 urllib3
