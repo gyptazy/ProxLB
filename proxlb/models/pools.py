@@ -68,6 +68,12 @@ class Pools:
             # Fetch pool details and collect member names
             pool_details = proxmox_api.pools(pool['poolid']).get()
             for member in pool_details.get("members", []):
+
+                # We might also have objects without the key "name", e.g. storage pools
+                if "name" not in member:
+                    logger.debug(f"Skipping member without name in pool: {pool['poolid']}")
+                    continue
+
                 logger.debug(f"Got member: {member['name']} for pool: {pool['poolid']}")
                 pools['pools'][pool['poolid']]['members'].append(member["name"])
 
