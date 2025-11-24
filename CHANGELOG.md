@@ -5,9 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.9.1] - 2025-10-30
+## [1.1.10] - 2025-11-25
 
 ### Added
+
+- Prevent redundant rebalancing by validating existing affinity enforcement before taking actions (@gyptazy). [#335]
+- Add safety-guard for PVE 8 users when activating conntrack-aware migrations mistakenly (@gyptazy). [#359]
+
+### Fixed
+
+- Fix the Proxmox API connection validation which returned a false-positive logging message of timeouts (@gyptazy). [#361]
+- Refactored Proxmox API connection functions (@gyptazy). [#361]
+- Fix a crash during PVE resource pool enumeration by skipping members not having a 'name' property (@stefanoettl). [#368]
+
+## [1.1.9.1] - 2025-10-30
+
+### Fixed
 
 - Fix quoting in f-strings which may cause issues on PVE 8 / Debian Bookworm systems (@gyptazy). [#352]
 

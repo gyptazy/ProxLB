@@ -1,2 +1,2 @@
-fixed:
+added:
   - Add safety-guard for PVE 8 users when activating conntrack-aware migrations mistakenly (@gyptazy). [#359]
