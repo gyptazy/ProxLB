@@ -1,6 +1,16 @@
+proxlb (1.1.10) stable; urgency=medium
+
+  * Prevent redundant rebalancing by validating existing affinity enforcement before taking actions. (Closes: #335)
+  * Add safety-guard for PVE 8 users when activating conntrack-aware migrations mistakenly. (Closes: #359)
+  * Fix the Proxmox API connection validation which returned a false-positive logging message of timeouts. (Closes: #361)
+  * Refactored the whole Proxmox API connection function. (Closes: #361)
+  * Fix a crash during PVE resource pool enumeration by skipping members not having a 'name' property. (Closes: #368)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Tue, 25 Nov 2025 09:12:04 +0001
+
 proxlb (1.1.9.1) stable; urgency=medium
 
-  * Fix quoting in f-strings which may cause issues on PVE 8 / Debian Bookworm systems (Closes: #352)
+  * Fix quoting in f-strings which may cause issues on PVE 8 / Debian Bookworm systems. (Closes: #352)
 
  -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Thu, 30 Oct 2025 17:41:02 +0001
 
