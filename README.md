@@ -142,7 +142,7 @@ wget -O /etc/apt/trusted.gpg.d/proxlb.asc https://repo.gyptazy.com/repository.gp
 
 #### Debian Packages (.deb files)
 If you do not want to use the repository you can also find the debian packages as a .deb file on gyptazy's CDN at:
-* https://cdn.gyptazy.com/debian/
+* https://cdn.gyptazy.com/debian/proxlb/
 
 Afterwards, you can simply install the package by running:
 ```bash
@@ -173,6 +173,7 @@ docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.10 | cr.gyptazy.com/proxlb/proxlb:v1.1.10 |
 | v1.1.9.1 | cr.gyptazy.com/proxlb/proxlb:v1.1.9.1 |
 | v1.1.9 | cr.gyptazy.com/proxlb/proxlb:v1.1.9 |
 | v1.1.8 | cr.gyptazy.com/proxlb/proxlb:v1.1.8 |
