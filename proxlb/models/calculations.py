@@ -605,7 +605,7 @@ class Calculations:
             logger.debug(f"Affinity for guest {guest} is {'valid' if balancing_state_affinity else 'NOT valid'}")
             logger.debug(f"Anti-affinity for guest {guest} is {'valid' if balancing_state_anti_affinity else 'NOT valid'}")
 
-            balancing_ok = not balancing_state_affinity or not balancing_state_anti_affinity
+            balancing_ok = balancing_state_affinity and balancing_state_anti_affinity
 
         if balancing_ok:
             logger.debug(f"Rebalancing based on affinity/anti-affinity map is not required.")

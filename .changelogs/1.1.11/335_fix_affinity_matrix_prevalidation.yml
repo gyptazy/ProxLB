@@ -1,0 +1,2 @@
+fixed:
+  - Fixed affinity matrix pre-validation by inverting validations (@Thalagyrt). [#335]
