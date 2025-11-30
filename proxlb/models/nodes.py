@@ -96,8 +96,10 @@ class Nodes:
                 nodes["nodes"][node["node"]]["memory_assigned"] += reserved_memory
                 logger.debug(f"Node {nodes['nodes'][node['node']]['name']} assigned Memory: {nodes['nodes'][node['node']]['memory_assigned']}")
 
-                # node reservations for memory used
+                # node reservations for memory used - if this would exceed mem_total, set it to mem_total
                 nodes["nodes"][node["node"]]["memory_used"] = node["mem"] + reserved_memory
+                if nodes["nodes"][node["node"]]["memory_used"] > nodes["nodes"][node["node"]]["memory_total"]:
+                    nodes["nodes"][node["node"]]["memory_used"] = nodes["nodes"][node["node"]]["memory_total"]
 
                 nodes["nodes"][node["node"]]["memory_free"] = node["maxmem"] - node["mem"]
                 nodes["nodes"][node["node"]]["memory_assigned_percent"] = nodes["nodes"][node["node"]]["memory_assigned"] / nodes["nodes"][node["node"]]["memory_total"] * 100
