@@ -526,7 +526,7 @@ Connect with us in our dedicated chat room for immediate support and live intera
 | Support Channel | Link |
 |------|:------:|
 | Matrix | [#proxlb:gyptazy.com](https://matrix.to/#/#proxlb:gyptazy.com) |
-| Discord | [Discord](https://discord.gg/JemGu7WbfQ) |
+| Discord | [Discord](https://discord.gg/JemGu7WbfQ) |
 | GitHub Community | [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/)
 | GitHub | [ProxLB GitHub](https://github.com/gyptazy/ProxLB/issues) |
 

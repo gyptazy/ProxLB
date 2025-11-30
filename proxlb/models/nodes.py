@@ -79,7 +79,26 @@ class Nodes:
                 nodes["nodes"][node["node"]]["cpu_pressure_hot"] = False
                 nodes["nodes"][node["node"]]["memory_total"] = node["maxmem"]
                 nodes["nodes"][node["node"]]["memory_assigned"] = 0
-                nodes["nodes"][node["node"]]["memory_used"] = node["mem"]
+
+                ## resource reservation memory
+                # get configured reservation, apply some basic safety checks
+                reserved_memory_gb = proxlb_config["balancing"]["node_resource_reserve"].get(nodes["nodes"][node["node"]]["name"], {}).get("memory", proxlb_config["balancing"]["node_resource_reserve"]["defaults"]["memory"])
+                if reserved_memory_gb < 0:
+                    logger.info(f"{nodes['nodes'][node['node']]['name']}: Invalid assigned memory reservation, applying defaults")
+                    reserved_memory_gb = proxlb_config["balancing"]["node_resource_reserve"]["defaults"]["memory"]
+                reserved_memory = int(round(reserved_memory_gb * 1024 ** 3)) # proxmox expects bytes, in case of fractions: round it
+                # set the reservation to 0 if it would exceed the nodes total memory
+                if reserved_memory > nodes["nodes"][node["node"]]["memory_total"]:
+                    logger.info(f"{nodes['nodes'][node['node']]['name']}: Assigned memory reservation ({reserved_memory} Bytes) exceeds total memory ({node['maxmem']} Bytes), skipping reservation!")
+                    reserved_memory = 0
+
+                # add reservation to the current assigned memory
+                nodes["nodes"][node["node"]]["memory_assigned"] += reserved_memory
+                logger.debug(f"Node {nodes['nodes'][node['node']]['name']} assigned Memory: {nodes['nodes'][node['node']]['memory_assigned']}")
+
+                # node reservations for memory used
+                nodes["nodes"][node["node"]]["memory_used"] = node["mem"] + reserved_memory
+
                 nodes["nodes"][node["node"]]["memory_free"] = node["maxmem"] - node["mem"]
                 nodes["nodes"][node["node"]]["memory_assigned_percent"] = nodes["nodes"][node["node"]]["memory_assigned"] / nodes["nodes"][node["node"]]["memory_total"] * 100
                 nodes["nodes"][node["node"]]["memory_free_percent"] = nodes["nodes"][node["node"]]["memory_free"] / node["maxmem"] * 100
@@ -101,6 +120,7 @@ class Nodes:
                 nodes["nodes"][node["node"]]["disk_pressure_some_spikes_percent"] = Nodes.get_node_rrd_data(proxmox_api, node["node"], "disk", "some", spikes=True)
                 nodes["nodes"][node["node"]]["disk_pressure_full_spikes_percent"] = Nodes.get_node_rrd_data(proxmox_api, node["node"], "disk", "full", spikes=True)
                 nodes["nodes"][node["node"]]["disk_pressure_hot"] = False
+
 
                 # Evaluate if node should be set to maintenance mode
                 if Nodes.set_node_maintenance(proxmox_api, proxlb_config, node["node"]):

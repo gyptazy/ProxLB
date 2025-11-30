@@ -87,6 +87,7 @@ def main():
         # Update the initial node resource assignments
         # by the previously created groups.
         Calculations.set_node_assignments(proxlb_data)
+        Helper.log_node_metrics(proxlb_data, init=False)
         Calculations.set_node_hot(proxlb_data)
         Calculations.set_guest_hot(proxlb_data)
         Calculations.get_most_free_node(proxlb_data, cli_args.best_node)

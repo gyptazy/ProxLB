@@ -5,3 +5,6 @@ build/
 dist/
 *.egg-info/
 proxlb_dev.yaml
+config/
+log.log
+proxlb/log.log
