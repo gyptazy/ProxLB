@@ -1,0 +1,90 @@
+proxmox_api:
+  hosts: ['virt01.example.com', '10.10.10.10', 'fe01:bad:code::cafe']
+  user: root@pam
+  pass: crazyPassw0rd!
+  # API Token method
+  # token_id: proxlb
+  # token_secret: 430e308f-1337-1337-beef-1337beefcafe
+  ssl_verification: True
+  timeout: 10
+  # API Connection retries
+  # retries: 1
+  # wait_time: 1
+
+proxmox_cluster:
+  maintenance_nodes: ['virt66.example.com']
+  ignore_nodes: []
+  overprovisioning: True
+
+balancing:
+  enable: True
+  enforce_affinity: False
+  parallel: False
+  # If running parallel job, you can define
+  # the amount of prallel jobs (default: 5)
+  parallel_jobs: 1
+  live: True
+  with_local_disks: True
+  with_conntrack_state: True
+  balance_types: ['vm', 'ct']         # 'vm' | 'ct'
+  max_job_validation: 1800            # Maximum time (in seconds) a job validation may take
+  memory_threshold: 75                # Optional: Maximum threshold (in percent) to trigger balancing actions
+  balanciness: 5                      # Maximum delta of resource usage between highest and lowest usage node
+  method: memory                      # 'memory' | 'cpu' | 'disk'
+  mode: used                          # 'assigned' | 'used' | 'psi'
+  # # PSI thresholds only apply when using mode 'psi'
+  # psi:
+  #   nodes:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #   guests:
+  #     memory:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     cpu:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  #     disk:
+  #       pressure_full: 0.20
+  #       pressure_some: 0.20
+  #       pressure_spikes: 1.00
+  pools:                              # Optional: Define affinity/anti-affinity rules per pool
+    dev:                              # Pool name: dev
+      type: affinity                  # Type: affinity (keeping VMs together)
+    de-nbg01-db:                      # Pool name: de-nbg01-db
+      type: anti-affinity             # Type: anti-affinity (spreading VMs apart)
+      pin:                            # Define a pinning og guests to specific node(s)
+        - virt66
+        - virt77
+  # reserve some ressource for proxmox and / or other application on the nodes
+    node_resource_reserve:
+  # defaults - cpu in %, memory in GB, disk in %
+      defaults:
+        cpu: 10
+        memory: 4
+        disk: 20
+      node1:
+        memory: 4
+
+service:
+  daemon: True
+  schedule:
+    interval: 12
+    format: hours
+  delay:
+    enable: False
+    time: 1
+    format: hours
+  log_level: INFO
