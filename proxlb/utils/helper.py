@@ -81,6 +81,7 @@ class Helper:
         """
         logger.debug("Starting: log_node_metrics.")
         nodes_usage_memory = " | ".join([f"{key}: {value['memory_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
+        nodes_assigned_memory = " | ".join([f"{key}: {value['memory_assigned_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
         nodes_usage_cpu = "  | ".join([f"{key}: {value['cpu_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
         nodes_usage_disk = " | ".join([f"{key}: {value['disk_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
 
@@ -90,6 +91,7 @@ class Helper:
             proxlb_data["meta"]["statistics"]["after"] = {"memory": nodes_usage_memory, "cpu": nodes_usage_cpu, "disk": nodes_usage_disk}
 
         logger.debug(f"Nodes usage memory: {nodes_usage_memory}")
+        logger.debug(f"Nodes usage memory assigned: {nodes_assigned_memory}")
         logger.debug(f"Nodes usage cpu:    {nodes_usage_cpu}")
         logger.debug(f"Nodes usage disk:   {nodes_usage_disk}")
         logger.debug("Finished: log_node_metrics.")
