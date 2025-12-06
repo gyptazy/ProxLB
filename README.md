@@ -120,6 +120,8 @@ systemctl start proxlb
 
 Afterwards, ProxLB is running in the background and balances your cluster by your defined balancing method (default: memory).
 
+**Note**: If you want to use ProxLB with the proxmox-offline-mirror or any other APT mirror tool that does not support the flat repository architecture, please see the [docs](https://github.com/gyptazy/ProxLB/blob/main/docs/02_installation.md#Repo-Mirror-and-Proxmox-Offline-Mirror-Support) how you can add this by using ProxLB's fully repo.
+
 #### Details
 ProxLB provides two different repositories:
 * https://repo.gyptazy.com/stable (only stable release)
