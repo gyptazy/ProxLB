@@ -377,7 +377,19 @@ class Calculations:
             if proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
                 logger.debug("Balancing of guests will be performed. Reason: enforce affinity balancing")
 
-            for group_name in proxlb_data["groups"]["affinity"]:
+            # Sort guests by used memory
+            # Allows processing larger guests first or smaller guests first
+            larger_first = proxlb_data.get("meta", {}).get("balancing", {}).get("balance_larger_guests_first", False)
+
+            if larger_first:
+                logger.debug("Larger guests will be processed first. (Sorting descending by memory used)")
+            else:
+                logger.debug("Smaller guests will be processed first. (Sorting ascending by memory used)")
+
+            sorted_guest_usage_groups = sorted(proxlb_data["groups"]["affinity"], key=lambda g: proxlb_data["groups"]["affinity"][g]["memory_used"], reverse=larger_first)
+
+            # Iterate over all affinity groups
+            for group_name in sorted_guest_usage_groups:
 
                 # We get initially the node with the most free resources and then
                 # migrate all guests within the group to that node to ensure the

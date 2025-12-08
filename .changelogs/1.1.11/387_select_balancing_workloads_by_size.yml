@@ -1,0 +1,2 @@
+added:
+  - Add possibility to sort and select balancing workloads by smaller/larger guest objects (@gyptazy). [#387]
