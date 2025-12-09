@@ -120,6 +120,8 @@ systemctl start proxlb
 
 Afterwards, ProxLB is running in the background and balances your cluster by your defined balancing method (default: memory).
 
+**Note**: If you want to use ProxLB with the proxmox-offline-mirror or any other APT mirror tool that does not support the flat repository architecture, please see the [docs](https://github.com/gyptazy/ProxLB/blob/main/docs/02_installation.md#Repo-Mirror-and-Proxmox-Offline-Mirror-Support) how you can add this by using ProxLB's fully repo.
+
 #### Details
 ProxLB provides two different repositories:
 * https://repo.gyptazy.com/stable (only stable release)
@@ -287,6 +289,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | memory_threshold |  | 75 | `Int` | The maximum threshold (in percent) that needs to be hit to perform balancing actions. (Optional) |
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
 |  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`, `psi` (pressure)] |
+|  | balance_larger_guests_first |  | False | `Bool` | Option to prefer larger/smaller guests first |
 |  | psi |  | { nodes: { memory: { pressure_full: 0.20, pressure_some: 0.20, pressure_spikes: 1.00 }}} | `Dict` | A dict of PSI based thresholds for nodes and guests |
 |  | pools |  | pools: { dev: { type: affinity }, de-nbg01-db: { type: anti-affinity }} | `Dict` | A dict of pool names and their type for creating affinity/anti-affinity rules |
 | `service` |  |  |  |  |  |
@@ -334,6 +337,7 @@ balancing:
   balanciness: 5
   method: memory
   mode: used
+  balance_larger_guests_first: False
 # # PSI thresholds only apply when using mode 'psi'
 # # PSI based balancing is currently in beta and req. PVE >= 9
 # psi:

@@ -32,6 +32,7 @@ balancing:
   balanciness: 5                      # Maximum delta of resource usage between highest and lowest usage node
   method: memory                      # 'memory' | 'cpu' | 'disk'
   mode: used                          # 'assigned' | 'used' | 'psi'
+  balance_larger_guests_first: False  # Option to prioritize balancing of larger or smaller guests first
   # # PSI thresholds only apply when using mode 'psi'
   # psi:
   #   nodes:

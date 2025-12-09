@@ -377,7 +377,19 @@ class Calculations:
             if proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
                 logger.debug("Balancing of guests will be performed. Reason: enforce affinity balancing")
 
-            for group_name in proxlb_data["groups"]["affinity"]:
+            # Sort guests by used memory
+            # Allows processing larger guests first or smaller guests first
+            larger_first = proxlb_data.get("meta", {}).get("balancing", {}).get("balance_larger_guests_first", False)
+
+            if larger_first:
+                logger.debug("Larger guests will be processed first. (Sorting descending by memory used)")
+            else:
+                logger.debug("Smaller guests will be processed first. (Sorting ascending by memory used)")
+
+            sorted_guest_usage_groups = sorted(proxlb_data["groups"]["affinity"], key=lambda g: proxlb_data["groups"]["affinity"][g]["memory_used"], reverse=larger_first)
+
+            # Iterate over all affinity groups
+            for group_name in sorted_guest_usage_groups:
 
                 # We get initially the node with the most free resources and then
                 # migrate all guests within the group to that node to ensure the
@@ -386,6 +398,10 @@ class Calculations:
 
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
                     mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+
+                    if not Calculations.validate_node_resources(proxlb_data, guest_name):
+                        logger.warning(f"Skipping relocation of guest {guest_name} due to insufficient resources on target node {proxlb_data['meta']['balancing']['balance_next_node']}. This might affect affinity group {group_name}.")
+                        continue
 
                     if mode == 'psi':
                         logger.debug(f"Evaluating guest relocation based on {mode} mode.")
@@ -707,3 +723,40 @@ class Calculations:
                 return False
 
         return True
+
+    @staticmethod
+    def validate_node_resources(proxlb_data: Dict[str, Any], guest_name: str) -> bool:
+        """
+        Validate that the target node has sufficient resources to host the specified guest.
+
+        This function checks if the target node, determined by the balancing logic,
+        has enough CPU, memory, and disk resources available to accommodate the guest.
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing the complete ProxLB state including:
+                - "nodes": Dictionary with node resource information
+                - "guests": Dictionary with guest resource requirements
+                - "meta": Dictionary with balancing information including target node
+            guest_name (str): The name of the guest to validate resources for
+        Returns:
+            bool: True if the target node has sufficient resources, False otherwise
+        """
+        logger.debug("Starting: validate_node_resources.")
+        node_target = proxlb_data["meta"]["balancing"]["balance_next_node"]
+
+        node_memory_free = proxlb_data["nodes"][node_target]["memory_free"]
+        node_cpu_free = proxlb_data["nodes"][node_target]["cpu_free"]
+        node_disk_free = proxlb_data["nodes"][node_target]["disk_free"]
+
+        guest_memory_required = proxlb_data["guests"][guest_name]["memory_used"]
+        guest_cpu_required = proxlb_data["guests"][guest_name]["cpu_used"]
+        guest_disk_required = proxlb_data["guests"][guest_name]["disk_used"]
+
+        if guest_memory_required < node_memory_free:
+            logger.debug(f"Node '{node_target}' has sufficient resources for guest '{guest_name}'.")
+            logger.debug("Finished: validate_node_resources.")
+            return True
+        else:
+            logger.debug(f"Node '{node_target}' lacks sufficient resources for guest '{guest_name}'.")
+            logger.debug("Finished: validate_node_resources.")
+            return False

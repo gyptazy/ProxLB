@@ -6,6 +6,7 @@
     - [Quick-Start](#quick-start)
     - [Details](#details)
     - [Debian Packages (.deb files)](#debian-packages-deb-files)
+    - [Repo Mirror and Proxmox Offline Mirror Support](#repo-mirror-and-proxmox-offline-mirror-support)
   - [RedHat Package](#redhat-package)
   - [Container Images / Docker](#container-images--docker)
     - [Overview of Images](#overview-of-images)
@@ -81,6 +82,27 @@ cp /etc/proxlb/proxlb_example.yaml /etc/proxlb/proxlb.yaml
 # Adjust the config to your needs
 vi /etc/proxlb/proxlb.yaml
 systemctl start proxlb
+```
+
+#### Repo Mirror and Proxmox Offline Mirror Support
+ProxLB uses the supported flat mirror style for the Debian repository. Unfortunately, not all offline-mirror applications support it. One of the known ones is the official *proxmox-offline-mirror* which is unable to handle flat repositories (see also: [#385](https://github.com/gyptazy/ProxLB/issues/385)).
+
+Therefore, we currently operate and support both ways to avoid everyone force switching to the new repository. As a result, you can simply use this repository:
+```
+deb https://repo.gyptazy.com/proxlb stable main
+```
+
+**Example Config for proxmox-offline-mirror:**
+
+An example config for the proxmox-offline-mirror would look like:
+```
+mirror: proxlb
+    architectures amd64
+    base-dir /var/lib/proxmox-offline-mirror/mirrors/
+    key-path /etc/apt/trusted.gpg.d/proxlb.asc
+    repository deb https://repo.gyptazy.com/proxlb stable main
+    sync true
+    verify true
 ```
 
 ### RedHat Package
