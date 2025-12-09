@@ -297,7 +297,7 @@ class Nodes:
         reserved_memory = int(round(reserved_memory_gb * 1024 ** 3)) # proxmox expects bytes, in case of fractions: round it
         # if the reservation is > total_memory just skip it entirely as it could be that even the default exceeds total_memory
         if reserved_memory > node_data.get("memory_total"):
-            logger.debug(f"Reservation of {reserved_memory} Bytes exceeds available memory of {node_data.get("memory_total")} - skipping reservation")
+            logger.debug(f"Reservation of {reserved_memory} Bytes exceeds available memory of {node_data.get('memory_total')} - skipping reservation")
             reserved_memory = 0
             reserved_memory_gb = 0
         logger.debug(f"Reserved Memory: {reserved_memory_gb} GB ({reserved_memory} Bytes)")
