@@ -357,7 +357,7 @@ class Helper:
         # disk
         node_data["disk_assigned_percent"] = node_data["disk_assigned"] / node_data["disk_total"] * 100
         node_data["disk_free_percent"] = node_data["disk_free"] / node_data["disk_total"] * 100
-        node_data["dsik_used_percent"] = node_data["disk_used"] / node_data["disk_total"] * 100
+        node_data["disk_used_percent"] = node_data["disk_used"] / node_data["disk_total"] * 100
 
         logger.debug(f"node data: {node_data}")
         logger.debug(f"End: Update resource percentages")
