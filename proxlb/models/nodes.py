@@ -258,7 +258,7 @@ class Nodes:
 
 
     @staticmethod
-    def apply_resource_reservation(node_name, proxlb_config: Dict[str, Any], node_data: Dict[str, Any]) -> float:
+    def apply_resource_reservation(node_name, proxlb_config: Dict[str, Any], node_data: Dict[str, Any]) -> None:
         """
         Check if there is a a configured resource reservation for the current nodes and apply it as needed.
         Checks for a node specific config first, then if there is any configured default and if neither then nothing is reserved.
@@ -267,7 +267,7 @@ class Nodes:
         Args: 
             node_name: (str) the name of the node 
             proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
-            node_data: (Dict[str, Any]): Dict containting the current nodes data
+            node_data: (Dict[str, Any]): Dict containing the current nodes data
         Returns: none
         """
         logger.debug(f"Starting: Resource reservation")

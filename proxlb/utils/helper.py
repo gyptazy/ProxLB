@@ -337,9 +337,9 @@ class Helper:
             test_socket.close()
 
     @staticmethod
-    def update_resource_percentages(node_data: Dict[str, any]):
+    def update_resource_percentages(node_data: Dict[str, any]) -> None:
         """
-        This function updates the percentages of the node's resources
+        This function updates the percentages of the node's resources in its respective dict
         Args:
             node_data: (Dict[str, any]) dict containing the nodes data to be updated
         Returns: none
