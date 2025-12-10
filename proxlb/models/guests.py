@@ -11,6 +11,7 @@ __license__ = "GPL-3.0"
 from typing import Dict, Any
 from utils.logger import SystemdLogger
 from models.pools import Pools
+from models.ha_rules import HaRules
 from models.tags import Tags
 import time
 
@@ -36,7 +37,7 @@ class Guests:
         """
 
     @staticmethod
-    def get_guests(proxmox_api: any, pools: Dict[str, Any], nodes: Dict[str, Any], meta: Dict[str, Any], proxlb_config: Dict[str, Any]) -> Dict[str, Any]:
+    def get_guests(proxmox_api: any, pools: Dict[str, Any], ha_rules: Dict[str, Any], nodes: Dict[str, Any], meta: Dict[str, Any], proxlb_config: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get metrics of all guests in a Proxmox cluster.
 
@@ -46,6 +47,8 @@ class Guests:
 
         Args:
             proxmox_api (any): The Proxmox API client instance.
+            pools (Dict[str, Any]): A dictionary containing information about the pools in the Proxmox cluster.
+            ha_rules (Dict[str, Any]): A dictionary containing information about the HA rules in the
             nodes (Dict[str, Any]): A dictionary containing information about the nodes in the Proxmox cluster.
             meta (Dict[str, Any]): A dictionary containing metadata information.
             proxmox_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
@@ -95,8 +98,9 @@ class Guests:
                     guests['guests'][guest['name']]['pressure_hot'] = False
                     guests['guests'][guest['name']]['tags'] = Tags.get_tags_from_guests(proxmox_api, node, guest['vmid'], 'vm')
                     guests['guests'][guest['name']]['pools'] = Pools.get_pools_for_guest(guest['name'], pools)
-                    guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'], guests['guests'][guest['name']]['pools'], proxlb_config)
-                    guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'], guests['guests'][guest['name']]['pools'], proxlb_config)
+                    guests['guests'][guest['name']]['ha_rules'] = HaRules.get_ha_rules_for_guest(guest['name'], ha_rules, guest['vmid'])
+                    guests['guests'][guest['name']]['affinity_groups'] = Tags.get_affinity_groups(guests['guests'][guest['name']]['tags'], guests['guests'][guest['name']]['pools'], guests['guests'][guest['name']]['ha_rules'], proxlb_config)
+                    guests['guests'][guest['name']]['anti_affinity_groups'] = Tags.get_anti_affinity_groups(guests['guests'][guest['name']]['tags'], guests['guests'][guest['name']]['pools'], guests['guests'][guest['name']]['ha_rules'], proxlb_config)
                     guests['guests'][guest['name']]['ignore'] = Tags.get_ignore(guests['guests'][guest['name']]['tags'])
                     guests['guests'][guest['name']]['node_relationships'] = Tags.get_node_relationships(guests['guests'][guest['name']]['tags'], nodes, guests['guests'][guest['name']]['pools'], proxlb_config)
                     guests['guests'][guest['name']]['type'] = 'vm'

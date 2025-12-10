@@ -1,0 +1,2 @@
+feature:
+  - Add support for Proxmox's native HA (affinity/anti-affinity) rules (@gyptazy). [#391]

@@ -80,7 +80,7 @@ class Tags:
         return tags
 
     @staticmethod
-    def get_affinity_groups(tags: List[str], pools: List[str], proxlb_config: Dict[str, Any]) -> List[str]:
+    def get_affinity_groups(tags: List[str], pools: List[str], ha_rules: List[str], proxlb_config: Dict[str, Any]) -> List[str]:
         """
         Get affinity tags for a guest from the Proxmox cluster by the API.
 
@@ -99,6 +99,7 @@ class Tags:
         logger.debug("Starting: get_affinity_groups.")
         affinity_tags = []
 
+        # Tag based affinity groups
         if len(tags) > 0:
             for tag in tags:
                 if tag.startswith("plb_affinity"):
@@ -107,6 +108,7 @@ class Tags:
                 else:
                     logger.debug(f"Skipping affinity group for tag {tag}.")
 
+        # Pool based affinity groups
         if len(pools) > 0:
             for pool in pools:
                 if pool in (proxlb_config['balancing'].get('pools') or {}):
@@ -116,11 +118,18 @@ class Tags:
                 else:
                     logger.debug(f"Skipping affinity group for pool {pool}.")
 
+        # HA rule based affinity groups
+        if len(ha_rules) > 0:
+            for ha_rule in ha_rules:
+                if ha_rule.get('type', None) == 'affinity':
+                    logger.debug(f"Adding affinity group for ha-rule {ha_rule}.")
+                    affinity_tags.append(ha_rule['rule'])
+
         logger.debug("Finished: get_affinity_groups.")
         return affinity_tags
 
     @staticmethod
-    def get_anti_affinity_groups(tags: List[str], pools: List[str], proxlb_config: Dict[str, Any]) -> List[str]:
+    def get_anti_affinity_groups(tags: List[str], pools: List[str], ha_rules: List[str], proxlb_config: Dict[str, Any]) -> List[str]:
         """
         Get anti-affinity tags for a guest from the Proxmox cluster by the API.
 
@@ -139,6 +148,7 @@ class Tags:
         logger.debug("Starting: get_anti_affinity_groups.")
         anti_affinity_tags = []
 
+        # Tag based anti-affinity groups
         if len(tags) > 0:
             for tag in tags:
                 if tag.startswith("plb_anti_affinity"):
@@ -147,6 +157,7 @@ class Tags:
                 else:
                     logger.debug(f"Skipping anti-affinity group for tag {tag}.")
 
+        # Pool based anti-affinity groups
         if len(pools) > 0:
             for pool in pools:
                 if pool in (proxlb_config['balancing'].get('pools') or {}):
@@ -155,6 +166,13 @@ class Tags:
                         anti_affinity_tags.append(pool)
                 else:
                     logger.debug(f"Skipping anti-affinity group for pool {pool}.")
+
+        # HA rule based anti-affinity groups
+        if len(ha_rules) > 0:
+            for ha_rule in ha_rules:
+                if ha_rule.get('type', None) == 'anti-affinity':
+                    logger.debug(f"Adding anti-affinity group for ha-rule {ha_rule}.")
+                    anti_affinity_tags.append(ha_rule['rule'])
 
         logger.debug("Finished: get_anti_affinity_groups.")
         return anti_affinity_tags
