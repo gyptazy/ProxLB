@@ -40,6 +40,19 @@ jobs:
             # Install dependencies
             apt-get update && \
             apt-get install -y python3 python3-setuptools debhelper dh-python python3-pip python3-stdeb python3-proxmoxer python3-requests python3-urllib3 devscripts python3-all && \
+
+            # Get base version from source code
+            BASE_VERSION=\$(grep __version__ proxlb/utils/version.py | awk '{print \$3}' | tr -d '\"')
+            echo \"Base version: \$BASE_VERSION\"
+
+            # Build full version with timestamp
+            FULL_VERSION=\"\${BASE_VERSION}+$(date +%Y%m%d%H%M)\"
+            echo \"Full version: \$FULL_VERSION\"
+
+            # Update debian/changelog with new version
+            dch --force-bad-version -v \"\$FULL_VERSION\" \
+                \"Automated GitHub Actions build on $(date -u +'%Y-%m-%d %H:%M UTC').\" && \
+
             # Build package using stdeb / setuptools
             # python3 setup.py --command-packages=stdeb.command bdist_deb && \
             # Build native package
