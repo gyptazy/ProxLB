@@ -56,9 +56,15 @@ class HaRules:
         ha_rules = {"ha_rules": {}}
 
         for rule in proxmox_api.cluster.ha.rules.get():
+
+            # Skip disabled rules (disable key exists AND is truthy)
+            if rule.get("disable", 0):
+                logger.debug(f"Skipping ha-rule: {rule['rule']} of type {rule['type']} affecting guests: {rule['resources']}. Rule is disabled.")
+                continue
+
             # Create a resource list by splitting on commas and stripping whitespace containing
             # the VM and CT IDs that are part of this HA rule
-            resources_list = [int(r.split(":")[1]) for r in rule["resources"].split(",") if r.strip()]
+            resources_list_guests = [int(r.split(":")[1]) for r in rule["resources"].split(",") if r.strip()]
 
             # Convert the affinity field to a more descriptive type
             if rule.get("affinity", None) == "negative":
@@ -66,11 +72,17 @@ class HaRules:
             else:
                 affinity_type = "affinity"
 
+            # Create affected nodes list
+            resources_list_nodes = []
+            if rule.get("nodes", None):
+                resources_list_nodes = [n for n in rule["nodes"].split(",") if n]
+
             # Create the ha_rule element
             ha_rules['ha_rules'][rule['rule']] = {}
             ha_rules['ha_rules'][rule['rule']]['rule'] = rule['rule']
             ha_rules['ha_rules'][rule['rule']]['type'] = affinity_type
-            ha_rules['ha_rules'][rule['rule']]['members'] = resources_list
+            ha_rules['ha_rules'][rule['rule']]['nodes'] = resources_list_nodes
+            ha_rules['ha_rules'][rule['rule']]['members'] = resources_list_guests
 
             logger.debug(f"Got ha-rule: {rule['rule']} as type {affinity_type} affecting guests: {rule['resources']}")
 
