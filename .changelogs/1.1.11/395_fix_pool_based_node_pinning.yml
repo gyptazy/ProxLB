@@ -1,0 +1,2 @@
+fixed:
+  - Fixed pool based node pinning (@gyptazy). [#395]
