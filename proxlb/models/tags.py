@@ -248,7 +248,7 @@ class Tags:
                 if pool in (proxlb_config['balancing'].get('pools') or {}):
 
                     pool_nodes = proxlb_config['balancing']['pools'][pool].get('pin', None)
-                    for node in pool_nodes:
+                    for node in pool_nodes if pool_nodes is not None else []:
 
                         # Validate if the node to pin is present in the cluster
                         if Helper.validate_node_presence(node, nodes):
