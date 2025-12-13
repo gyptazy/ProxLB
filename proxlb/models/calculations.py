@@ -391,6 +391,13 @@ class Calculations:
             # Iterate over all affinity groups
             for group_name in sorted_guest_usage_groups:
 
+                # Validate balanciness again before processing each group
+                Calculations.get_balanciness(proxlb_data)
+                logger.debug(proxlb_data["meta"]["balancing"]["balance"])
+                if (not proxlb_data["meta"]["balancing"]["balance"]) and (not proxlb_data["meta"]["balancing"].get("enforce_affinity", False)):
+                    logger.debug("Skipping further guest relocations as balanciness is now ok.")
+                    break
+
                 # We get initially the node with the most free resources and then
                 # migrate all guests within the group to that node to ensure the
                 # affinity.
@@ -398,6 +405,18 @@ class Calculations:
 
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
                     mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+
+                    # Stop moving guests if the source node is no longer the most loaded
+                    source_node = proxlb_data["guests"][guest_name]["node_current"]
+                    method = proxlb_data["meta"]["balancing"].get("method", "memory")
+                    mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+
+                    highest_node = max(proxlb_data["nodes"].values(), key=lambda n: n[f"{method}_{mode}_percent"])
+
+                    # FIXME affinity honouring should be re-evaluated here
+                    if highest_node["name"] != source_node:
+                        logger.debug(f"Stopping relocation for guest {guest_name}: source node {source_node} is no longer the most loaded node.")
+                        break
 
                     if not Calculations.validate_node_resources(proxlb_data, guest_name):
                         logger.warning(f"Skipping relocation of guest {guest_name} due to insufficient resources on target node {proxlb_data['meta']['balancing']['balance_next_node']}. This might affect affinity group {group_name}.")
@@ -583,6 +602,9 @@ class Calculations:
         proxlb_data["guests"][guest_name]["node_target"] = node_target
         logger.debug(f"Set guest {guest_name} from node {node_current} to node {node_target}.")
 
+        Calculations.recalc_node_statistics(proxlb_data, node_target)
+        Calculations.recalc_node_statistics(proxlb_data, node_current)
+
         logger.debug("Finished: update_node_resources.")
 
     def validate_affinity_map(proxlb_data: Dict[str, Any]):
@@ -760,3 +782,21 @@ class Calculations:
             logger.debug(f"Node '{node_target}' lacks sufficient resources for guest '{guest_name}'.")
             logger.debug("Finished: validate_node_resources.")
             return False
+
+    @staticmethod
+    def recalc_node_statistics(proxlb_data: Dict[str, Any], node_name: str) -> None:
+        n = proxlb_data["nodes"][node_name]
+
+        # free derived from totals and used (keeps your data consistent after virtual moves)
+        n["cpu_free"] = max(0, n["cpu_total"] - n["cpu_used"])
+        n["memory_free"] = max(0, n["memory_total"] - n["memory_used"])
+        n["disk_free"] = max(0, n["disk_total"] - n["disk_used"])
+
+        # percent recompute (avoid drift)
+        n["cpu_used_percent"] = (n["cpu_used"] / n["cpu_total"] * 100) if n["cpu_total"] else 0
+        n["memory_used_percent"] = (n["memory_used"] / n["memory_total"] * 100) if n["memory_total"] else 0
+        n["disk_used_percent"] = (n["disk_used"] / n["disk_total"] * 100) if n["disk_total"] else 0
+
+        n["cpu_assigned_percent"] = (n["cpu_assigned"] / n["cpu_total"] * 100) if n["cpu_total"] else 0
+        n["memory_assigned_percent"] = (n["memory_assigned"] / n["memory_total"] * 100) if n["memory_total"] else 0
+        n["disk_assigned_percent"] = (n["disk_assigned"] / n["disk_total"] * 100) if n["disk_total"] else 0
