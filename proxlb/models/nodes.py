@@ -309,9 +309,8 @@ class Nodes:
 
         logger.debug(f"Reserved Memory: {reserved_memory_gb_node} GB ({reserved_memory_node} Bytes)")
         node_data["memory_total"] -= reserved_memory_node
-        Helper.update_resource_percentages(node_data)
+        Helper.update_node_resource_percentages(node_data)
 
         logger.debug(f"End: Resource reservation")
-        exit()
         return
 
