@@ -36,7 +36,7 @@ class HaRules:
         """
 
     @staticmethod
-    def get_ha_rules(proxmox_api: any) -> Dict[str, Any]:
+    def get_ha_rules(proxmox_api: any, meta: dict) -> Dict[str, Any]:
         """
         Retrieve all HA rules from a Proxmox cluster.
 
@@ -46,14 +46,22 @@ class HaRules:
         descriptive format (affinity or anti-affinity).
 
         Args:
-            proxmox_api (any): Proxmox API client instance.
+            proxmox_api (any):      Proxmox API client instance.
+            meta (dict):            The metadata dictionary containing cluster information.
 
         Returns:
-            Dict[str, Any]: Dictionary with a top-level "ha_rules" key mapping rule id
-                to {"rule": <rule_id>, "type": <affinity_type>, "members": [<resource_ids>...]}.
+            Dict[str, Any]:         Dictionary with a top-level "ha_rules" key mapping rule id
+                                    to {"rule": <rule_id>, "type": <affinity_type>, "members": [<resource_ids>...]}.
         """
         logger.debug("Starting: get_ha_rules.")
         ha_rules = {"ha_rules": {}}
+
+        # If any node is non PVE 9, skip fetching HA rules as they are unsupported
+        if meta["meta"]["cluster_non_pve9"]:
+            logger.debug("Skipping HA rule retrieval as non Proxmox VE 9 systems detected.")
+            return ha_rules
+        else:
+            logger.debug("Cluster running Proxmox VE 9 or newer, proceeding with HA rule retrieval.")
 
         for rule in proxmox_api.cluster.ha.rules.get():
 

@@ -88,3 +88,37 @@ class Features:
                 proxlb_data["meta"]["balancing"]["enable"] = False
 
         logger.debug("Finished: validate_available_features.")
+
+    @staticmethod
+    def validate_any_non_pve9_node(meta: any, nodes: any) -> dict:
+        """
+        Validate if any node in the cluster is running Proxmox VE < 9.0.0 and update meta accordingly.
+
+        This function inspects the cluster node versions and sets a flag in meta indicating whether
+        any node is running a Proxmox VE version older than 9.0.0.
+
+        Args:
+            meta (dict):    Metadata structure that will be updated with cluster version information.
+            nodes (dict):   Cluster nodes mapping whose values contain 'pve_version' strings.
+
+        Returns:
+            dict:           The updated meta dictionary with 'cluster_non_pve9' flag set to True or False.
+
+        Side effects:
+            - Mutates meta["meta"]["cluster_non_pve9"] based on node versions.
+            - Emits debug log messages.
+
+        Notes:
+            - Version comparison uses semantic version parsing; defaults to "0.0.0" if pve_version is missing.
+        """
+        logger.debug("Starting: validate_any_non_pve9_node.")
+        any_non_pve9_node = any(version.parse(node.get("pve_version", "0.0.0")) < version.parse("9.0.0") for node in nodes.get("nodes", {}).values())
+
+        if any_non_pve9_node:
+            meta["meta"]["cluster_non_pve9"] = True
+            logger.debug("Finished: validate_any_non_pve9_node. Result: True")
+        else:
+            meta["meta"]["cluster_non_pve9"] = False
+            logger.debug("Finished: validate_any_non_pve9_node. Result: False")
+
+        return meta

@@ -74,8 +74,9 @@ def main():
         # Get all required objects from the Proxmox cluster
         meta = {"meta": proxlb_config}
         nodes = Nodes.get_nodes(proxmox_api, proxlb_config)
+        meta = Features.validate_any_non_pve9_node(meta, nodes)
         pools = Pools.get_pools(proxmox_api)
-        ha_rules = HaRules.get_ha_rules(proxmox_api)
+        ha_rules = HaRules.get_ha_rules(proxmox_api, meta)
         guests = Guests.get_guests(proxmox_api, pools, ha_rules, nodes, meta, proxlb_config)
         groups = Groups.get_groups(guests, nodes)
 
