@@ -271,39 +271,47 @@ class Nodes:
         Returns: none
         """
         logger.debug(f"Starting: Resource reservation")
-        # get configured reservation: try node specific, then defaults. Use 0 if there isnt anything at all
-        reserved_memory_gb = (
-            proxlb_config.get("balancing", {})
-                         .get("node_resource_reserve", {})
-                         .get(node_name, {}).get("memory")
-        or
-        proxlb_config.get("balancing", {})
-                     .get("node_resource_reserve", {})
-                     .get("defaults", {}).get("memory", 0)
-        )
-        # check if it is a number - set to 0 otherwise
-        if not isinstance(reserved_memory_gb, (int, float)):
-            logger.info(f"Invalid memory reservation: Found a string while expecting a numeric value")
-            reserved_memory_gb = 0
-        # if the reservation is less then 0, try to apply default, otherwise set it to 0
-        if reserved_memory_gb < 0:
+        logger.debug(f"Processing resource reservation for node {node_name}")
+        # load the balancing section from the  config dict, will create an empty dict if there isnt anything
+        balancing_cfg = proxlb_config.get("balancing", {})
+        # get the reservation dict from the previously loaded dict , will create an empty dict if there isnt anything
+        reserve_cfg = balancing_cfg.get("node_resource_reserve", {}) 
+        # try to get the reserved memory for the node
+        reserved_memory_gb_node = reserve_cfg.get(node_name, {}).get("memory")
+        # try to load the default reserved memory - will set to 0 if there isn't anything
+        reserved_memory_gb_default = reserve_cfg.get("defaults", {}).get("memory", 0)
+
+        # make sure the reservation is a numeric value - check for both, default and node specific
+        if not isinstance(reserved_memory_gb_default, (int, float)):
+            if reserved_memory_gb_default is not None:
+                logger.info("Invalid default memory reservation: Found a string while expecting a numeric value - skipping default reservation")
+            reserved_memory_gb_default = 0
+
+        if not isinstance(reserved_memory_gb_node, (int, float)):
+            if reserved_memory_gb_node is not None:
+                logger.info(f"Invalid memory reservation: Found a string while expecting a numeric value - applying current default of {reserved_memory_gb_default} Bytes")
+            reserved_memory_gb_node = reserved_memory_gb_default
+
+        # make sure the reservation is positive
+        if reserved_memory_gb_node < 0:
             logger.info(f"{nodes['nodes'][node['node']]['name']}: Invalid assigned memory reservation, applying defaults")
-            reserved_memory_gb = (
-                proxlb_config.get("balancing", {})
-                             .get("node_resource_reserve", {})
-                             .get("defaults", {})
-                             .get("memory", 0)
-           )
-        reserved_memory = int(round(reserved_memory_gb * 1024 ** 3)) # proxmox expects bytes, in case of fractions: round it
-        # if the reservation is > total_memory just skip it entirely as it could be that even the default exceeds total_memory
-        if reserved_memory > node_data.get("memory_total"):
-            logger.debug(f"Reservation of {reserved_memory} Bytes exceeds available memory of {node_data.get('memory_total')} - skipping reservation")
-            reserved_memory = 0
-            reserved_memory_gb = 0
-        logger.debug(f"Reserved Memory: {reserved_memory_gb} GB ({reserved_memory} Bytes)")
-        # finally apply the reservation and update the percentages
-        node_data["memory_total"] -= reserved_memory
+            reserved_memory_gb_node = reserved_memory_gb_default
+
+        # convert the reservation from GB to Bytes, get the current nodes physical memory
+        reserved_memory_node = int(round(reserved_memory_gb_node * 1024 ** 3))
+        total_mem = node_data.get("memory_total")
+
+        # check if the reservation doesnt exceed the nodes total memory
+        if reserved_memory_node > total_mem:
+            logger.debug(f"Reservation of {reserved_memory_node} Bytes exceeds available memory of {total_mem} Bytes- skipping reservation")
+            reserved_memory_node = 0
+            reserved_memory_gb_node = 0
+
+        logger.debug(f"Reserved Memory: {reserved_memory_gb_node} GB ({reserved_memory_node} Bytes)")
+        node_data["memory_total"] -= reserved_memory_node
         Helper.update_resource_percentages(node_data)
+
         logger.debug(f"End: Resource reservation")
+        exit()
         return
 
