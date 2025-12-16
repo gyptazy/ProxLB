@@ -226,8 +226,23 @@ class Balancing:
         logger.debug("Starting: get_rebalancing_job_status.")
         job = proxmox_api.nodes(guest_current_node).tasks(job_id).status().get()
 
+        # Fetch actual migration job status if this got spawned by a HA job
+        if job["type"] == "hamigrate":
+            logger.debug(f"Balancing: Job ID {job_id} (guest: {guest_name}) is a HA migration job. Fetching underlying migration job...")
+            time.sleep(1)
+            vm_id = int(job["id"])
+            qm_migrate_jobs = proxmox_api.nodes(guest_current_node).tasks.get(typefilter="qmigrate", vmid=vm_id, start=0, source="active", limit=1)
+
+            if len(qm_migrate_jobs) > 0:
+                job = qm_migrate_jobs[0]
+                job_id = job["upid"]
+                logger.debug(f'Overwriting job polling for: ID {job_id} (guest: {guest_name}) by {job}')
+        else:
+            logger.debug(f"Balancing: Job ID {job_id} (guest: {guest_name}) is a standard migration job. Proceeding with status check.")
+
         # Watch job id until it finalizes
-        if job["status"] == "running":
+        # Note: Unsaved jobs are delivered in uppercase from Proxmox API
+        if job.get("status", "").lower() == "running":
             # Do not hammer the API while
             # watching the job status
             time.sleep(10)
