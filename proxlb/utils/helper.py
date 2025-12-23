@@ -362,4 +362,3 @@ class Helper:
         logger.debug(f"node data: {node_data}")
         logger.debug(f"End: Update resource percentages")
         return
-

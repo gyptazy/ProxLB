@@ -5,7 +5,3 @@ build/
 dist/
 *.egg-info/
 proxlb_dev.yaml
-log.log
-proxlb/log.log
-proxlb.yaml
-proxlb_reservation.yaml

@@ -33,6 +33,11 @@ balancing:
   method: memory                      # 'memory' | 'cpu' | 'disk'
   mode: used                          # 'assigned' | 'used' | 'psi'
   balance_larger_guests_first: False  # Option to prioritize balancing of larger or smaller guests first
+  node_resource_reserve:              # Optional: Define resource reservations for nodes (in GB)
+    defaults:                         # Default reservation values applying to all nodes (unless explicitly overridden)
+      memory: 4                       # Default: 4 GB memory reserved per node
+    node01:                           # Specific node reservation override for node 'node01'
+      memory: 6                       # Specific: 6 GB memory reserved for node 'node01'
   # # PSI thresholds only apply when using mode 'psi'
   # psi:
   #   nodes:
@@ -69,15 +74,6 @@ balancing:
       pin:                            # Define a pinning og guests to specific node(s)
         - virt66
         - virt77
-  # reserve some ressource for proxmox and / or other application on the nodes
-    node_resource_reserve:
-  # defaults - cpu in %, memory in GB, disk in %
-      defaults:
-        cpu: 10
-        memory: 4
-        disk: 20
-      node1:
-        memory: 4
 
 service:
   daemon: True

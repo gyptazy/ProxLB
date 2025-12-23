@@ -290,6 +290,7 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | method |  | memory | `Str` | The balancing method that should be used.  [values: `memory` (default), `cpu`, `disk`]|
 |  | mode |  | used | `Str` | The balancing mode that should be used. [values: `used` (default), `assigned`, `psi` (pressure)] |
 |  | balance_larger_guests_first |  | False | `Bool` | Option to prefer larger/smaller guests first |
+|  | node_resource_reserve |  | { default: { memory: 4 }, { node01: { memory: 6 }} } | `Dict` | A dict of pool names and their type for creating affinity/anti-affinity rules |
 |  | psi |  | { nodes: { memory: { pressure_full: 0.20, pressure_some: 0.20, pressure_spikes: 1.00 }}} | `Dict` | A dict of PSI based thresholds for nodes and guests |
 |  | pools |  | pools: { dev: { type: affinity }, de-nbg01-db: { type: anti-affinity }} | `Dict` | A dict of pool names and their type for creating affinity/anti-affinity rules |
 | `service` |  |  |  |  |  |
@@ -338,6 +339,11 @@ balancing:
   method: memory
   mode: used
   balance_larger_guests_first: False
+  node_resource_reserve:
+    defaults:
+      memory: 4
+    node01:
+      memory: 6
 # # PSI thresholds only apply when using mode 'psi'
 # # PSI based balancing is currently in beta and req. PVE >= 9
 # psi:
@@ -530,7 +536,7 @@ Connect with us in our dedicated chat room for immediate support and live intera
 | Support Channel | Link |
 |------|:------:|
 | Matrix | [#proxlb:gyptazy.com](https://matrix.to/#/#proxlb:gyptazy.com) |
-| Discord | [Discord](https://discord.gg/JemGu7WbfQ) |
+| Discord | [Discord](https://discord.gg/JemGu7WbfQ) |
 | GitHub Community | [GitHub Community](https://github.com/gyptazy/ProxLB/discussions/)
 | GitHub | [ProxLB GitHub](https://github.com/gyptazy/ProxLB/issues) |
 
