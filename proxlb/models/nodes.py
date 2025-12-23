@@ -24,6 +24,7 @@ __license__ = "GPL-3.0"
 import time
 from typing import Dict, Any
 from utils.logger import SystemdLogger
+from utils.helper import Helper
 
 logger = SystemdLogger()
 
@@ -102,6 +103,7 @@ class Nodes:
                 nodes["nodes"][node["node"]]["disk_pressure_full_spikes_percent"] = Nodes.get_node_rrd_data(proxmox_api, node["node"], "disk", "full", spikes=True)
                 nodes["nodes"][node["node"]]["disk_pressure_hot"] = False
 
+                Nodes.apply_resource_reservation(nodes["nodes"][node["node"]]["name"], proxlb_config, nodes["nodes"][node["node"]])
                 # Evaluate if node should be set to maintenance mode
                 if Nodes.set_node_maintenance(proxmox_api, proxlb_config, node["node"]):
                     nodes["nodes"][node["node"]]["maintenance"] = True
@@ -253,3 +255,62 @@ class Nodes:
         logger.debug(f"Got version {version['version']} for node {node_name}.")
         logger.debug("Finished: get_node_pve_version.")
         return version["version"]
+
+
+    @staticmethod
+    def apply_resource_reservation(node_name, proxlb_config: Dict[str, Any], node_data: Dict[str, Any]) -> None:
+        """
+        Check if there is a a configured resource reservation for the current nodes and apply it as needed.
+        Checks for a node specific config first, then if there is any configured default and if neither then nothing is reserved.
+        Reservations are applied by directly modifying the data gathered from the nodes.
+
+        Args: 
+            node_name: (str) the name of the node 
+            proxlb_config (Dict[str, Any]): A dictionary containing the ProxLB configuration.
+            node_data: (Dict[str, Any]): Dict containing the current nodes data
+        Returns: none
+        """
+        logger.debug(f"Starting: Resource reservation")
+        logger.debug(f"Processing resource reservation for node {node_name}")
+        # load the balancing section from the  config dict, will create an empty dict if there isnt anything
+        balancing_cfg = proxlb_config.get("balancing", {})
+        # get the reservation dict from the previously loaded dict , will create an empty dict if there isnt anything
+        reserve_cfg = balancing_cfg.get("node_resource_reserve", {}) 
+        # try to get the reserved memory for the node
+        reserved_memory_gb_node = reserve_cfg.get(node_name, {}).get("memory")
+        # try to load the default reserved memory - will set to 0 if there isn't anything
+        reserved_memory_gb_default = reserve_cfg.get("defaults", {}).get("memory", 0)
+
+        # make sure the reservation is a numeric value - check for both, default and node specific
+        if not isinstance(reserved_memory_gb_default, (int, float)):
+            if reserved_memory_gb_default is not None:
+                logger.info("Invalid default memory reservation: Found a string while expecting a numeric value - skipping default reservation")
+            reserved_memory_gb_default = 0
+
+        if not isinstance(reserved_memory_gb_node, (int, float)):
+            if reserved_memory_gb_node is not None:
+                logger.info(f"Invalid memory reservation: Found a string while expecting a numeric value - applying current default of {reserved_memory_gb_default} Bytes")
+            reserved_memory_gb_node = reserved_memory_gb_default
+
+        # make sure the reservation is positive
+        if reserved_memory_gb_node < 0:
+            logger.info(f"{nodes['nodes'][node['node']]['name']}: Invalid assigned memory reservation, applying defaults")
+            reserved_memory_gb_node = reserved_memory_gb_default
+
+        # convert the reservation from GB to Bytes, get the current nodes physical memory
+        reserved_memory_node = int(round(reserved_memory_gb_node * 1024 ** 3))
+        total_mem = node_data.get("memory_total")
+
+        # check if the reservation doesnt exceed the nodes total memory
+        if reserved_memory_node > total_mem:
+            logger.debug(f"Reservation of {reserved_memory_node} Bytes exceeds available memory of {total_mem} Bytes- skipping reservation")
+            reserved_memory_node = 0
+            reserved_memory_gb_node = 0
+
+        logger.debug(f"Reserved Memory: {reserved_memory_gb_node} GB ({reserved_memory_node} Bytes)")
+        node_data["memory_total"] -= reserved_memory_node
+        Helper.update_node_resource_percentages(node_data)
+
+        logger.debug(f"End: Resource reservation")
+        return
+

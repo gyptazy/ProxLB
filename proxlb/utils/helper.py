@@ -81,6 +81,7 @@ class Helper:
         """
         logger.debug("Starting: log_node_metrics.")
         nodes_usage_memory = " | ".join([f"{key}: {value['memory_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
+        nodes_assigned_memory = " | ".join([f"{key}: {value['memory_assigned_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
         nodes_usage_cpu = "  | ".join([f"{key}: {value['cpu_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
         nodes_usage_disk = " | ".join([f"{key}: {value['disk_used_percent']:.2f}%" for key, value in proxlb_data["nodes"].items()])
 
@@ -90,6 +91,7 @@ class Helper:
             proxlb_data["meta"]["statistics"]["after"] = {"memory": nodes_usage_memory, "cpu": nodes_usage_cpu, "disk": nodes_usage_disk}
 
         logger.debug(f"Nodes usage memory: {nodes_usage_memory}")
+        logger.debug(f"Nodes usage memory assigned: {nodes_assigned_memory}")
         logger.debug(f"Nodes usage cpu:    {nodes_usage_cpu}")
         logger.debug(f"Nodes usage disk:   {nodes_usage_disk}")
         logger.debug("Finished: log_node_metrics.")
@@ -333,3 +335,31 @@ class Helper:
             return (rc == 0, rc if rc != 0 else None)
         finally:
             test_socket.close()
+
+    @staticmethod
+    def update_node_resource_percentages(node_data: Dict[str, any]) -> None:
+        """
+        This function updates the percentages of the node's resources in its respective dict
+        Args:
+            node_data: (Dict[str, any]) dict containing the nodes data to be updated
+        Returns: none
+        """
+        logger.debug(f"Starting: Update resource percentages")
+        logger.debug(f"node data: {node_data}")
+        # memory
+        node_data["memory_assigned_percent"] = node_data["memory_assigned"] / node_data["memory_total"] * 100
+        node_data["memory_free_percent"] = node_data["memory_free"] / node_data["memory_total"] * 100
+        node_data["memory_used_percent"] = node_data["memory_used"] / node_data["memory_total"] * 100
+        # cpu
+        node_data["cpu_assigned_percent"] = node_data["cpu_assigned"] / node_data["cpu_total"] * 100
+        node_data["cpu_free_percent"] = node_data["cpu_free"] / node_data["cpu_total"] * 100
+        node_data["cpu_used_percent"] = node_data["cpu_used"] / node_data["cpu_total"] * 100
+        # disk
+        node_data["disk_assigned_percent"] = node_data["disk_assigned"] / node_data["disk_total"] * 100
+        node_data["disk_free_percent"] = node_data["disk_free"] / node_data["disk_total"] * 100
+        node_data["disk_used_percent"] = node_data["disk_used"] / node_data["disk_total"] * 100
+
+        logger.debug(f"node data: {node_data}")
+        logger.debug(f"End: Update resource percentages")
+        return
+
