@@ -169,6 +169,18 @@ vi proxlb.yaml
 docker run -it --rm -v $(pwd)/proxlb.yaml:/etc/proxlb/proxlb.yaml proxlb
 ```
 
+### Docker Compose
+
+```bash
+services:
+  proxlb:
+    image: cr.gyptazy.com/proxlb/proxlb:latest
+    container_name: proxlb
+    restart: unless-stopped
+    volumes:
+      - ./proxlb.yaml:/etc/proxlb/proxlb.yaml:ro
+```
+
 *Note: ProxLB container images are officially only available at cr.proxlb.de and cr.gyptazy.com.*
 
 #### Overview of Images
