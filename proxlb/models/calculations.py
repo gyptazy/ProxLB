@@ -753,10 +753,10 @@ class Calculations:
         guest_disk_required = proxlb_data["guests"][guest_name]["disk_used"]
 
         if guest_memory_required < node_memory_free:
-            logger.debug(f"Node '{node_target}' has sufficient resources for guest '{guest_name}'.")
+            logger.debug(f"Node '{node_target}' has sufficient resources ({node_memory_free / (1024 ** 3):.2f} GB free) for guest '{guest_name}'.")
             logger.debug("Finished: validate_node_resources.")
             return True
         else:
-            logger.debug(f"Node '{node_target}' lacks sufficient resources for guest '{guest_name}'.")
+            logger.debug(f"Node '{node_target}' lacks sufficient resources ({node_memory_free / (1024 ** 3):.2f} GB free) for guest '{guest_name}'.")
             logger.debug("Finished: validate_node_resources.")
             return False

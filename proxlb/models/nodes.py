@@ -24,6 +24,7 @@ __license__ = "GPL-3.0"
 import time
 from typing import Dict, Any
 from utils.logger import SystemdLogger
+from utils.helper import Helper
 
 logger = SystemdLogger()
 
@@ -77,7 +78,7 @@ class Nodes:
                 nodes["nodes"][node["node"]]["cpu_pressure_some_spikes_percent"] = Nodes.get_node_rrd_data(proxmox_api, node["node"], "cpu", "some", spikes=True)
                 nodes["nodes"][node["node"]]["cpu_pressure_full_spikes_percent"] = Nodes.get_node_rrd_data(proxmox_api, node["node"], "cpu", "full", spikes=True)
                 nodes["nodes"][node["node"]]["cpu_pressure_hot"] = False
-                nodes["nodes"][node["node"]]["memory_total"] = node["maxmem"]
+                nodes["nodes"][node["node"]]["memory_total"] = Nodes.set_node_resource_reservation(node["node"], node["maxmem"], proxlb_config, "memory")
                 nodes["nodes"][node["node"]]["memory_assigned"] = 0
                 nodes["nodes"][node["node"]]["memory_used"] = node["mem"]
                 nodes["nodes"][node["node"]]["memory_free"] = node["maxmem"] - node["mem"]
@@ -253,3 +254,59 @@ class Nodes:
         logger.debug(f"Got version {version['version']} for node {node_name}.")
         logger.debug("Finished: get_node_pve_version.")
         return version["version"]
+
+    @staticmethod
+    def set_node_resource_reservation(node_name, resource_value, proxlb_config, resource_type) -> int:
+        """
+        Check if there is a configured resource reservation for the current node and apply it as needed.
+        Checks for a node specific config first, then if there is any configured default and if neither then nothing is reserved.
+        Reservations are applied by directly modifying the resource value.
+
+        Args:
+            node_name (str):                    The name of the node.
+            resource_value (int):               The total resource value in bytes.
+            proxlb_config (Dict[str, Any]):     A dictionary containing the ProxLB configuration.
+            resource_type (str):                The type of resource ('memory', 'disk', etc.).
+
+        Returns:
+            int:                                The resource value after applying any configured reservations.
+        """
+        logger.debug(f"Starting: apply_resource_reservation")
+
+        balancing_cfg = proxlb_config.get("balancing", {})
+        reserve_cfg = balancing_cfg.get("node_resource_reserve", {})
+        node_resource_reservation = reserve_cfg.get(node_name, {}).get(resource_type, 0)
+        default_resource_reservation = reserve_cfg.get("defaults", {}).get(resource_type, 0)
+
+        # Ensure reservations are numeric values
+        node_resource_reservation = node_resource_reservation if isinstance(node_resource_reservation, (int, float)) else 0
+        default_resource_reservation = default_resource_reservation if isinstance(default_resource_reservation, (int, float)) else 0
+
+        # Apply node specific reservation if set
+        if node_resource_reservation > 0:
+            if resource_value < (node_resource_reservation * 1024 ** 3):
+                logger.critical(f"Configured resource reservation for node {node_name} of type {resource_type} with {node_resource_reservation} GB is higher than available resource value {resource_value / (1024 ** 3):.2f} GB. Not applying...")
+                return resource_value
+            else:
+                logger.debug(f"Applying node specific reservation for {node_name} of type {resource_type} with {node_resource_reservation} GB.")
+                resource_value_new = resource_value - (node_resource_reservation * 1024 ** 3)
+                logger.debug(f'Switched resource value for node {node_name} of type {resource_type} from {resource_value / (1024 ** 3):.2f} GB to {resource_value_new / (1024 ** 3):.2f} GB after applying reservation.')
+                logger.debug(f"Before: {resource_value} | After: {resource_value_new}")
+                return resource_value_new
+
+        # Apply default reservation if set and no node specific reservation has been performed
+        elif default_resource_reservation > 0:
+            if resource_value < (default_resource_reservation * 1024 ** 3):
+                logger.critical(f"Configured default reservation for node {node_name} of type {resource_type} with {default_resource_reservation} GB is higher than available resource value {resource_value / (1024 ** 3):.2f} GB. Not applying...")
+                return resource_value
+            else:
+                logger.debug(f"Applying default reservation for {node_name} of type {resource_type} with {default_resource_reservation} GB.")
+                resource_value_new = resource_value - (default_resource_reservation * 1024 ** 3)
+                logger.debug(f'Switched resource value for node {node_name} of type {resource_type} from {resource_value / (1024 ** 3):.2f} GB to {resource_value_new / (1024 ** 3):.2f} GB after applying reservation.')
+                logger.debug(f"Before: {resource_value} | After: {resource_value_new}")
+                return resource_value_new
+
+        else:
+            logger.debug(f"No default or node specific resource reservation for node {node_name} found. Skipping...")
+            logger.debug(f"Finished: apply_resource_reservation")
+            return resource_value
