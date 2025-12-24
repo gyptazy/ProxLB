@@ -335,30 +335,3 @@ class Helper:
             return (rc == 0, rc if rc != 0 else None)
         finally:
             test_socket.close()
-
-    @staticmethod
-    def update_node_resource_percentages(node_data: Dict[str, any]) -> None:
-        """
-        This function updates the percentages of the node's resources in its respective dict
-        Args:
-            node_data: (Dict[str, any]) dict containing the nodes data to be updated
-        Returns: none
-        """
-        logger.debug(f"Starting: Update resource percentages")
-        logger.debug(f"node data: {node_data}")
-        # memory
-        node_data["memory_assigned_percent"] = node_data["memory_assigned"] / node_data["memory_total"] * 100
-        node_data["memory_free_percent"] = node_data["memory_free"] / node_data["memory_total"] * 100
-        node_data["memory_used_percent"] = node_data["memory_used"] / node_data["memory_total"] * 100
-        # cpu
-        node_data["cpu_assigned_percent"] = node_data["cpu_assigned"] / node_data["cpu_total"] * 100
-        node_data["cpu_free_percent"] = node_data["cpu_free"] / node_data["cpu_total"] * 100
-        node_data["cpu_used_percent"] = node_data["cpu_used"] / node_data["cpu_total"] * 100
-        # disk
-        node_data["disk_assigned_percent"] = node_data["disk_assigned"] / node_data["disk_total"] * 100
-        node_data["disk_free_percent"] = node_data["disk_free"] / node_data["disk_total"] * 100
-        node_data["disk_used_percent"] = node_data["disk_used"] / node_data["disk_total"] * 100
-
-        logger.debug(f"node data: {node_data}")
-        logger.debug(f"End: Update resource percentages")
-        return
