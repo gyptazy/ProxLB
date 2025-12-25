@@ -1,0 +1,2 @@
+fixed:
+  - Fixed that ignored VMs/CTs got moved to another node when being ignored (@gyptazy). [#408]

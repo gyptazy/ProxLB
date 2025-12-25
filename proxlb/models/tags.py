@@ -107,7 +107,7 @@ class Tags:
                     logger.debug(f"Adding affinity group for tag {tag}.")
                     affinity_tags.append(tag)
                 else:
-                    logger.debug(f"Skipping affinity group for tag {tag}.")
+                    logger.debug(f"Skipping evaluation of tag: {tag} This is not an affinity tag.")
 
         # Pool based affinity groups
         if len(pools) > 0:
@@ -117,7 +117,7 @@ class Tags:
                         logger.debug(f"Adding affinity group for pool {pool}.")
                         affinity_tags.append(pool)
                 else:
-                    logger.debug(f"Skipping affinity group for pool {pool}.")
+                    logger.debug(f"Skipping evaluation of pool: {pool} This is not an affinity pool.")
 
         # HA rule based affinity groups
         if len(ha_rules) > 0:
@@ -157,7 +157,7 @@ class Tags:
                     logger.debug(f"Adding anti-affinity group for tag {tag}.")
                     anti_affinity_tags.append(tag)
                 else:
-                    logger.debug(f"Skipping anti-affinity group for tag {tag}.")
+                    logger.debug(f"Skipping evaluation of tag: {tag} This is not an anti-affinity tag.")
 
         # Pool based anti-affinity groups
         if len(pools) > 0:
@@ -167,7 +167,7 @@ class Tags:
                         logger.debug(f"Adding anti-affinity group for pool {pool}.")
                         anti_affinity_tags.append(pool)
                 else:
-                    logger.debug(f"Skipping anti-affinity group for pool {pool}.")
+                    logger.debug(f"Skipping evaluation of pool: {pool} This is not an anti-affinity pool.")
 
         # HA rule based anti-affinity groups
         if len(ha_rules) > 0:
@@ -197,9 +197,14 @@ class Tags:
         ignore_tag = False
 
         if len(tags) > 0:
+            logger.debug(f"Found {len(tags)} tags to evaluate.")
             for tag in tags:
+                logger.debug(f"Evaluating tag: {tag}.")
                 if tag.startswith("plb_ignore"):
+                    logger.debug(f"Found valid ignore tag: {tag}. Marking guest as ignored.")
                     ignore_tag = True
+                else:
+                    logger.debug(f"Tag: {tag} This is not an ignore tag.")
 
         logger.debug("Finished: get_ignore.")
         return ignore_tag

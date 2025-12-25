@@ -580,8 +580,11 @@ class Calculations:
         proxlb_data["nodes"][node_current]["disk_used_percent"] = proxlb_data["nodes"][node_current]["disk_used"] / proxlb_data["nodes"][node_current]["disk_total"] * 100
 
         # Assign guest to the new target node
-        proxlb_data["guests"][guest_name]["node_target"] = node_target
-        logger.debug(f"Set guest {guest_name} from node {node_current} to node {node_target}.")
+        if not proxlb_data["guests"][guest_name]["ignore"]:
+            proxlb_data["guests"][guest_name]["node_target"] = node_target
+            logger.debug(f"Set guest {guest_name} from node {node_current} to node {node_target}.")
+        else:
+            logger.debug(f"Guest {guest_name} is marked as ignored. Skipping target node assignment.")
 
         logger.debug("Finished: update_node_resources.")
 
