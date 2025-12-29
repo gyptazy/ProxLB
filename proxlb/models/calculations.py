@@ -386,18 +386,38 @@ class Calculations:
             else:
                 logger.debug("Smaller guests will be processed first. (Sorting ascending by memory used)")
 
-            sorted_guest_usage_groups = sorted(proxlb_data["groups"]["affinity"], key=lambda g: proxlb_data["groups"]["affinity"][g]["memory_used"], reverse=larger_first)
+            # Sort affinity groups by number of guests to avoid creating more migrations than needed
+            # because of affinity-groups and use afterwards memory for defining smaller/larger guests
+            sorted_guest_usage_groups = sorted(
+                proxlb_data["groups"]["affinity"],
+                key=lambda g: (
+                    proxlb_data["groups"]["affinity"][g]["counter"],
+                    -proxlb_data["groups"]["affinity"][g]["memory_used"]
+                    if larger_first
+                    else proxlb_data["groups"]["affinity"][g]["memory_used"],
+                )
+            )
 
             # Iterate over all affinity groups
             for group_name in sorted_guest_usage_groups:
 
-                # We get initially the node with the most free resources and then
-                # migrate all guests within the group to that node to ensure the
-                # affinity.
-                Calculations.get_most_free_node(proxlb_data)
+                # Validate balanciness again before processing each group
+                Calculations.get_balanciness(proxlb_data)
+                logger.debug(proxlb_data["meta"]["balancing"]["balance"])
+                if (not proxlb_data["meta"]["balancing"]["balance"]) and (not proxlb_data["meta"]["balancing"].get("enforce_affinity", False)):
+                    logger.debug("Skipping further guest relocations as balanciness is now ok.")
+                    break
 
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
+                    # Stop moving guests if the source node is no longer the most loaded
+                    source_node = proxlb_data["guests"][guest_name]["node_current"]
+                    method = proxlb_data["meta"]["balancing"].get("method", "memory")
                     mode = proxlb_data["meta"]["balancing"].get("mode", "used")
+                    highest_node = max(proxlb_data["nodes"].values(), key=lambda n: n[f"{method}_{mode}_percent"])
+
+                    if highest_node["name"] != source_node:
+                        logger.debug(f"Stopping relocation for guest {guest_name}: source node {source_node} is no longer the most loaded node.")
+                        break
 
                     if not Calculations.validate_node_resources(proxlb_data, guest_name):
                         logger.warning(f"Skipping relocation of guest {guest_name} due to insufficient resources on target node {proxlb_data['meta']['balancing']['balance_next_node']}. This might affect affinity group {group_name}.")
@@ -586,6 +606,9 @@ class Calculations:
         else:
             logger.debug(f"Guest {guest_name} is marked as ignored. Skipping target node assignment.")
 
+        Calculations.recalc_node_statistics(proxlb_data, node_target)
+        Calculations.recalc_node_statistics(proxlb_data, node_current)
+
         logger.debug("Finished: update_node_resources.")
 
     def validate_affinity_map(proxlb_data: Dict[str, Any]):
@@ -763,3 +786,31 @@ class Calculations:
             logger.debug(f"Node '{node_target}' lacks sufficient resources ({node_memory_free / (1024 ** 3):.2f} GB free) for guest '{guest_name}'.")
             logger.debug("Finished: validate_node_resources.")
             return False
+
+    @staticmethod
+    def recalc_node_statistics(proxlb_data: Dict[str, Any], node_name: str) -> None:
+        """
+        Recalculates node statistics including free resources and usage percentages.
+
+        This function updates the computed statistics for a node based on its current
+        resource allocation and usage. It calculates free resources, usage percentages,
+        and assigned percentages for CPU, memory, and disk.
+
+        Args:
+            proxlb_data (Dict[str, Any]): A dictionary containing the complete ProxLB state including:
+            - "nodes": Dictionary with node resource information
+            node_name (str): The name of the node to recalculate statistics for
+
+        Returns:
+            None: Modifies proxlb_data in-place by updating node statistics
+        """
+        n = proxlb_data["nodes"][node_name]
+        n["cpu_free"] = max(0, n["cpu_total"] - n["cpu_used"])
+        n["memory_free"] = max(0, n["memory_total"] - n["memory_used"])
+        n["disk_free"] = max(0, n["disk_total"] - n["disk_used"])
+        n["cpu_used_percent"] = (n["cpu_used"] / n["cpu_total"] * 100) if n["cpu_total"] else 0
+        n["memory_used_percent"] = (n["memory_used"] / n["memory_total"] * 100) if n["memory_total"] else 0
+        n["disk_used_percent"] = (n["disk_used"] / n["disk_total"] * 100) if n["disk_total"] else 0
+        n["cpu_assigned_percent"] = (n["cpu_assigned"] / n["cpu_total"] * 100) if n["cpu_total"] else 0
+        n["memory_assigned_percent"] = (n["memory_assigned"] / n["memory_total"] * 100) if n["memory_total"] else 0
+        n["disk_assigned_percent"] = (n["disk_assigned"] / n["disk_total"] * 100) if n["disk_total"] else 0

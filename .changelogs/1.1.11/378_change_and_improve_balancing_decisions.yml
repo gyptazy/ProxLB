@@ -1,0 +1,3 @@
+changed:
+  - Changed balancing and sorting behaviour (@gyptazy). [#378]
+  - Balancing objects will be ordered by: count of objects in affinity-rules, followed by memory size 
