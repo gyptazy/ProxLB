@@ -115,3 +115,29 @@ class Pools:
 
         logger.debug("Finished: get_pools_for_guests.")
         return guest_pools
+
+    @staticmethod
+    def get_pool_node_affinity_strictness(proxlb_config: Dict[str, Any], guest_pools: list) -> bool:
+        """
+        Retrieve the node affinity strictness setting for a guest across its pools.
+
+        Queries the ProxLB configuration to determine the node affinity strictness
+        level for the specified guest based on its pool memberships. Returns the
+        strictness setting from the first matching pool configuration.
+
+        Args:
+            proxlb_config (Dict[str, Any]):     ProxLB configuration dictionary.
+            guest_pools (list):                 List of pool names the guest belongs to.
+
+        Returns:
+            bool:                               Node affinity strictness setting (default True if not specified).
+        """
+        logger.debug("Starting: get_pool_node_affinity_strictness.")
+
+        node_strictness = True
+        for pool in guest_pools:
+            pool_settings = proxlb_config.get("balancing", {}).get("pools", {}).get(pool, {})
+            node_strictness = pool_settings.get("strict", True)
+
+        logger.debug("Finished: get_pool_node_affinity_strictness.")
+        return node_strictness

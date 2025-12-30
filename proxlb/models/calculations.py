@@ -519,8 +519,20 @@ class Calculations:
         if len(proxlb_data["guests"][guest_name]["node_relationships"]) > 0:
             logger.debug(f"Guest '{guest_name}' has relationships defined to node(s): {','.join(proxlb_data['guests'][guest_name]['node_relationships'])}. Pinning to node.")
 
-            # Get the node with the most free resources of the group
+            # Get the list of nodes that are defined as relationship for the guest
             guest_node_relation_list = proxlb_data["guests"][guest_name]["node_relationships"]
+
+            # Validate if strict relationships are defined. If not, we prefer
+            # the most free node in addition to the relationship list.
+            if proxlb_data["guests"][guest_name]["node_relationships_strict"]:
+                logger.debug(f"Guest '{guest_name}' has strict node relationships defined. Only nodes in the relationship list will be considered for pinning.")
+            else:
+                logger.debug(f"Guest '{guest_name}' has non-strict node relationships defined. Prefering nodes in the relationship list for pinning.")
+                Calculations.get_most_free_node(proxlb_data)
+                most_free_node = proxlb_data["meta"]["balancing"]["balance_next_node"]
+                guest_node_relation_list.append(most_free_node)
+
+            # Get the most free node from the relationship list, or the most free node overall
             Calculations.get_most_free_node(proxlb_data, False, guest_node_relation_list)
 
             # Validate if the specified node name is really part of the cluster

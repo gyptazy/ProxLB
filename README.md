@@ -393,6 +393,7 @@ balancing:
       pin:
         - virt66
         - virt77
+      strict: False
 
 service:
   daemon: True

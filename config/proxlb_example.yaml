@@ -74,6 +74,7 @@ balancing:
       pin:                            # Define a pinning og guests to specific node(s)
         - virt66
         - virt77
+      strict: False                   # Disable strict mode of node pinning for this pool
 
 service:
   daemon: True
