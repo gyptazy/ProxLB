@@ -1,0 +1,2 @@
+added:
+  - Add support for configuring node-pinning strictness (default: true) within pools (@gyptazy). [#406]
