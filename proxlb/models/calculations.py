@@ -369,13 +369,21 @@ class Calculations:
         None
         """
         logger.debug("Starting: relocate_guests.")
-        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
+
+        # Balance only if it is required by:
+        #  - balanciness
+        #  - Affinity/Anti-Affinity rules
+        # - Pinning rules
+        if proxlb_data["meta"]["balancing"]["balance"] or proxlb_data["meta"]["balancing"].get("enforce_affinity", False) or proxlb_data["meta"]["balancing"].get("enforce_pinning", False):
 
             if proxlb_data["meta"]["balancing"].get("balance", False):
                 logger.debug("Balancing of guests will be performed. Reason: balanciness")
 
             if proxlb_data["meta"]["balancing"].get("enforce_affinity", False):
                 logger.debug("Balancing of guests will be performed. Reason: enforce affinity balancing")
+
+            if proxlb_data["meta"]["balancing"].get("enforce_pinning", False):
+                logger.debug("Balancing of guests will be performed. Reason: enforce pinning balancing")
 
             # Sort guests by used memory
             # Allows processing larger guests first or smaller guests first
@@ -404,7 +412,8 @@ class Calculations:
                 # Validate balanciness again before processing each group
                 Calculations.get_balanciness(proxlb_data)
                 logger.debug(proxlb_data["meta"]["balancing"]["balance"])
-                if (not proxlb_data["meta"]["balancing"]["balance"]) and (not proxlb_data["meta"]["balancing"].get("enforce_affinity", False)):
+
+                if (not proxlb_data["meta"]["balancing"]["balance"]) and (not proxlb_data["meta"]["balancing"].get("enforce_affinity", False)) and (not proxlb_data["meta"]["balancing"].get("enforce_pinning", False)):
                     logger.debug("Skipping further guest relocations as balanciness is now ok.")
                     break
 

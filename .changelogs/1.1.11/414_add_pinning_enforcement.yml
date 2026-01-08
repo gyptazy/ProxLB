@@ -1,0 +1,2 @@
+added:
+  - Add new option to enforce node/guest pinning even when cluster is balanced from a resource perspective (@gyptazy). [#414]
