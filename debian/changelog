@@ -1,3 +1,19 @@
+proxlb (1.1.11) stable; urgency=medium
+
+  * Add support for native Proxmox HA/Affinity rules. (Closes: #391)
+  * Add safety guard to avoid node overprovisioning. (Closes: #275)
+  * Fix affinity rules pre-validation (avoid rebalancing if already ensured). (Closes: #335)
+  * Add resource reservation support for PVE nodes. (Closes: #373)
+  * Change/Adjust balancing and sorting behaviour. (Closes: #378)
+  * Add control over balancing workloads by prefering smaller/larger guest objects. (Closes: #387)
+  * Fix pinning of guest and node relations when using pool based pinning. (Closes: #395)
+  * Add validation of HA jobs by fetching the related child jobs. (Closes: #402)
+  * Add support for configuring node-pinning strictness (mode: strict/prefer). (Closes: #406)
+  * Fix that tag based ignored guests got still moved. (Closes: #408)
+  * Add parameter to enforce guest node relationships when pinned even when the cluster is balanced. (Closes: #414)
+
+ -- Florian Paul Azim Hoberg <gyptazy@gyptazy.com>  Mon, 12 Jan 2026 11:11:04 +0001
+
 proxlb (1.1.10) stable; urgency=medium
 
   * Prevent redundant rebalancing by validating existing affinity enforcement before taking actions. (Closes: #335)
