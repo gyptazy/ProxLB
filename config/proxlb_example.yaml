@@ -19,6 +19,7 @@ proxmox_cluster:
 balancing:
   enable: True
   enforce_affinity: False
+  enforce_pinning: False
   parallel: False
   # If running parallel job, you can define
   # the amount of prallel jobs (default: 5)

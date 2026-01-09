@@ -289,7 +289,8 @@ The following options can be set in the configuration file `proxlb.yaml`:
 |  | overprovisioning |  | False | `Bool` | Avoids balancing when nodes would become overprovisioned. |
 | `balancing` |  |  |  |  |  |
 |  | enable |  | True | `Bool` | Enables the guest balancing.|
-|  | enforce_affinity |  | True | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse. |
+|  | enforce_affinity |  | False | `Bool` | Enforcing affinity/anti-affinity rules but balancing might become worse. |
+|  | enforce_pinning |  | False | `Bool` | Enforcing pinning rules but balancing might become worse. |
 |  | parallel |  | False | `Bool` | If guests should be moved in parallel or sequentially.|
 |  | parallel_jobs |  | 5 | `Int` | The amount if parallel jobs when migrating guests. (default: `5`)|
 |  | live |  | True | `Bool` | If guests should be moved live or shutdown.|
@@ -340,6 +341,7 @@ proxmox_cluster:
 balancing:
   enable: True
   enforce_affinity: False
+  enforce_pinning: False
   parallel: False
   live: True
   with_local_disks: True
