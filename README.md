@@ -187,6 +187,7 @@ services:
 | Version | Image |
 |------|:------:|
 | latest | cr.gyptazy.com/proxlb/proxlb:latest |
+| v1.1.11 | cr.gyptazy.com/proxlb/proxlb:v1.1.11 |
 | v1.1.10 | cr.gyptazy.com/proxlb/proxlb:v1.1.10 |
 | v1.1.9.1 | cr.gyptazy.com/proxlb/proxlb:v1.1.9.1 |
 | v1.1.9 | cr.gyptazy.com/proxlb/proxlb:v1.1.9 |

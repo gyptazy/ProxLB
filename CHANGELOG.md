@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.11] - 2026-01-12
+
+### Added
+
+- Add support for Proxmoxs native HA (affinity/anti-affinity) rules [beta] (@gyptazy). [#391]
+- Add support for Proxmox native HA (node-affinity) rules for pinning guests to nodes [beta] (@gyptazy). [#391]
+- Add resource reservation support for PVE nodes (@Chipmonk2). [#373]
+- Add possibility to sort and select balancing workloads by smaller/larger guest objects (@gyptazy). [#387]
+- Add HA job validation for migration jobs to fetch child jobs (@gytazy). [#402]
+- Add support for configuring node-pinning strictness (default: true) within pools to allow strict/prefer modes (@gyptazy). [#406]
+- Add new option to enforce node/guest pinning even when cluster is balanced from a resource perspective (@gyptazy). [#414]
+
+### Fixed
+
+- Fix missing overprovisioning safety guard to avoid node overprovisioning (@gyptazy). [#275]
+- Fix affinity matrix pre-validation by inverting validations (@Thalagyrt). [#335]
+- Fix pool based node pinning which expects a list (@gyptazy). [#395]
+- Fix that ignored VMs/CTs got moved to another node when being ignored (@gyptazy). [#408]
+
+### Changed
+
+- Change balancing and sorting behaviour (@gyptazy). [#378]
+- Balancing objects will be ordered by count of objects in affinity-rules, followed by memory size (@gyptazy). [#378]
+
 ## [1.1.10] - 2025-11-25
 
 ### Added
