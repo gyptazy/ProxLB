@@ -1,0 +1,2 @@
+fixed:
+  - Fix PSI based balancing which resulted in a Python KeyError (@gyptazy). [#420]

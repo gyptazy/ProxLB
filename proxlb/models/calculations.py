@@ -418,11 +418,12 @@ class Calculations:
                     break
 
                 for guest_name in proxlb_data["groups"]["affinity"][group_name]["guests"]:
+
                     # Stop moving guests if the source node is no longer the most loaded
                     source_node = proxlb_data["guests"][guest_name]["node_current"]
                     method = proxlb_data["meta"]["balancing"].get("method", "memory")
                     mode = proxlb_data["meta"]["balancing"].get("mode", "used")
-                    highest_node = max(proxlb_data["nodes"].values(), key=lambda n: n[f"{method}_{mode}_percent"])
+                    highest_node = max(proxlb_data["nodes"].values(), key=lambda n: n[f"{method}_used_percent"])
 
                     if highest_node["name"] != source_node:
                         logger.debug(f"Stopping relocation for guest {guest_name}: source node {source_node} is no longer the most loaded node.")
