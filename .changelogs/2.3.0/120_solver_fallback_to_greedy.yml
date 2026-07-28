@@ -1,0 +1,2 @@
+added:
+  - Add `solver.fallback_to_greedy` to opt out of greedy Balancing() when the CP-SAT solver cannot find a feasible plan in active mode. [#120]

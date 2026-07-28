@@ -284,6 +284,7 @@ solver:
   timeout_seconds: 30
   use_reservations: True
   active_step_retries: 3
+  fallback_to_greedy: True
 ```
 
 See [docs/04_solver.md](docs/04_solver.md) for the full configuration reference, a description of the feedback loop in active mode, and instructions for generating HTML reports.

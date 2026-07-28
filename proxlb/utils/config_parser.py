@@ -178,6 +178,7 @@ class Config(BaseModel):
 
         active_step_retries: int = 3
         enable: bool = False
+        fallback_to_greedy: bool = True
         log_dir: str = "/var/log/proxlb/solver"
         mode: Mode = Mode.Shadow
         timeout_seconds: float = 30.0

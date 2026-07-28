@@ -108,6 +108,7 @@ solver:
   timeout_seconds: 30     # CP-SAT wall-clock time limit per solve
   use_reservations: True  # honour node_resource_reserve entries from the balancing section
   active_step_retries: 3  # max re-solve attempts on migration failure (active mode only)
+  fallback_to_greedy: True  # fall back to greedy Balancing() when the solver cannot place VMs
 ```
 
 ### Configuration Reference
@@ -119,7 +120,8 @@ solver:
 | `log_dir` | string | `/var/log/proxlb/solver` | Directory for JSONL run logs and HTML reports. Created automatically if absent. The user running ProxLB must have write access (see [Log directory permissions](#logging-and-reports)). |
 | `timeout_seconds` | float | `30.0` | Wall-clock time limit given to the CP-SAT solver per solve (initial solve and each re-solve in active mode). |
 | `use_reservations` | bool | `True` | When `True`, memory reservations defined in `balancing.node_resource_reserve` are applied as hard constraints in the solver (capacity is reduced by the configured GB). |
-| `active_step_retries` | int | `3` | Maximum number of re-solve attempts in active mode. After this many failures the remaining VMs are handed back to ProxLB's Balancing(). |
+| `active_step_retries` | int | `3` | Maximum number of re-solve attempts in active mode. After this many failures the remaining VMs are handed back to ProxLB's Balancing() when `fallback_to_greedy` is `True`. |
+| `fallback_to_greedy` | bool | `True` | In active mode, fall back to ProxLB's greedy `Balancing()` when the solver returns no feasible plan (`INFEASIBLE`), active execution fails, or retries are exhausted. Set to `False` for fail-closed, solver-only behaviour. |
 
 ### Shadow mode (default)
 
@@ -146,17 +148,18 @@ solver:
   log_dir: /var/log/proxlb/solver
   timeout_seconds: 60
   active_step_retries: 3
+  fallback_to_greedy: False  # fail closed: do not migrate when the solver cannot find a safe plan
 ```
 
 In active mode the solver replaces ProxLB's migration execution.  If a migration fails (verified
 via the Proxmox `cluster/resources` API), the failed VM is pinned to its current node and the
 solver re-solves from the updated cluster state.  This repeats up to `active_step_retries` times.
 If the re-solve is infeasible or retries are exhausted, the remaining VMs are handled by ProxLB's
-own Balancing() call.
+own Balancing() call when `fallback_to_greedy` is `True` (default).
 
 If the solver raises an unexpected exception during active execution, ProxLB logs a warning and
-falls back to its greedy Balancing() automatically — active mode never leaves the cluster without
-a migration pass.
+falls back to its greedy Balancing() when `fallback_to_greedy` is `True`. With
+`fallback_to_greedy: False`, no greedy migrations are issued in these cases.
 
 
 ## Logging and Reports
@@ -209,7 +212,7 @@ The solver reads and enforces all constraints that ProxLB recognises:
 When the solver cannot find a placement that satisfies all hard constraints (e.g. anti-affinity on
 a single-node cluster), it reports the blocking VMs in an `infeasible` JSONL event and returns
 `None`.  In shadow mode ProxLB continues with its own plan; in active mode ProxLB falls back to
-its greedy Balancing().
+its greedy Balancing() when `fallback_to_greedy` is `True` (default).
 
 
 ## Operational Notes

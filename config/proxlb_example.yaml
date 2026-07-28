@@ -108,3 +108,4 @@ service:
 #   timeout_seconds: 30             # CP-SAT wall-clock time limit per solve (seconds)
 #   use_reservations: True          # Apply node_resource_reserve entries as hard constraints
 #   active_step_retries: 3          # Max re-solve attempts on migration failure (active mode only)
+#   fallback_to_greedy: True        # Fall back to greedy Balancing() when the solver cannot place VMs (active mode only)
